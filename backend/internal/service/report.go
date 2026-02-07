@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"math/big"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -80,7 +79,7 @@ func (s *Report) IncomeExpense(ctx context.Context, userID uuid.UUID, dateFrom, 
 	return result, nil
 }
 
-func (s *Report) BalanceHistory(ctx context.Context, accountID uuid.UUID, dateFrom, dateTo string) ([]dto.BalanceHistoryItem, error) {
+func (s *Report) BalanceHistory(ctx context.Context, userID, accountID uuid.UUID, dateFrom, dateTo string) ([]dto.BalanceHistoryItem, error) {
 	df, err := dateFromString(dateFrom)
 	if err != nil {
 		return nil, err
@@ -90,14 +89,9 @@ func (s *Report) BalanceHistory(ctx context.Context, accountID uuid.UUID, dateFr
 		return nil, err
 	}
 
-	// Get initial balance
-	sums, err := s.queries.GetAccountTransactionSums(ctx, accountID)
-	if err != nil {
-		return nil, err
-	}
-
 	rows, err := s.queries.BalanceHistory(ctx, store.BalanceHistoryParams{
 		AccountID: accountID,
+		UserID:    userID,
 		DateFrom:  df,
 		DateTo:    dt,
 	})
@@ -105,18 +99,11 @@ func (s *Report) BalanceHistory(ctx context.Context, accountID uuid.UUID, dateFr
 		return nil, err
 	}
 
-	// We need a running total, but since we only have the date range,
-	// we'll show daily change as running balance from initial
-	_ = sums // use initial balance for proper running total if needed
-
 	result := make([]dto.BalanceHistoryItem, 0, len(rows))
-	running := new(big.Float)
 	for _, r := range rows {
-		change := numericToBigFloat(r.DailyChange)
-		running.Add(running, change)
 		result = append(result, dto.BalanceHistoryItem{
 			Date:    dateToString(r.Date),
-			Balance: running.Text('f', 2),
+			Balance: numericToString(r.Balance),
 		})
 	}
 	return result, nil

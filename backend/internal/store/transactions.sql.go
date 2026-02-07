@@ -13,30 +13,57 @@ import (
 )
 
 const balanceHistory = `-- name: BalanceHistory :many
+WITH daily AS (
+    SELECT
+        t.date,
+        SUM(CASE WHEN t.type = 'income' THEN t.amount ELSE -t.amount END)::DECIMAL(15,2) AS daily_change
+    FROM transactions t
+    WHERE t.account_id = $1
+        AND t.user_id = $2
+        AND t.date >= $3
+        AND t.date <= $4
+    GROUP BY t.date
+),
+start_balance AS (
+    SELECT
+        a.initial_balance
+        + COALESCE(SUM(CASE WHEN t.type = 'income' THEN t.amount ELSE -t.amount END), 0)::DECIMAL(15,2) AS balance
+    FROM accounts a
+    LEFT JOIN transactions t
+        ON t.account_id = a.id
+        AND t.user_id = a.user_id
+        AND t.date < $3
+    WHERE a.id = $1
+        AND a.user_id = $2
+    GROUP BY a.initial_balance
+)
 SELECT
-    date,
-    SUM(CASE WHEN type = 'income' THEN amount ELSE -amount END)::DECIMAL(15,2) AS daily_change
-FROM transactions
-WHERE account_id = $1
-    AND date >= $2
-    AND date <= $3
-GROUP BY date
-ORDER BY date
+    d.date,
+    (sb.balance + SUM(d.daily_change) OVER (ORDER BY d.date))::DECIMAL(15,2) AS balance
+FROM daily d
+CROSS JOIN start_balance sb
+ORDER BY d.date
 `
 
 type BalanceHistoryParams struct {
 	AccountID uuid.UUID   `json:"account_id"`
+	UserID    uuid.UUID   `json:"user_id"`
 	DateFrom  pgtype.Date `json:"date_from"`
 	DateTo    pgtype.Date `json:"date_to"`
 }
 
 type BalanceHistoryRow struct {
-	Date        pgtype.Date    `json:"date"`
-	DailyChange pgtype.Numeric `json:"daily_change"`
+	Date    pgtype.Date    `json:"date"`
+	Balance pgtype.Numeric `json:"balance"`
 }
 
 func (q *Queries) BalanceHistory(ctx context.Context, arg BalanceHistoryParams) ([]BalanceHistoryRow, error) {
-	rows, err := q.db.Query(ctx, balanceHistory, arg.AccountID, arg.DateFrom, arg.DateTo)
+	rows, err := q.db.Query(ctx, balanceHistory,
+		arg.AccountID,
+		arg.UserID,
+		arg.DateFrom,
+		arg.DateTo,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -44,7 +71,7 @@ func (q *Queries) BalanceHistory(ctx context.Context, arg BalanceHistoryParams) 
 	items := []BalanceHistoryRow{}
 	for rows.Next() {
 		var i BalanceHistoryRow
-		if err := rows.Scan(&i.Date, &i.DailyChange); err != nil {
+		if err := rows.Scan(&i.Date, &i.Balance); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

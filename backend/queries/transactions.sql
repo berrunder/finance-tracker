@@ -76,15 +76,36 @@ WHERE user_id = @user_id
     AND date <= @date_to;
 
 -- name: BalanceHistory :many
+WITH daily AS (
+    SELECT
+        t.date,
+        SUM(CASE WHEN t.type = 'income' THEN t.amount ELSE -t.amount END)::DECIMAL(15,2) AS daily_change
+    FROM transactions t
+    WHERE t.account_id = @account_id
+        AND t.user_id = @user_id
+        AND t.date >= @date_from
+        AND t.date <= @date_to
+    GROUP BY t.date
+),
+start_balance AS (
+    SELECT
+        a.initial_balance
+        + COALESCE(SUM(CASE WHEN t.type = 'income' THEN t.amount ELSE -t.amount END), 0)::DECIMAL(15,2) AS balance
+    FROM accounts a
+    LEFT JOIN transactions t
+        ON t.account_id = a.id
+        AND t.user_id = a.user_id
+        AND t.date < @date_from
+    WHERE a.id = @account_id
+        AND a.user_id = @user_id
+    GROUP BY a.initial_balance
+)
 SELECT
-    date,
-    SUM(CASE WHEN type = 'income' THEN amount ELSE -amount END)::DECIMAL(15,2) AS daily_change
-FROM transactions
-WHERE account_id = @account_id
-    AND date >= @date_from
-    AND date <= @date_to
-GROUP BY date
-ORDER BY date;
+    d.date,
+    (sb.balance + SUM(d.daily_change) OVER (ORDER BY d.date))::DECIMAL(15,2) AS balance
+FROM daily d
+CROSS JOIN start_balance sb
+ORDER BY d.date;
 
 -- name: BulkCreateTransactions :copyfrom
 INSERT INTO transactions (user_id, account_id, category_id, type, amount, description, date)

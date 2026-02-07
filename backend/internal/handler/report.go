@@ -50,6 +50,7 @@ func (h *Report) BalanceHistory(w http.ResponseWriter, r *http.Request) {
 	}
 
 	dateFrom, dateTo := getDateRange(r)
+	userID := middleware.UserID(r.Context())
 
 	uid, err := parseUUID(accountID)
 	if err != nil {
@@ -57,7 +58,7 @@ func (h *Report) BalanceHistory(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result, err := h.svc.BalanceHistory(r.Context(), uid, dateFrom, dateTo)
+	result, err := h.svc.BalanceHistory(r.Context(), userID, uid, dateFrom, dateTo)
 	if err != nil {
 		respond.Error(w, http.StatusInternalServerError, "INTERNAL_ERROR", err.Error())
 		return

@@ -44,7 +44,7 @@ func main() {
 	authSvc := service.NewAuth(queries, cfg.JWTSecret)
 	accountSvc := service.NewAccount(queries)
 	categorySvc := service.NewCategory(queries)
-	transactionSvc := service.NewTransaction(queries)
+	transactionSvc := service.NewTransaction(queries, pool)
 	reportSvc := service.NewReport(queries)
 	importSvc := service.NewImport(queries)
 	exchangeRateSvc := service.NewExchangeRate(queries)
@@ -80,5 +80,13 @@ func runMigrations(databaseURL string) error {
 	if err != nil {
 		return err
 	}
-	return m.Up()
+	err = m.Up()
+	sourceErr, dbErr := m.Close()
+	if sourceErr != nil {
+		return sourceErr
+	}
+	if dbErr != nil {
+		return dbErr
+	}
+	return err
 }

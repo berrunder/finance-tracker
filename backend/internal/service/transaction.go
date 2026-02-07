@@ -7,6 +7,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/sanches/finance-tracker-cc/backend/internal/dto"
 	"github.com/sanches/finance-tracker-cc/backend/internal/store"
@@ -14,10 +15,11 @@ import (
 
 type Transaction struct {
 	queries *store.Queries
+	pool    *pgxpool.Pool
 }
 
-func NewTransaction(queries *store.Queries) *Transaction {
-	return &Transaction{queries: queries}
+func NewTransaction(queries *store.Queries, pool *pgxpool.Pool) *Transaction {
+	return &Transaction{queries: queries, pool: pool}
 }
 
 func (s *Transaction) Create(ctx context.Context, userID uuid.UUID, req dto.CreateTransactionRequest) (*dto.TransactionResponse, error) {
@@ -27,13 +29,13 @@ func (s *Transaction) Create(ctx context.Context, userID uuid.UUID, req dto.Crea
 	}
 
 	txn, err := s.queries.CreateTransaction(ctx, store.CreateTransactionParams{
-		UserID:     userID,
-		AccountID:  req.AccountID,
-		CategoryID: uuidToNullable(req.CategoryID),
-		Type:       req.Type,
-		Amount:     numericFromString(req.Amount),
+		UserID:      userID,
+		AccountID:   req.AccountID,
+		CategoryID:  uuidToNullable(req.CategoryID),
+		Type:        req.Type,
+		Amount:      numericFromString(req.Amount),
 		Description: req.Description,
-		Date:       date,
+		Date:        date,
 	})
 	if err != nil {
 		return nil, err
@@ -61,8 +63,20 @@ func (s *Transaction) CreateTransfer(ctx context.Context, userID uuid.UUID, req 
 		description = "Transfer"
 	}
 
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		if err != nil {
+			_ = tx.Rollback(ctx)
+		}
+	}()
+
+	q := s.queries.WithTx(tx)
+
 	// Source: expense from source account
-	srcTxn, err := s.queries.CreateTransaction(ctx, store.CreateTransactionParams{
+	srcTxn, err := q.CreateTransaction(ctx, store.CreateTransactionParams{
 		UserID:       userID,
 		AccountID:    req.FromAccountID,
 		Type:         "expense",
@@ -77,7 +91,7 @@ func (s *Transaction) CreateTransfer(ctx context.Context, userID uuid.UUID, req 
 	}
 
 	// Destination: income to destination account
-	dstTxn, err := s.queries.CreateTransaction(ctx, store.CreateTransactionParams{
+	dstTxn, err := q.CreateTransaction(ctx, store.CreateTransactionParams{
 		UserID:       userID,
 		AccountID:    req.ToAccountID,
 		Type:         "income",
@@ -87,6 +101,11 @@ func (s *Transaction) CreateTransfer(ctx context.Context, userID uuid.UUID, req 
 		TransferID:   pgtype.UUID{Bytes: transferID, Valid: true},
 		ExchangeRate: exchangeRate,
 	})
+	if err != nil {
+		return nil, err
+	}
+
+	err = tx.Commit(ctx)
 	if err != nil {
 		return nil, err
 	}
