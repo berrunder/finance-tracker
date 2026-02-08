@@ -16,8 +16,12 @@ import (
 	"github.com/sanches/finance-tracker-cc/backend/internal/store"
 )
 
+type importStore interface {
+	BulkCreateTransactions(ctx context.Context, arg []store.BulkCreateTransactionsParams) (int64, error)
+}
+
 type Import struct {
-	queries *store.Queries
+	queries importStore
 }
 
 func NewImport(queries *store.Queries) *Import {

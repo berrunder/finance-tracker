@@ -20,8 +20,15 @@ var (
 	ErrInvalidToken     = errors.New("invalid or expired token")
 )
 
+type authStore interface {
+	CreateUser(ctx context.Context, arg store.CreateUserParams) (store.User, error)
+	GetUserByUsername(ctx context.Context, username string) (store.User, error)
+	GetUserByID(ctx context.Context, id uuid.UUID) (store.User, error)
+	CreateDefaultCategories(ctx context.Context, userID uuid.UUID) error
+}
+
 type Auth struct {
-	queries *store.Queries
+	queries authStore
 	secret  []byte
 }
 

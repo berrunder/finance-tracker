@@ -7,8 +7,13 @@ import (
 	"github.com/sanches/finance-tracker-cc/backend/internal/store"
 )
 
+type exchangeRateStore interface {
+	ListExchangeRates(ctx context.Context) ([]store.ExchangeRate, error)
+	UpsertExchangeRate(ctx context.Context, arg store.UpsertExchangeRateParams) (store.ExchangeRate, error)
+}
+
 type ExchangeRate struct {
-	queries *store.Queries
+	queries exchangeRateStore
 }
 
 func NewExchangeRate(queries *store.Queries) *ExchangeRate {

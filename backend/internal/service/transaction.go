@@ -13,8 +13,20 @@ import (
 	"github.com/sanches/finance-tracker-cc/backend/internal/store"
 )
 
+type transactionStore interface {
+	CreateTransaction(ctx context.Context, arg store.CreateTransactionParams) (store.Transaction, error)
+	GetTransaction(ctx context.Context, arg store.GetTransactionParams) (store.Transaction, error)
+	ListTransactions(ctx context.Context, arg store.ListTransactionsParams) ([]store.Transaction, error)
+	CountTransactions(ctx context.Context, arg store.CountTransactionsParams) (int64, error)
+	UpdateTransaction(ctx context.Context, arg store.UpdateTransactionParams) (store.Transaction, error)
+	DeleteTransaction(ctx context.Context, arg store.DeleteTransactionParams) error
+	DeleteTransactionByTransferID(ctx context.Context, arg store.DeleteTransactionByTransferIDParams) error
+	GetAccount(ctx context.Context, arg store.GetAccountParams) (store.Account, error)
+	WithTx(tx pgx.Tx) *store.Queries
+}
+
 type Transaction struct {
-	queries *store.Queries
+	queries transactionStore
 	pool    *pgxpool.Pool
 }
 

@@ -10,8 +10,17 @@ import (
 	"github.com/sanches/finance-tracker-cc/backend/internal/store"
 )
 
+type reportStore interface {
+	SpendingByCategory(ctx context.Context, arg store.SpendingByCategoryParams) ([]store.SpendingByCategoryRow, error)
+	MonthlyIncomeExpense(ctx context.Context, arg store.MonthlyIncomeExpenseParams) ([]store.MonthlyIncomeExpenseRow, error)
+	BalanceHistory(ctx context.Context, arg store.BalanceHistoryParams) ([]store.BalanceHistoryRow, error)
+	DashboardSummary(ctx context.Context, arg store.DashboardSummaryParams) (store.DashboardSummaryRow, error)
+	ListAccounts(ctx context.Context, userID uuid.UUID) ([]store.Account, error)
+	GetAccountTransactionSums(ctx context.Context, accountID uuid.UUID) (store.GetAccountTransactionSumsRow, error)
+}
+
 type Report struct {
-	queries *store.Queries
+	queries reportStore
 }
 
 func NewReport(queries *store.Queries) *Report {

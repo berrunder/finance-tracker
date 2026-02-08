@@ -17,8 +17,17 @@ var (
 	ErrCategoryHasTransactions = errors.New("category has transactions")
 )
 
+type categoryStore interface {
+	CreateCategory(ctx context.Context, arg store.CreateCategoryParams) (store.Category, error)
+	ListCategories(ctx context.Context, userID uuid.UUID) ([]store.Category, error)
+	UpdateCategory(ctx context.Context, arg store.UpdateCategoryParams) (store.Category, error)
+	DeleteCategory(ctx context.Context, arg store.DeleteCategoryParams) error
+	HasChildCategories(ctx context.Context, parentID pgtype.UUID) (bool, error)
+	HasCategoryTransactions(ctx context.Context, categoryID pgtype.UUID) (bool, error)
+}
+
 type Category struct {
-	queries *store.Queries
+	queries categoryStore
 }
 
 func NewCategory(queries *store.Queries) *Category {

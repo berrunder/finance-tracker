@@ -13,8 +13,17 @@ import (
 
 var ErrNotFound = errors.New("not found")
 
+type accountStore interface {
+	CreateAccount(ctx context.Context, arg store.CreateAccountParams) (store.Account, error)
+	ListAccounts(ctx context.Context, userID uuid.UUID) ([]store.Account, error)
+	GetAccount(ctx context.Context, arg store.GetAccountParams) (store.Account, error)
+	UpdateAccount(ctx context.Context, arg store.UpdateAccountParams) (store.Account, error)
+	DeleteAccount(ctx context.Context, arg store.DeleteAccountParams) error
+	GetAccountTransactionSums(ctx context.Context, accountID uuid.UUID) (store.GetAccountTransactionSumsRow, error)
+}
+
 type Account struct {
-	queries *store.Queries
+	queries accountStore
 }
 
 func NewAccount(queries *store.Queries) *Account {
