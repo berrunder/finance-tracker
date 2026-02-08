@@ -74,11 +74,10 @@ CREATE INDEX idx_transactions_category ON transactions(category_id);
 INSERT INTO currencies (code, name, symbol) VALUES
     ('USD', 'US Dollar', '$'),
     ('EUR', 'Euro', '€'),
-    ('GBP', 'British Pound', '£'),
-    ('BRL', 'Brazilian Real', 'R$'),
+    ('GBP', 'British Pound', '£'),    
     ('JPY', 'Japanese Yen', '¥'),
-    ('CAD', 'Canadian Dollar', 'CA$'),
-    ('AUD', 'Australian Dollar', 'A$'),
-    ('CHF', 'Swiss Franc', 'CHF'),
     ('CNY', 'Chinese Yuan', '¥'),
-    ('RUB', 'Russian Ruble', '₽');
+    ('RUB', 'Russian Ruble', '₽'),
+    ('AMD', 'Armenian Dram', '֏'),
+    ('GEL', 'Georgian Lari', '₾'),
+    ('TRY', 'Turkish Lira', '₺');
