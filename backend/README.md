@@ -133,7 +133,7 @@ Generated code goes to `internal/store/` — do not edit those files directly.
 
 ## Project Structure
 
-See [ARCHITECTURE.md](ARCHITECTURE.md) for detailed patterns and conventions.
+See [ARCHITECTURE.md](docs/ARCHITECTURE.md) for detailed patterns and conventions.
 
 ```
 cmd/api/main.go        entry point, dependency wiring
@@ -148,6 +148,10 @@ internal/
 migrations/            SQL migration files
 queries/               sqlc SQL definitions
 ```
+
+## API documentaion
+
+See [API.md](docs/API.md) for API documentation
 
 ## Testing
 

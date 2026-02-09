@@ -65,3 +65,9 @@ handler -> service -> store (sqlc-generated)
 ### sqlc Configuration
 
 `backend/sqlc.yaml` — generates to `internal/store/` package, uses `pgx/v5`, maps `uuid` DB type to `google/uuid.UUID`. Annotations: `-- name: FuncName :one/:many/:exec/:copyfrom`.
+
+### Additional conventions
+
+- Every change in API should be reflected in [API documentation](backend/docs/API.md)
+- Every architectural change should be reflected in [architecture documentation](backend/docs/API.md)
+- Backend feature changes and added/updated commands should be reflected in [README](backend/README.md)
