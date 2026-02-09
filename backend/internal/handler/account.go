@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"encoding/json"
 	"errors"
 	"net/http"
 
@@ -35,7 +34,7 @@ func (h *Account) List(w http.ResponseWriter, r *http.Request) {
 func (h *Account) Create(w http.ResponseWriter, r *http.Request) {
 	userID := middleware.UserID(r.Context())
 	var req dto.CreateAccountRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if err := decodeJSON(w, r, &req); err != nil {
 		respond.Error(w, http.StatusBadRequest, "INVALID_BODY", "invalid request body")
 		return
 	}
@@ -46,7 +45,7 @@ func (h *Account) Create(w http.ResponseWriter, r *http.Request) {
 
 	acct, err := h.svc.Create(r.Context(), userID, req)
 	if err != nil {
-		respond.Error(w, http.StatusInternalServerError, "INTERNAL_ERROR", err.Error())
+		respond.Error(w, http.StatusInternalServerError, "INTERNAL_ERROR", "failed to create account")
 		return
 	}
 	respond.JSON(w, http.StatusCreated, acct)
@@ -81,7 +80,7 @@ func (h *Account) Update(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var req dto.UpdateAccountRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if err := decodeJSON(w, r, &req); err != nil {
 		respond.Error(w, http.StatusBadRequest, "INVALID_BODY", "invalid request body")
 		return
 	}
@@ -96,7 +95,7 @@ func (h *Account) Update(w http.ResponseWriter, r *http.Request) {
 			respond.Error(w, http.StatusNotFound, "NOT_FOUND", "account not found")
 			return
 		}
-		respond.Error(w, http.StatusInternalServerError, "INTERNAL_ERROR", err.Error())
+		respond.Error(w, http.StatusInternalServerError, "INTERNAL_ERROR", "failed to update account")
 		return
 	}
 	respond.JSON(w, http.StatusOK, acct)

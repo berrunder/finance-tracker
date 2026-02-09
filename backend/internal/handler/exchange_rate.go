@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"encoding/json"
 	"net/http"
 
 	"github.com/sanches/finance-tracker-cc/backend/internal/dto"
@@ -28,7 +27,7 @@ func (h *ExchangeRate) List(w http.ResponseWriter, r *http.Request) {
 
 func (h *ExchangeRate) Create(w http.ResponseWriter, r *http.Request) {
 	var req dto.CreateExchangeRateRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if err := decodeJSON(w, r, &req); err != nil {
 		respond.Error(w, http.StatusBadRequest, "INVALID_BODY", "invalid request body")
 		return
 	}
@@ -39,7 +38,7 @@ func (h *ExchangeRate) Create(w http.ResponseWriter, r *http.Request) {
 
 	rate, err := h.svc.Create(r.Context(), req)
 	if err != nil {
-		respond.Error(w, http.StatusInternalServerError, "INTERNAL_ERROR", err.Error())
+		respond.Error(w, http.StatusInternalServerError, "INTERNAL_ERROR", "failed to create exchange rate")
 		return
 	}
 	respond.JSON(w, http.StatusCreated, rate)

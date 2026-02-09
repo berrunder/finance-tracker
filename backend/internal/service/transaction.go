@@ -132,6 +132,9 @@ func (s *Transaction) List(ctx context.Context, userID uuid.UUID, params ListTra
 	if params.Page < 1 {
 		params.Page = 1
 	}
+	if params.Page > 10000 {
+		params.Page = 10000
+	}
 	if params.PerPage < 1 || params.PerPage > 100 {
 		params.PerPage = 20
 	}
@@ -251,12 +254,10 @@ func (s *Transaction) Delete(ctx context.Context, userID, txnID uuid.UUID) error
 	}
 
 	if txn.TransferID.Valid {
-		if err := s.queries.DeleteTransactionByTransferID(ctx, store.DeleteTransactionByTransferIDParams{
+		return s.queries.DeleteTransactionByTransferID(ctx, store.DeleteTransactionByTransferIDParams{
 			TransferID: txn.TransferID,
 			UserID:     userID,
-		}); err != nil {
-			return err
-		}
+		})
 	}
 
 	return s.queries.DeleteTransaction(ctx, store.DeleteTransactionParams{ID: txnID, UserID: userID})

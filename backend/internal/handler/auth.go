@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"encoding/json"
 	"errors"
 	"net/http"
 
@@ -24,7 +23,7 @@ func NewAuth(svc *service.Auth) *Auth {
 
 func (h *Auth) Register(w http.ResponseWriter, r *http.Request) {
 	var req dto.RegisterRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if err := decodeJSON(w, r, &req); err != nil {
 		respond.Error(w, http.StatusBadRequest, "INVALID_BODY", "invalid request body")
 		return
 	}
@@ -48,7 +47,7 @@ func (h *Auth) Register(w http.ResponseWriter, r *http.Request) {
 
 func (h *Auth) Login(w http.ResponseWriter, r *http.Request) {
 	var req dto.LoginRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if err := decodeJSON(w, r, &req); err != nil {
 		respond.Error(w, http.StatusBadRequest, "INVALID_BODY", "invalid request body")
 		return
 	}
@@ -72,7 +71,7 @@ func (h *Auth) Login(w http.ResponseWriter, r *http.Request) {
 
 func (h *Auth) Refresh(w http.ResponseWriter, r *http.Request) {
 	var req dto.RefreshRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if err := decodeJSON(w, r, &req); err != nil {
 		respond.Error(w, http.StatusBadRequest, "INVALID_BODY", "invalid request body")
 		return
 	}

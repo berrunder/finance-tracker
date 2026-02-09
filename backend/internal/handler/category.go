@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"encoding/json"
 	"errors"
 	"net/http"
 
@@ -35,7 +34,7 @@ func (h *Category) List(w http.ResponseWriter, r *http.Request) {
 func (h *Category) Create(w http.ResponseWriter, r *http.Request) {
 	userID := middleware.UserID(r.Context())
 	var req dto.CreateCategoryRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if err := decodeJSON(w, r, &req); err != nil {
 		respond.Error(w, http.StatusBadRequest, "INVALID_BODY", "invalid request body")
 		return
 	}
@@ -46,7 +45,7 @@ func (h *Category) Create(w http.ResponseWriter, r *http.Request) {
 
 	cat, err := h.svc.Create(r.Context(), userID, req)
 	if err != nil {
-		respond.Error(w, http.StatusInternalServerError, "INTERNAL_ERROR", err.Error())
+		respond.Error(w, http.StatusInternalServerError, "INTERNAL_ERROR", "failed to create category")
 		return
 	}
 	respond.JSON(w, http.StatusCreated, cat)
@@ -61,7 +60,7 @@ func (h *Category) Update(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var req dto.UpdateCategoryRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if err := decodeJSON(w, r, &req); err != nil {
 		respond.Error(w, http.StatusBadRequest, "INVALID_BODY", "invalid request body")
 		return
 	}
@@ -76,7 +75,7 @@ func (h *Category) Update(w http.ResponseWriter, r *http.Request) {
 			respond.Error(w, http.StatusNotFound, "NOT_FOUND", "category not found")
 			return
 		}
-		respond.Error(w, http.StatusInternalServerError, "INTERNAL_ERROR", err.Error())
+		respond.Error(w, http.StatusInternalServerError, "INTERNAL_ERROR", "failed to update category")
 		return
 	}
 	respond.JSON(w, http.StatusOK, cat)

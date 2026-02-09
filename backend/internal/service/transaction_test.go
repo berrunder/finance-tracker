@@ -116,7 +116,7 @@ func TestTransactionDelete_WithTransfer(t *testing.T) {
 
 	require.NoError(t, err)
 	require.True(t, deleteByTransferCalled, "DeleteTransactionByTransferID should be called")
-	require.True(t, deleteCalled, "DeleteTransaction should also be called")
+	require.False(t, deleteCalled, "DeleteTransaction should not be called for transfer transactions")
 }
 
 func TestTransactionDelete_NoTransfer(t *testing.T) {

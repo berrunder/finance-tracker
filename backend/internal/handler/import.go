@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"encoding/json"
 	"net/http"
 
 	"github.com/sanches/finance-tracker-cc/backend/internal/dto"
@@ -44,7 +43,7 @@ func (h *Import) Confirm(w http.ResponseWriter, r *http.Request) {
 	userID := middleware.UserID(r.Context())
 
 	var req dto.CSVConfirmRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if err := decodeJSON(w, r, &req); err != nil {
 		respond.Error(w, http.StatusBadRequest, "INVALID_BODY", "invalid request body")
 		return
 	}
@@ -55,7 +54,7 @@ func (h *Import) Confirm(w http.ResponseWriter, r *http.Request) {
 
 	count, err := h.svc.ConfirmImport(r.Context(), userID, req)
 	if err != nil {
-		respond.Error(w, http.StatusInternalServerError, "IMPORT_ERROR", err.Error())
+		respond.Error(w, http.StatusInternalServerError, "IMPORT_ERROR", "failed to import transactions")
 		return
 	}
 

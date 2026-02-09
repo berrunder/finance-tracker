@@ -23,7 +23,7 @@ func (h *Report) Spending(w http.ResponseWriter, r *http.Request) {
 
 	result, err := h.svc.Spending(r.Context(), userID, dateFrom, dateTo)
 	if err != nil {
-		respond.Error(w, http.StatusInternalServerError, "INTERNAL_ERROR", err.Error())
+		respond.Error(w, http.StatusInternalServerError, "INTERNAL_ERROR", "failed to get spending report")
 		return
 	}
 	respond.JSON(w, http.StatusOK, map[string]any{"data": result})
@@ -35,7 +35,7 @@ func (h *Report) IncomeExpense(w http.ResponseWriter, r *http.Request) {
 
 	result, err := h.svc.IncomeExpense(r.Context(), userID, dateFrom, dateTo)
 	if err != nil {
-		respond.Error(w, http.StatusInternalServerError, "INTERNAL_ERROR", err.Error())
+		respond.Error(w, http.StatusInternalServerError, "INTERNAL_ERROR", "failed to get income/expense report")
 		return
 	}
 	respond.JSON(w, http.StatusOK, map[string]any{"data": result})
@@ -60,7 +60,7 @@ func (h *Report) BalanceHistory(w http.ResponseWriter, r *http.Request) {
 
 	result, err := h.svc.BalanceHistory(r.Context(), userID, uid, dateFrom, dateTo)
 	if err != nil {
-		respond.Error(w, http.StatusInternalServerError, "INTERNAL_ERROR", err.Error())
+		respond.Error(w, http.StatusInternalServerError, "INTERNAL_ERROR", "failed to get balance history")
 		return
 	}
 	respond.JSON(w, http.StatusOK, map[string]any{"data": result})
@@ -72,7 +72,7 @@ func (h *Report) Summary(w http.ResponseWriter, r *http.Request) {
 
 	result, err := h.svc.Summary(r.Context(), userID, dateFrom, dateTo)
 	if err != nil {
-		respond.Error(w, http.StatusInternalServerError, "INTERNAL_ERROR", err.Error())
+		respond.Error(w, http.StatusInternalServerError, "INTERNAL_ERROR", "failed to get summary")
 		return
 	}
 	respond.JSON(w, http.StatusOK, result)
