@@ -27,12 +27,20 @@ func NewReport(queries *store.Queries) *Report {
 	return &Report{queries: queries}
 }
 
-func (s *Report) Spending(ctx context.Context, userID uuid.UUID, dateFrom, dateTo string) ([]dto.SpendingByCategoryItem, error) {
+func parseDateRange(dateFrom, dateTo string) (pgtype.Date, pgtype.Date, error) {
 	df, err := dateFromString(dateFrom)
 	if err != nil {
-		return nil, err
+		return pgtype.Date{}, pgtype.Date{}, err
 	}
 	dt, err := dateFromString(dateTo)
+	if err != nil {
+		return pgtype.Date{}, pgtype.Date{}, err
+	}
+	return df, dt, nil
+}
+
+func (s *Report) Spending(ctx context.Context, userID uuid.UUID, dateFrom, dateTo string) ([]dto.SpendingByCategoryItem, error) {
+	df, dt, err := parseDateRange(dateFrom, dateTo)
 	if err != nil {
 		return nil, err
 	}
@@ -59,11 +67,7 @@ func (s *Report) Spending(ctx context.Context, userID uuid.UUID, dateFrom, dateT
 }
 
 func (s *Report) IncomeExpense(ctx context.Context, userID uuid.UUID, dateFrom, dateTo string) ([]dto.MonthlyIncomeExpenseItem, error) {
-	df, err := dateFromString(dateFrom)
-	if err != nil {
-		return nil, err
-	}
-	dt, err := dateFromString(dateTo)
+	df, dt, err := parseDateRange(dateFrom, dateTo)
 	if err != nil {
 		return nil, err
 	}
@@ -89,11 +93,7 @@ func (s *Report) IncomeExpense(ctx context.Context, userID uuid.UUID, dateFrom, 
 }
 
 func (s *Report) BalanceHistory(ctx context.Context, userID, accountID uuid.UUID, dateFrom, dateTo string) ([]dto.BalanceHistoryItem, error) {
-	df, err := dateFromString(dateFrom)
-	if err != nil {
-		return nil, err
-	}
-	dt, err := dateFromString(dateTo)
+	df, dt, err := parseDateRange(dateFrom, dateTo)
 	if err != nil {
 		return nil, err
 	}
@@ -119,11 +119,7 @@ func (s *Report) BalanceHistory(ctx context.Context, userID, accountID uuid.UUID
 }
 
 func (s *Report) Summary(ctx context.Context, userID uuid.UUID, dateFrom, dateTo string) (*dto.SummaryResponse, error) {
-	df, err := dateFromString(dateFrom)
-	if err != nil {
-		return nil, err
-	}
-	dt, err := dateFromString(dateTo)
+	df, dt, err := parseDateRange(dateFrom, dateTo)
 	if err != nil {
 		return nil, err
 	}
@@ -148,17 +144,7 @@ func (s *Report) Summary(ctx context.Context, userID uuid.UUID, dateFrom, dateTo
 		if err != nil {
 			continue
 		}
-		balance := numericAdd(a.InitialBalance, numericSub(sums.TotalIncome, sums.TotalExpense))
-		acctResponses = append(acctResponses, dto.AccountResponse{
-			ID:             a.ID,
-			Name:           a.Name,
-			Type:           a.Type,
-			Currency:       a.Currency,
-			InitialBalance: numericToString(a.InitialBalance),
-			Balance:        numericToString(balance),
-			CreatedAt:      a.CreatedAt.Time,
-			UpdatedAt:      a.UpdatedAt.Time,
-		})
+		acctResponses = append(acctResponses, accountToResponse(a, sums))
 	}
 
 	netIncome := numericSub(summary.TotalIncome, summary.TotalExpense)
@@ -170,6 +156,3 @@ func (s *Report) Summary(ctx context.Context, userID uuid.UUID, dateFrom, dateTo
 		Accounts:     acctResponses,
 	}, nil
 }
-
-// Unused import suppression for pgtype
-var _ pgtype.Date

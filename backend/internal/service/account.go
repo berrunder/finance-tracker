@@ -30,11 +30,22 @@ func NewAccount(queries *store.Queries) *Account {
 	return &Account{queries: queries}
 }
 
-func (s *Account) Create(ctx context.Context, userID uuid.UUID, req dto.CreateAccountRequest) (*dto.AccountResponse, error) {
-	balance := numericFromString(req.InitialBalance)
-	if !balance.Valid {
-		balance = numericFromString("0")
+func accountToResponse(a store.Account, sums store.GetAccountTransactionSumsRow) dto.AccountResponse {
+	balance := numericAdd(a.InitialBalance, numericSub(sums.TotalIncome, sums.TotalExpense))
+	return dto.AccountResponse{
+		ID:             a.ID,
+		Name:           a.Name,
+		Type:           a.Type,
+		Currency:       a.Currency,
+		InitialBalance: numericToString(a.InitialBalance),
+		Balance:        numericToString(balance),
+		CreatedAt:      a.CreatedAt.Time,
+		UpdatedAt:      a.UpdatedAt.Time,
 	}
+}
+
+func (s *Account) Create(ctx context.Context, userID uuid.UUID, req dto.CreateAccountRequest) (*dto.AccountResponse, error) {
+	balance := numericFromStringOrZero(req.InitialBalance)
 
 	acct, err := s.queries.CreateAccount(ctx, store.CreateAccountParams{
 		UserID:         userID,
@@ -79,10 +90,7 @@ func (s *Account) Get(ctx context.Context, userID, accountID uuid.UUID) (*dto.Ac
 }
 
 func (s *Account) Update(ctx context.Context, userID, accountID uuid.UUID, req dto.UpdateAccountRequest) (*dto.AccountResponse, error) {
-	balance := numericFromString(req.InitialBalance)
-	if !balance.Valid {
-		balance = numericFromString("0")
-	}
+	balance := numericFromStringOrZero(req.InitialBalance)
 
 	acct, err := s.queries.UpdateAccount(ctx, store.UpdateAccountParams{
 		ID:             accountID,
@@ -110,16 +118,6 @@ func (s *Account) toResponse(ctx context.Context, a store.Account) (*dto.Account
 		return nil, err
 	}
 
-	balance := numericAdd(a.InitialBalance, numericSub(sums.TotalIncome, sums.TotalExpense))
-
-	return &dto.AccountResponse{
-		ID:             a.ID,
-		Name:           a.Name,
-		Type:           a.Type,
-		Currency:       a.Currency,
-		InitialBalance: numericToString(a.InitialBalance),
-		Balance:        numericToString(balance),
-		CreatedAt:      a.CreatedAt.Time,
-		UpdatedAt:      a.UpdatedAt.Time,
-	}, nil
+	resp := accountToResponse(a, sums)
+	return &resp, nil
 }

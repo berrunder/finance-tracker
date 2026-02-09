@@ -19,6 +19,14 @@ func numericFromString(s string) pgtype.Numeric {
 	return n
 }
 
+func numericFromStringOrZero(s string) pgtype.Numeric {
+	n := numericFromString(s)
+	if !n.Valid {
+		n = numericFromString("0")
+	}
+	return n
+}
+
 func numericToString(n pgtype.Numeric) string {
 	if !n.Valid {
 		return "0"

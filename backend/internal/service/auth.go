@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -148,24 +149,9 @@ func (s *Auth) generateToken(userID uuid.UUID, tokenType string, expiry time.Dur
 }
 
 func isDuplicateKey(err error) bool {
-	return err != nil && (errors.As(err, new(*pgDuplicateKeyError)) ||
-		containsString(err.Error(), "duplicate key") ||
-		containsString(err.Error(), "23505"))
-}
-
-type pgDuplicateKeyError struct{}
-
-func (e *pgDuplicateKeyError) Error() string { return "duplicate key" }
-
-func containsString(s, substr string) bool {
-	return len(s) >= len(substr) && searchString(s, substr)
-}
-
-func searchString(s, substr string) bool {
-	for i := 0; i <= len(s)-len(substr); i++ {
-		if s[i:i+len(substr)] == substr {
-			return true
-		}
+	if err == nil {
+		return false
 	}
-	return false
+	msg := err.Error()
+	return strings.Contains(msg, "duplicate key") || strings.Contains(msg, "23505")
 }

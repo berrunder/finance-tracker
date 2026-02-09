@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
@@ -136,7 +137,7 @@ func TestRefresh_ValidToken(t *testing.T) {
 	svc := &Auth{queries: mock, secret: []byte(testAuthSecret)}
 
 	// Generate a refresh token
-	refreshToken, err := svc.generateToken(user.ID, "refresh", 7*24*60*60*1e9) // 7 days
+	refreshToken, err := svc.generateToken(user.ID, "refresh", 7*24*time.Hour)
 	require.NoError(t, err)
 
 	resp, err := svc.Refresh(context.Background(), refreshToken)
