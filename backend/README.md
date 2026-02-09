@@ -1,6 +1,6 @@
 # Finance Tracker — Backend
 
-REST API for a personal finance tracker. Tracks income/expenses across multiple accounts and currencies, generates spending reports, and imports bank statements via CSV.
+REST API for a small-scale personal finance tracker. Tracks income/expenses across multiple accounts and currencies, generates spending reports, and imports bank statements via CSV.
 
 ## Tech
 
