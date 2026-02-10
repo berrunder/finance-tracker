@@ -34,6 +34,10 @@ func (h *Auth) Register(w http.ResponseWriter, r *http.Request) {
 
 	res, err := h.svc.Register(r.Context(), req)
 	if err != nil {
+		if errors.Is(err, service.ErrInvalidInviteCode) {
+			respond.Error(w, http.StatusForbidden, "INVALID_INVITE_CODE", err.Error())
+			return
+		}
 		if errors.Is(err, service.ErrUserExists) {
 			respond.Error(w, http.StatusConflict, "USER_EXISTS", err.Error())
 			return

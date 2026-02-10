@@ -8,6 +8,7 @@ type Config struct {
 	Port        string `envconfig:"PORT" default:"8080"`
 	DatabaseURL string `envconfig:"DATABASE_URL" required:"true"`
 	JWTSecret   string `envconfig:"JWT_SECRET" required:"true"`
+	InviteCodes string `envconfig:"INVITE_CODES" required:"true"`
 }
 
 func Load() (*Config, error) {

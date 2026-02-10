@@ -26,7 +26,7 @@ make dev-frontend
 
 ## Environment Variables
 
-Required: `DATABASE_URL` (postgres connection string), `JWT_SECRET` (HMAC key, 32+ chars). Optional: `PORT` (default 8080).
+Required: `DATABASE_URL` (postgres connection string), `JWT_SECRET` (HMAC key, 32+ chars), `INVITE_CODES` (comma-separated list of valid registration invite codes). Optional: `PORT` (default 8080).
 
 ## Conventions
 

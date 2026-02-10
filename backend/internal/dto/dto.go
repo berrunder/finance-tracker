@@ -35,6 +35,7 @@ type RegisterRequest struct {
 	Password     string `json:"password" validate:"required,min=8,max=128"`
 	DisplayName  string `json:"display_name" validate:"required,max=100"`
 	BaseCurrency string `json:"base_currency" validate:"required,len=3"`
+	InviteCode   string `json:"invite_code" validate:"required"`
 }
 
 type LoginRequest struct {

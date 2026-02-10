@@ -66,4 +66,5 @@ type User struct {
 	BaseCurrency string             `json:"base_currency"`
 	CreatedAt    pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt    pgtype.Timestamptz `json:"updated_at"`
+	InviteCode   pgtype.Text        `json:"invite_code"`
 }

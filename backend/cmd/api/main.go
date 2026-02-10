@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"log/slog"
+	"strings"
 
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
@@ -41,7 +42,11 @@ func main() {
 	queries := store.New(pool)
 
 	// Services
-	authSvc := service.NewAuth(queries, cfg.JWTSecret)
+	inviteCodes := parseInviteCodes(cfg.InviteCodes)
+	if len(inviteCodes) == 0 {
+		log.Fatal("INVITE_CODES must contain at least one valid code")
+	}
+	authSvc := service.NewAuth(queries, cfg.JWTSecret, inviteCodes)
 	accountSvc := service.NewAccount(queries)
 	categorySvc := service.NewCategory(queries)
 	transactionSvc := service.NewTransaction(queries, pool)
@@ -69,6 +74,16 @@ func main() {
 	if err := srv.Start(); err != nil {
 		log.Fatal("server error: ", err)
 	}
+}
+
+func parseInviteCodes(raw string) []string {
+	var codes []string
+	for _, c := range strings.Split(raw, ",") {
+		if c = strings.TrimSpace(c); c != "" {
+			codes = append(codes, c)
+		}
+	}
+	return codes
 }
 
 func runMigrations(databaseURL string) error {

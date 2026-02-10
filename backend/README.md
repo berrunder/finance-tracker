@@ -56,6 +56,7 @@ All config is via environment variables:
 |---|---|---|---|
 | `DATABASE_URL` | yes | — | PostgreSQL connection string |
 | `JWT_SECRET` | yes | — | HMAC signing key for JWTs |
+| `INVITE_CODES` | yes | — | Comma-separated list of valid invite codes for registration |
 | `PORT` | no | `8080` | HTTP listen port |
 
 ## API Overview
@@ -65,7 +66,7 @@ Base path: `/api/v1`
 ### Auth (public)
 
 ```
-POST /auth/register    { username, password, display_name, base_currency }
+POST /auth/register    { username, password, display_name, base_currency, invite_code }
 POST /auth/login       { username, password }
 POST /auth/refresh     { refresh_token }
 ```

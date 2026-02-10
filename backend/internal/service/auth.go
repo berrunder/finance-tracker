@@ -3,12 +3,14 @@ package service
 import (
 	"context"
 	"errors"
+	"slices"
 	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/sanches/finance-tracker-cc/backend/internal/dto"
@@ -16,9 +18,10 @@ import (
 )
 
 var (
-	ErrUserExists       = errors.New("username already taken")
+	ErrUserExists         = errors.New("username already taken")
 	ErrInvalidCredentials = errors.New("invalid username or password")
-	ErrInvalidToken     = errors.New("invalid or expired token")
+	ErrInvalidToken       = errors.New("invalid or expired token")
+	ErrInvalidInviteCode  = errors.New("invalid invite code")
 )
 
 type authStore interface {
@@ -29,15 +32,20 @@ type authStore interface {
 }
 
 type Auth struct {
-	queries authStore
-	secret  []byte
+	queries     authStore
+	secret      []byte
+	inviteCodes []string
 }
 
-func NewAuth(queries *store.Queries, secret string) *Auth {
-	return &Auth{queries: queries, secret: []byte(secret)}
+func NewAuth(queries *store.Queries, secret string, inviteCodes []string) *Auth {
+	return &Auth{queries: queries, secret: []byte(secret), inviteCodes: inviteCodes}
 }
 
 func (s *Auth) Register(ctx context.Context, req dto.RegisterRequest) (*dto.AuthResponse, error) {
+	if !slices.Contains(s.inviteCodes, req.InviteCode) {
+		return nil, ErrInvalidInviteCode
+	}
+
 	hash, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
 		return nil, err
@@ -48,6 +56,7 @@ func (s *Auth) Register(ctx context.Context, req dto.RegisterRequest) (*dto.Auth
 		PasswordHash: string(hash),
 		DisplayName:  req.DisplayName,
 		BaseCurrency: req.BaseCurrency,
+		InviteCode:   pgtype.Text{String: req.InviteCode, Valid: true},
 	})
 	if err != nil {
 		if isDuplicateKey(err) {

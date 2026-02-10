@@ -1,0 +1,1 @@
+ALTER TABLE users ADD COLUMN invite_code VARCHAR(100);

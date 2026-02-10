@@ -9,19 +9,21 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const createUser = `-- name: CreateUser :one
-INSERT INTO users (username, password_hash, display_name, base_currency)
-VALUES ($1, $2, $3, $4)
-RETURNING id, username, password_hash, display_name, base_currency, created_at, updated_at
+INSERT INTO users (username, password_hash, display_name, base_currency, invite_code)
+VALUES ($1, $2, $3, $4, $5)
+RETURNING id, username, password_hash, display_name, base_currency, created_at, updated_at, invite_code
 `
 
 type CreateUserParams struct {
-	Username     string `json:"username"`
-	PasswordHash string `json:"password_hash"`
-	DisplayName  string `json:"display_name"`
-	BaseCurrency string `json:"base_currency"`
+	Username     string      `json:"username"`
+	PasswordHash string      `json:"password_hash"`
+	DisplayName  string      `json:"display_name"`
+	BaseCurrency string      `json:"base_currency"`
+	InviteCode   pgtype.Text `json:"invite_code"`
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
@@ -30,6 +32,7 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		arg.PasswordHash,
 		arg.DisplayName,
 		arg.BaseCurrency,
+		arg.InviteCode,
 	)
 	var i User
 	err := row.Scan(
@@ -40,12 +43,13 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		&i.BaseCurrency,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.InviteCode,
 	)
 	return i, err
 }
 
 const getUserByID = `-- name: GetUserByID :one
-SELECT id, username, password_hash, display_name, base_currency, created_at, updated_at FROM users WHERE id = $1
+SELECT id, username, password_hash, display_name, base_currency, created_at, updated_at, invite_code FROM users WHERE id = $1
 `
 
 func (q *Queries) GetUserByID(ctx context.Context, id uuid.UUID) (User, error) {
@@ -59,12 +63,13 @@ func (q *Queries) GetUserByID(ctx context.Context, id uuid.UUID) (User, error) {
 		&i.BaseCurrency,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.InviteCode,
 	)
 	return i, err
 }
 
 const getUserByUsername = `-- name: GetUserByUsername :one
-SELECT id, username, password_hash, display_name, base_currency, created_at, updated_at FROM users WHERE username = $1
+SELECT id, username, password_hash, display_name, base_currency, created_at, updated_at, invite_code FROM users WHERE username = $1
 `
 
 func (q *Queries) GetUserByUsername(ctx context.Context, username string) (User, error) {
@@ -78,6 +83,7 @@ func (q *Queries) GetUserByUsername(ctx context.Context, username string) (User,
 		&i.BaseCurrency,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.InviteCode,
 	)
 	return i, err
 }
@@ -86,7 +92,7 @@ const updateUser = `-- name: UpdateUser :one
 UPDATE users
 SET display_name = $2, base_currency = $3, updated_at = now()
 WHERE id = $1
-RETURNING id, username, password_hash, display_name, base_currency, created_at, updated_at
+RETURNING id, username, password_hash, display_name, base_currency, created_at, updated_at, invite_code
 `
 
 type UpdateUserParams struct {
@@ -106,6 +112,7 @@ func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (User, e
 		&i.BaseCurrency,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.InviteCode,
 	)
 	return i, err
 }

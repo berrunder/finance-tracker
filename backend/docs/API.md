@@ -23,6 +23,7 @@ All errors return:
 | `UNAUTHORIZED` | 401 | Missing/invalid/expired token |
 | `INVALID_CREDENTIALS` | 401 | Wrong username or password |
 | `INVALID_TOKEN` | 401 | Bad refresh token |
+| `INVALID_INVITE_CODE` | 403 | Invalid invite code on registration |
 | `USER_EXISTS` | 409 | Username taken |
 | `NOT_FOUND` | 404 | Resource doesn't exist or belongs to another user |
 | `HAS_CHILDREN` | 409 | Category has subcategories (can't delete) |
@@ -49,7 +50,8 @@ All errors return:
   "username": "string",      // required, 3-50 chars
   "password": "string",      // required, 8-128 chars
   "display_name": "string",  // required, max 100 chars
-  "base_currency": "string"  // required, exactly 3 chars (e.g. "USD")
+  "base_currency": "string", // required, exactly 3 chars (e.g. "USD")
+  "invite_code": "string"    // required, must match a configured invite code
 }
 
 // Response 201

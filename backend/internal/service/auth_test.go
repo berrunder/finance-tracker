@@ -18,6 +18,8 @@ import (
 
 const testAuthSecret = "test-auth-secret-at-least-32-chars!"
 
+var testInviteCodes = []string{"valid-code", "another-code"}
+
 type mockAuthStore struct {
 	createUserFn             func(ctx context.Context, arg store.CreateUserParams) (store.User, error)
 	getUserByUsernameFn      func(ctx context.Context, username string) (store.User, error)
@@ -115,15 +117,58 @@ func TestRegister_DuplicateUser(t *testing.T) {
 		},
 	}
 
-	svc := &Auth{queries: mock, secret: []byte(testAuthSecret)}
+	svc := &Auth{queries: mock, secret: []byte(testAuthSecret), inviteCodes: testInviteCodes}
 	_, err := svc.Register(context.Background(), dto.RegisterRequest{
 		Username:     "existing",
 		Password:     "password123",
 		DisplayName:  "Test",
 		BaseCurrency: "USD",
+		InviteCode:   "valid-code",
 	})
 
 	require.ErrorIs(t, err, ErrUserExists)
+}
+
+func TestRegister_InvalidInviteCode(t *testing.T) {
+	mock := &mockAuthStore{}
+
+	svc := &Auth{queries: mock, secret: []byte(testAuthSecret), inviteCodes: testInviteCodes}
+	_, err := svc.Register(context.Background(), dto.RegisterRequest{
+		Username:     "newuser",
+		Password:     "password123",
+		DisplayName:  "Test",
+		BaseCurrency: "USD",
+		InviteCode:   "wrong-code",
+	})
+
+	require.ErrorIs(t, err, ErrInvalidInviteCode)
+}
+
+func TestRegister_ValidInviteCode(t *testing.T) {
+	user := testUser("password123")
+
+	mock := &mockAuthStore{
+		createUserFn: func(ctx context.Context, arg store.CreateUserParams) (store.User, error) {
+			return user, nil
+		},
+		createDefaultCategoriesFn: func(ctx context.Context, userID uuid.UUID) error {
+			return nil
+		},
+	}
+
+	svc := &Auth{queries: mock, secret: []byte(testAuthSecret), inviteCodes: testInviteCodes}
+	resp, err := svc.Register(context.Background(), dto.RegisterRequest{
+		Username:     "newuser",
+		Password:     "password123",
+		DisplayName:  "Test User",
+		BaseCurrency: "USD",
+		InviteCode:   "valid-code",
+	})
+
+	require.NoError(t, err)
+	require.NotEmpty(t, resp.AccessToken)
+	require.NotEmpty(t, resp.RefreshToken)
+	require.Equal(t, user.Username, resp.User.Username)
 }
 
 func TestRefresh_ValidToken(t *testing.T) {
