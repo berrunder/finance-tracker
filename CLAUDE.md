@@ -28,6 +28,10 @@ make dev-frontend
 
 Required: `DATABASE_URL` (postgres connection string), `JWT_SECRET` (HMAC key, 32+ chars), `INVITE_CODES` (comma-separated list of valid registration invite codes). Optional: `PORT` (default 8080).
 
+## Specifications
+
+Implementation specifications for frontend located at `frontend/SPEC.md`
+
 ## Conventions
 
 - API changes must be reflected in [backend/docs/API.md](backend/docs/API.md)
