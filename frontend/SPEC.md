@@ -8,20 +8,20 @@ Single-page application for a self-hosted personal finance tracker. Built with R
 
 ## Tech Stack
 
-| Concern | Library | Notes |
-|---|---|---|
-| Framework | React 19 + Vite | SPA, no SSR |
-| Language | TypeScript (strict mode) | |
-| Routing | React Router v7 | Client-side routing, Nginx SPA fallback |
-| Server state | TanStack Query v5 | Cache, refetch, mutations |
-| Forms | React Hook Form + zod | Inline validation on blur + server error mapping |
-| UI components | shadcn/ui (Radix + Tailwind) | Default neutral (zinc/slate) theme |
-| Styling | Tailwind CSS v4 | |
-| Charts | Recharts | Interactive charts with drill-down |
-| Dates | date-fns | |
-| Decimal math | decimal.js | All monetary arithmetic uses Decimal, never native floats |
-| CSV preview | PapaParse | Client-side CSV parsing for import flow |
-| Testing | Vitest | Unit tests for utils, API layer, auth logic |
+| Concern       | Library                      | Notes                                                     |
+| ------------- | ---------------------------- | --------------------------------------------------------- |
+| Framework     | React 19 + Vite              | SPA, no SSR                                               |
+| Language      | TypeScript (strict mode)     |                                                           |
+| Routing       | React Router v7              | Client-side routing, Nginx SPA fallback                   |
+| Server state  | TanStack Query v5            | Cache, refetch, mutations                                 |
+| Forms         | React Hook Form + zod        | Inline validation on blur + server error mapping          |
+| UI components | shadcn/ui (Radix + Tailwind) | Default neutral (zinc/slate) theme                        |
+| Styling       | Tailwind CSS v4              |                                                           |
+| Charts        | Recharts                     | Interactive charts with drill-down                        |
+| Dates         | date-fns                     |                                                           |
+| Decimal math  | decimal.js                   | All monetary arithmetic uses Decimal, never native floats |
+| CSV preview   | PapaParse                    | Client-side CSV parsing for import flow                   |
+| Testing       | Vitest                       | Unit tests for utils, API layer, auth logic               |
 
 ---
 
@@ -135,6 +135,7 @@ Registration requires an invite code to prevent unauthorized signups on the self
 ### Auth Context
 
 A React Context (`AuthProvider`) exposes:
+
 - `user: User | null` — current user object
 - `isAuthenticated: boolean`
 - `isLoading: boolean` — true while the initial refresh-on-startup is in-flight
@@ -232,6 +233,7 @@ Fixed left sidebar containing:
 #### Filter Bar
 
 Horizontal bar above the transaction list with:
+
 - **Account** dropdown (all accounts + "All Accounts" default).
 - **Category** searchable combobox (same component as in forms, with "All Categories" default).
 - **Type** dropdown: All / Income / Expense.
@@ -279,6 +281,7 @@ When source and destination accounts have different currencies, show three linke
 - **Exchange rate** (e.g., "0.925").
 
 Behavior:
+
 - Filling send amount + receive amount → auto-compute exchange rate.
 - Filling send amount + exchange rate → auto-compute receive amount.
 - Filling receive amount + exchange rate → auto-compute send amount.
@@ -336,11 +339,13 @@ Shared **date range picker** at the top of the page — controls the date range 
 Visual step indicator at the top: **1. Upload** → **2. Map & Preview** → **3. Confirm**.
 
 **Step 1 — Upload**:
+
 - File upload drop zone (drag-and-drop or click to browse). Accepts `.csv` files only.
 - Account selector dropdown (required — the account to import transactions into).
 - "Next" button. Calls `POST /import/csv` with the file. On success, move to step 2 with the parsed preview data.
 
 **Step 2 — Map & Preview**:
+
 - **Column mapping**: For each required field (date, amount) and optional field (description, type, category), show a dropdown populated with the CSV's column headers.
 - **Date format**: Auto-detect from the first few values. Show a dropdown with common formats (`YYYY-MM-DD`, `MM/DD/YYYY`, `DD/MM/YYYY`, `DD.MM.YYYY`) so the user can override if auto-detection is wrong. Preview updates live as the format changes.
 - **Amount convention**: Radio buttons — "Negative values are expenses" (default) or "All values are expenses".
@@ -348,6 +353,7 @@ Visual step indicator at the top: **1. Upload** → **2. Map & Preview** → **3
 - "Back" and "Next" buttons.
 
 **Step 3 — Confirm**:
+
 - Summary: "Import X transactions into [Account Name]".
 - Show breakdown: Y income, Z expense transactions.
 - **Bulk correction**: Checkboxes on each row. A "Flip selected to income/expense" button to fix misclassified transactions.
@@ -359,12 +365,14 @@ Visual step indicator at the top: **1. Upload** → **2. Map & Preview** → **3
 Tabbed layout with three tabs:
 
 **Tab: Profile**
+
 - Display name (text input, editable).
 - Base currency (dropdown, editable — affects report aggregation).
 - Username (read-only, displayed for reference).
 - "Save" button.
 
 **Tab: Categories**
+
 - Split into two sections: **Expense Categories** and **Income Categories**.
 - Each section shows parent categories as expandable sections.
 - Under each parent: list of child categories, indented.
@@ -376,6 +384,7 @@ Tabbed layout with three tabs:
   - Otherwise: simple confirmation dialog.
 
 **Tab: Appearance**
+
 - Theme selector: three options — Light, Dark, System (radio buttons or segmented control).
 - Preview of the selected theme (optional, low priority).
 
@@ -414,11 +423,11 @@ Tabbed layout with three tabs:
 
 ### Delete Confirmations — Tiered Strategy
 
-| Resource | Confirmation |
-|---|---|
-| Transaction | Simple confirmation dialog: "Delete this transaction?" with Cancel/Delete buttons |
-| Category | Simple confirmation dialog: "Delete category [name]?" |
-| Account | Dangerous confirmation: "Deleting [name] will permanently remove all its transactions. Type the account name to confirm:" with a text input that must match the account name |
+| Resource    | Confirmation                                                                                                                                                                 |
+| ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Transaction | Simple confirmation dialog: "Delete this transaction?" with Cancel/Delete buttons                                                                                            |
+| Category    | Simple confirmation dialog: "Delete category [name]?"                                                                                                                        |
+| Account     | Dangerous confirmation: "Deleting [name] will permanently remove all its transactions. Type the account name to confirm:" with a text input that must match the account name |
 
 For transfer transactions, the confirmation notes: "This will also delete the linked transfer transaction."
 
@@ -460,13 +469,13 @@ Backend errors arrive as `{ error: { code, message, details? } }`.
 
 **Mutation errors** (create, update, delete): Show as toast notification (top-right, auto-dismiss after 5 seconds). For form submissions, also map known error codes to specific form fields:
 
-| Backend Error Code | Frontend Handling |
-|---|---|
-| `VALIDATION_ERROR` | Map `details` to form field errors |
-| `USER_EXISTS` | Set error on `username` field |
-| `HAS_CHILDREN` | Show toast: "Remove subcategories first" |
-| `HAS_TRANSACTIONS` | Show toast: "Category has transactions" |
-| `NOT_FOUND` | Show toast: "Item not found. It may have been deleted." |
+| Backend Error Code    | Frontend Handling                                           |
+| --------------------- | ----------------------------------------------------------- |
+| `VALIDATION_ERROR`    | Map `details` to form field errors                          |
+| `USER_EXISTS`         | Set error on `username` field                               |
+| `HAS_CHILDREN`        | Show toast: "Remove subcategories first"                    |
+| `HAS_TRANSACTIONS`    | Show toast: "Category has transactions"                     |
+| `NOT_FOUND`           | Show toast: "Item not found. It may have been deleted."     |
 | `INVALID_CREDENTIALS` | Set error on form (general): "Invalid username or password" |
 
 **Page load errors** (GET requests that fail): Show inline error banner in the content area with a "Retry" button.
@@ -494,14 +503,14 @@ Namespaced and structured for targeted invalidation:
 
 ### Cache Invalidation on Mutations
 
-| Mutation | Invalidate |
-|---|---|
+| Mutation                       | Invalidate                                                          |
+| ------------------------------ | ------------------------------------------------------------------- |
 | Create/edit/delete transaction | `['transactions']`, `['accounts']` (balances change), `['reports']` |
-| Create/edit/delete transfer | Same as transaction |
-| Create/edit/delete account | `['accounts']`, `['reports', 'summary']` |
-| Create/edit/delete category | `['categories']` |
-| CSV import confirm | `['transactions']`, `['accounts']`, `['reports']` |
-| Update user profile | `['auth']` (user object) |
+| Create/edit/delete transfer    | Same as transaction                                                 |
+| Create/edit/delete account     | `['accounts']`, `['reports', 'summary']`                            |
+| Create/edit/delete category    | `['categories']`                                                    |
+| CSV import confirm             | `['transactions']`, `['accounts']`, `['reports']`                   |
+| Update user profile            | `['auth']` (user object)                                            |
 
 ### Defaults
 
@@ -529,10 +538,10 @@ Transaction filters sync bidirectionally with URL search params:
 
 ## Keyboard Shortcuts
 
-| Shortcut | Action | Context |
-|---|---|---|
-| `Ctrl+N` / `Cmd+N` | Open "New Transaction" form | Any page |
-| `Escape` | Close modal / form / combobox dropdown | When a modal or form is open |
+| Shortcut           | Action                                 | Context                      |
+| ------------------ | -------------------------------------- | ---------------------------- |
+| `Ctrl+N` / `Cmd+N` | Open "New Transaction" form            | Any page                     |
+| `Escape`           | Close modal / form / combobox dropdown | When a modal or form is open |
 
 Shortcuts are disabled when an input field is focused (to avoid conflicts with normal typing).
 
@@ -540,11 +549,11 @@ Shortcuts are disabled when an input field is focused (to avoid conflicts with n
 
 ## Responsive Breakpoints
 
-| Breakpoint | Width | Layout |
-|---|---|---|
-| Mobile | < 768px | Hamburger menu, card layouts, stacked forms |
-| Tablet | 768px - 1023px | Collapsed sidebar (icons), tables with horizontal scroll if needed |
-| Desktop | >= 1024px | Full sidebar, full tables, side-by-side layouts |
+| Breakpoint | Width          | Layout                                                             |
+| ---------- | -------------- | ------------------------------------------------------------------ |
+| Mobile     | < 768px        | Hamburger menu, card layouts, stacked forms                        |
+| Tablet     | 768px - 1023px | Collapsed sidebar (icons), tables with horizontal scroll if needed |
+| Desktop    | >= 1024px      | Full sidebar, full tables, side-by-side layouts                    |
 
 ---
 
@@ -628,6 +637,7 @@ The following backend changes are needed to support this frontend spec:
 ## Implementation Phases
 
 ### Phase 1 — Scaffold & Auth
+
 - Vite + React + TypeScript project setup
 - Tailwind CSS v4 + shadcn/ui initialization
 - React Router with route definitions (all pages as stubs)
@@ -638,6 +648,7 @@ The following backend changes are needed to support this frontend spec:
 - Dark mode support
 
 ### Phase 2 — Core CRUD
+
 - Accounts page (table, create/edit/delete)
 - Categories settings tab (grouped list, create/edit/delete)
 - Transaction page (list with filters, create/edit/delete form)
@@ -646,12 +657,14 @@ The following backend changes are needed to support this frontend spec:
 - TanStack Query cache invalidation wiring
 
 ### Phase 3 — Dashboard & Reports
+
 - Dashboard page (summary cards, recent transactions)
 - Reports page (spending chart, income-expense chart, balance history)
 - Chart drill-down interactions
 - Date range picker shared across reports
 
 ### Phase 4 — Import & Polish
+
 - CSV import wizard (3-step stepper)
 - Settings page (profile tab, appearance tab)
 - Skeleton loading states

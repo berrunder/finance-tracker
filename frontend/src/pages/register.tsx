@@ -1,33 +1,33 @@
-import { useState } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Link } from "react-router";
-import { useAuth } from "@/hooks/use-auth";
-import { registerSchema, type RegisterFormData } from "@/lib/validators";
-import { mapApiErrorToFieldError } from "@/lib/error-mapping";
-import { ApiError } from "@/api/client";
-import { CURRENCIES } from "@/lib/constants";
-import { Button } from "@/components/ui/button";
+import { useState } from 'react'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { Link } from 'react-router'
+import { useAuth } from '@/hooks/use-auth'
+import { registerSchema, type RegisterFormData } from '@/lib/validators'
+import { mapApiErrorToFieldError } from '@/lib/error-mapping'
+import { ApiError } from '@/api/client'
+import { CURRENCIES } from '@/lib/constants'
+import { Button } from '@/components/ui/button'
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+} from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from '@/components/ui/select'
 
 export default function RegisterPage() {
-  const { register: registerUser } = useAuth();
-  const [serverError, setServerError] = useState<string | null>(null);
+  const { register: registerUser } = useAuth()
+  const [serverError, setServerError] = useState<string | null>(null)
 
   const {
     register,
@@ -38,40 +38,40 @@ export default function RegisterPage() {
   } = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
-      username: "",
-      password: "",
-      confirm_password: "",
-      display_name: "",
-      base_currency: "",
-      invite_code: "",
+      username: '',
+      password: '',
+      confirm_password: '',
+      display_name: '',
+      base_currency: '',
+      invite_code: '',
     },
-    mode: "onBlur",
-  });
+    mode: 'onBlur',
+  })
 
   const onSubmit = async (data: RegisterFormData) => {
-    setServerError(null);
+    setServerError(null)
     try {
-      const { confirm_password: _, ...apiData } = data;
-      await registerUser(apiData);
+      const { confirm_password: _, ...apiData } = data
+      await registerUser(apiData)
     } catch (error) {
       if (error instanceof ApiError) {
-        const fieldError = mapApiErrorToFieldError(error);
+        const fieldError = mapApiErrorToFieldError(error)
         if (fieldError) {
-          if (fieldError.field === "root") {
-            setServerError(fieldError.message);
+          if (fieldError.field === 'root') {
+            setServerError(fieldError.message)
           } else {
             setError(fieldError.field as keyof RegisterFormData, {
               message: fieldError.message,
-            });
+            })
           }
         } else {
-          setServerError(error.message);
+          setServerError(error.message)
         }
       } else {
-        setServerError("An unexpected error occurred");
+        setServerError('An unexpected error occurred')
       }
     }
-  };
+  }
 
   return (
     <div className="flex min-h-screen items-center justify-center p-4">
@@ -92,7 +92,7 @@ export default function RegisterPage() {
 
             <div className="space-y-2">
               <Label htmlFor="username">Username</Label>
-              <Input id="username" {...register("username")} />
+              <Input id="username" {...register('username')} />
               {errors.username && (
                 <p className="text-destructive text-sm">
                   {errors.username.message}
@@ -102,7 +102,7 @@ export default function RegisterPage() {
 
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
-              <Input id="password" type="password" {...register("password")} />
+              <Input id="password" type="password" {...register('password')} />
               {errors.password && (
                 <p className="text-destructive text-sm">
                   {errors.password.message}
@@ -115,7 +115,7 @@ export default function RegisterPage() {
               <Input
                 id="confirm_password"
                 type="password"
-                {...register("confirm_password")}
+                {...register('confirm_password')}
               />
               {errors.confirm_password && (
                 <p className="text-destructive text-sm">
@@ -126,7 +126,7 @@ export default function RegisterPage() {
 
             <div className="space-y-2">
               <Label htmlFor="display_name">Display Name</Label>
-              <Input id="display_name" {...register("display_name")} />
+              <Input id="display_name" {...register('display_name')} />
               {errors.display_name && (
                 <p className="text-destructive text-sm">
                   {errors.display_name.message}
@@ -138,7 +138,7 @@ export default function RegisterPage() {
               <Label>Base Currency</Label>
               <Select
                 onValueChange={(value) =>
-                  setValue("base_currency", value, { shouldValidate: true })
+                  setValue('base_currency', value, { shouldValidate: true })
                 }
               >
                 <SelectTrigger className="w-full">
@@ -161,7 +161,7 @@ export default function RegisterPage() {
 
             <div className="space-y-2">
               <Label htmlFor="invite_code">Invite Code</Label>
-              <Input id="invite_code" {...register("invite_code")} />
+              <Input id="invite_code" {...register('invite_code')} />
               {errors.invite_code && (
                 <p className="text-destructive text-sm">
                   {errors.invite_code.message}
@@ -170,11 +170,11 @@ export default function RegisterPage() {
             </div>
 
             <Button type="submit" className="w-full" disabled={isSubmitting}>
-              {isSubmitting ? "Creating account..." : "Create account"}
+              {isSubmitting ? 'Creating account...' : 'Create account'}
             </Button>
           </form>
           <p className="text-muted-foreground mt-4 text-center text-sm">
-            Already have an account?{" "}
+            Already have an account?{' '}
             <Link
               to="/login"
               className="text-primary underline-offset-4 hover:underline"
@@ -185,5 +185,5 @@ export default function RegisterPage() {
         </CardContent>
       </Card>
     </div>
-  );
+  )
 }

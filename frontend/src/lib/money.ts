@@ -1,13 +1,13 @@
-import Decimal from "decimal.js";
+import Decimal from 'decimal.js'
 
 export function formatMoney(amount: string, currency: string): string {
-  const decimal = new Decimal(amount);
+  const decimal = new Decimal(amount)
   return new Intl.NumberFormat(navigator.language, {
-    style: "currency",
+    style: 'currency',
     currency,
-  }).format(decimal.toNumber());
+  }).format(decimal.toNumber())
 }
 
 export function parseDecimal(value: string): Decimal {
-  return new Decimal(value);
+  return new Decimal(value)
 }

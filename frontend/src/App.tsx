@@ -1,17 +1,17 @@
-import { BrowserRouter, Routes, Route, Navigate, Outlet } from "react-router";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Toaster } from "@/components/ui/sonner";
-import { AuthProvider } from "@/hooks/use-auth";
-import { ProtectedRoute, GuestRoute } from "@/components/layout/protected-route";
-import { AppLayout } from "@/components/layout/app-layout";
-import LoginPage from "@/pages/login";
-import RegisterPage from "@/pages/register";
-import DashboardPage from "@/pages/dashboard";
-import TransactionsPage from "@/pages/transactions";
-import AccountsPage from "@/pages/accounts";
-import ReportsPage from "@/pages/reports";
-import ImportPage from "@/pages/import";
-import SettingsPage from "@/pages/settings";
+import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { Toaster } from '@/components/ui/sonner'
+import { AuthProvider } from '@/hooks/use-auth'
+import { ProtectedRoute, GuestRoute } from '@/components/layout/protected-route'
+import { AppLayout } from '@/components/layout/app-layout'
+import LoginPage from '@/pages/login'
+import RegisterPage from '@/pages/register'
+import DashboardPage from '@/pages/dashboard'
+import TransactionsPage from '@/pages/transactions'
+import AccountsPage from '@/pages/accounts'
+import ReportsPage from '@/pages/reports'
+import ImportPage from '@/pages/import'
+import SettingsPage from '@/pages/settings'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -22,7 +22,7 @@ const queryClient = new QueryClient({
       retry: 3,
     },
   },
-});
+})
 
 function ProtectedLayout() {
   return (
@@ -31,7 +31,7 @@ function ProtectedLayout() {
         <Outlet />
       </AppLayout>
     </ProtectedRoute>
-  );
+  )
 }
 
 export default function App() {
@@ -40,8 +40,22 @@ export default function App() {
       <AuthProvider>
         <BrowserRouter>
           <Routes>
-            <Route path="/login" element={<GuestRoute><LoginPage /></GuestRoute>} />
-            <Route path="/register" element={<GuestRoute><RegisterPage /></GuestRoute>} />
+            <Route
+              path="/login"
+              element={
+                <GuestRoute>
+                  <LoginPage />
+                </GuestRoute>
+              }
+            />
+            <Route
+              path="/register"
+              element={
+                <GuestRoute>
+                  <RegisterPage />
+                </GuestRoute>
+              }
+            />
             <Route element={<ProtectedLayout />}>
               <Route index element={<Navigate to="/dashboard" replace />} />
               <Route path="dashboard" element={<DashboardPage />} />
@@ -56,5 +70,5 @@ export default function App() {
         <Toaster />
       </AuthProvider>
     </QueryClientProvider>
-  );
+  )
 }

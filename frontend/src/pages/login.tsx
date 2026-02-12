@@ -1,25 +1,25 @@
-import { useState } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Link } from "react-router";
-import { useAuth } from "@/hooks/use-auth";
-import { loginSchema, type LoginFormData } from "@/lib/validators";
-import { mapApiErrorToFieldError } from "@/lib/error-mapping";
-import { ApiError } from "@/api/client";
-import { Button } from "@/components/ui/button";
+import { useState } from 'react'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { Link } from 'react-router'
+import { useAuth } from '@/hooks/use-auth'
+import { loginSchema, type LoginFormData } from '@/lib/validators'
+import { mapApiErrorToFieldError } from '@/lib/error-mapping'
+import { ApiError } from '@/api/client'
+import { Button } from '@/components/ui/button'
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+} from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 
 export default function LoginPage() {
-  const { login } = useAuth();
-  const [serverError, setServerError] = useState<string | null>(null);
+  const { login } = useAuth()
+  const [serverError, setServerError] = useState<string | null>(null)
 
   const {
     register,
@@ -28,33 +28,33 @@ export default function LoginPage() {
     formState: { errors, isSubmitting },
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
-    defaultValues: { username: "", password: "" },
-    mode: "onBlur",
-  });
+    defaultValues: { username: '', password: '' },
+    mode: 'onBlur',
+  })
 
   const onSubmit = async (data: LoginFormData) => {
-    setServerError(null);
+    setServerError(null)
     try {
-      await login(data.username, data.password);
+      await login(data.username, data.password)
     } catch (error) {
       if (error instanceof ApiError) {
-        const fieldError = mapApiErrorToFieldError(error);
+        const fieldError = mapApiErrorToFieldError(error)
         if (fieldError) {
-          if (fieldError.field === "root") {
-            setServerError(fieldError.message);
+          if (fieldError.field === 'root') {
+            setServerError(fieldError.message)
           } else {
             setError(fieldError.field as keyof LoginFormData, {
               message: fieldError.message,
-            });
+            })
           }
         } else {
-          setServerError(error.message);
+          setServerError(error.message)
         }
       } else {
-        setServerError("An unexpected error occurred");
+        setServerError('An unexpected error occurred')
       }
     }
-  };
+  }
 
   return (
     <div className="flex min-h-screen items-center justify-center p-4">
@@ -72,7 +72,7 @@ export default function LoginPage() {
             )}
             <div className="space-y-2">
               <Label htmlFor="username">Username</Label>
-              <Input id="username" {...register("username")} />
+              <Input id="username" {...register('username')} />
               {errors.username && (
                 <p className="text-destructive text-sm">
                   {errors.username.message}
@@ -81,7 +81,7 @@ export default function LoginPage() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
-              <Input id="password" type="password" {...register("password")} />
+              <Input id="password" type="password" {...register('password')} />
               {errors.password && (
                 <p className="text-destructive text-sm">
                   {errors.password.message}
@@ -89,11 +89,11 @@ export default function LoginPage() {
               )}
             </div>
             <Button type="submit" className="w-full" disabled={isSubmitting}>
-              {isSubmitting ? "Logging in..." : "Log in"}
+              {isSubmitting ? 'Logging in...' : 'Log in'}
             </Button>
           </form>
           <p className="text-muted-foreground mt-4 text-center text-sm">
-            Don&apos;t have an account?{" "}
+            Don&apos;t have an account?{' '}
             <Link
               to="/register"
               className="text-primary underline-offset-4 hover:underline"
@@ -104,5 +104,5 @@ export default function LoginPage() {
         </CardContent>
       </Card>
     </div>
-  );
+  )
 }

@@ -1,16 +1,16 @@
-import { useState } from "react";
-import { Sidebar } from "./sidebar";
+import { useState } from 'react'
+import { Sidebar } from './sidebar'
 import {
   Sheet,
   SheetContent,
   SheetTrigger,
   SheetTitle,
-} from "@/components/ui/sheet";
-import { Button } from "@/components/ui/button";
-import { Menu, Wallet } from "lucide-react";
+} from '@/components/ui/sheet'
+import { Button } from '@/components/ui/button'
+import { Menu, Wallet } from 'lucide-react'
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
-  const [mobileOpen, setMobileOpen] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false)
 
   return (
     <div className="flex h-screen">
@@ -46,5 +46,5 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         {children}
       </main>
     </div>
-  );
+  )
 }

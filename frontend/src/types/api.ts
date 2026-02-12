@@ -1,207 +1,207 @@
 // Auth
 export interface User {
-  id: string;
-  username: string;
-  display_name: string;
-  base_currency: string;
-  created_at: string;
+  id: string
+  username: string
+  display_name: string
+  base_currency: string
+  created_at: string
 }
 
 export interface AuthResponse {
-  access_token: string;
-  refresh_token: string;
-  user: User;
+  access_token: string
+  refresh_token: string
+  user: User
 }
 
 export interface LoginRequest {
-  username: string;
-  password: string;
+  username: string
+  password: string
 }
 
 export interface RegisterRequest {
-  username: string;
-  password: string;
-  display_name: string;
-  base_currency: string;
-  invite_code: string;
+  username: string
+  password: string
+  display_name: string
+  base_currency: string
+  invite_code: string
 }
 
 // Error
 export interface ApiErrorDetail {
-  code: string;
-  message: string;
-  details?: string;
+  code: string
+  message: string
+  details?: string
 }
 
 export interface ApiErrorResponse {
-  error: ApiErrorDetail;
+  error: ApiErrorDetail
 }
 
 // Pagination
 export interface Pagination {
-  page: number;
-  per_page: number;
-  total: number;
+  page: number
+  per_page: number
+  total: number
 }
 
 export interface PaginatedResponse<T> {
-  data: T[];
-  pagination: Pagination;
+  data: T[]
+  pagination: Pagination
 }
 
 // Account
 export interface Account {
-  id: string;
-  name: string;
-  type: string;
-  currency: string;
-  initial_balance: string;
-  balance: string;
-  created_at: string;
-  updated_at: string;
+  id: string
+  name: string
+  type: string
+  currency: string
+  initial_balance: string
+  balance: string
+  created_at: string
+  updated_at: string
 }
 
 export interface CreateAccountRequest {
-  name: string;
-  type: string;
-  currency: string;
-  initial_balance: string;
+  name: string
+  type: string
+  currency: string
+  initial_balance: string
 }
 
 export interface UpdateAccountRequest {
-  name: string;
-  type: string;
-  initial_balance: string;
+  name: string
+  type: string
+  initial_balance: string
 }
 
 // Category
 export interface Category {
-  id: string;
-  name: string;
-  type: string;
-  parent_id: string | null;
-  children?: Category[];
-  created_at: string;
+  id: string
+  name: string
+  type: string
+  parent_id: string | null
+  children?: Category[]
+  created_at: string
 }
 
 export interface CreateCategoryRequest {
-  name: string;
-  type: string;
-  parent_id?: string | null;
+  name: string
+  type: string
+  parent_id?: string | null
 }
 
 export interface UpdateCategoryRequest {
-  name: string;
-  parent_id?: string | null;
+  name: string
+  parent_id?: string | null
 }
 
 // Transaction
 export interface Transaction {
-  id: string;
-  account_id: string;
-  category_id: string | null;
-  type: string;
-  amount: string;
-  currency: string;
-  description: string;
-  date: string;
-  transfer_id?: string | null;
-  exchange_rate?: string | null;
-  created_at: string;
-  updated_at: string;
+  id: string
+  account_id: string
+  category_id: string | null
+  type: string
+  amount: string
+  currency: string
+  description: string
+  date: string
+  transfer_id?: string | null
+  exchange_rate?: string | null
+  created_at: string
+  updated_at: string
 }
 
 export interface CreateTransactionRequest {
-  account_id: string;
-  category_id?: string | null;
-  type: string;
-  amount: string;
-  description: string;
-  date: string;
+  account_id: string
+  category_id?: string | null
+  type: string
+  amount: string
+  description: string
+  date: string
 }
 
 export interface CreateTransferRequest {
-  from_account_id: string;
-  to_account_id: string;
-  amount: string;
-  to_amount?: string;
-  exchange_rate?: string;
-  description: string;
-  date: string;
+  from_account_id: string
+  to_account_id: string
+  amount: string
+  to_amount?: string
+  exchange_rate?: string
+  description: string
+  date: string
 }
 
 export interface UpdateTransactionRequest {
-  account_id: string;
-  category_id?: string | null;
-  type: string;
-  amount: string;
-  description: string;
-  date: string;
+  account_id: string
+  category_id?: string | null
+  type: string
+  amount: string
+  description: string
+  date: string
 }
 
 // Import
 export interface CSVPreviewRow {
-  values: Record<string, string>;
+  values: Record<string, string>
 }
 
 export interface CSVUploadResponse {
-  headers: string[];
-  preview: CSVPreviewRow[];
-  total: number;
+  headers: string[]
+  preview: CSVPreviewRow[]
+  total: number
 }
 
 export interface CSVColumnMapping {
-  date: string;
-  amount: string;
-  description?: string;
-  type?: string;
-  category?: string;
+  date: string
+  amount: string
+  description?: string
+  type?: string
+  category?: string
 }
 
 export interface CSVConfirmRequest {
-  account_id: string;
-  mapping: CSVColumnMapping;
-  rows: CSVPreviewRow[];
+  account_id: string
+  mapping: CSVColumnMapping
+  rows: CSVPreviewRow[]
 }
 
 // Reports
 export interface SpendingByCategoryItem {
-  category_id: string;
-  category_name: string;
-  parent_id?: string | null;
-  total: string;
+  category_id: string
+  category_name: string
+  parent_id?: string | null
+  total: string
 }
 
 export interface MonthlyIncomeExpenseItem {
-  month: string;
-  income: string;
-  expense: string;
+  month: string
+  income: string
+  expense: string
 }
 
 export interface BalanceHistoryItem {
-  date: string;
-  balance: string;
+  date: string
+  balance: string
 }
 
 export interface SummaryResponse {
-  total_income: string;
-  total_expense: string;
-  net_income: string;
-  accounts: Account[];
+  total_income: string
+  total_expense: string
+  net_income: string
+  accounts: Account[]
 }
 
 // Exchange Rate
 export interface ExchangeRate {
-  id: string;
-  from_currency: string;
-  to_currency: string;
-  rate: string;
-  date: string;
+  id: string
+  from_currency: string
+  to_currency: string
+  rate: string
+  date: string
 }
 
 export interface CreateExchangeRateRequest {
-  from_currency: string;
-  to_currency: string;
-  rate: string;
-  date: string;
+  from_currency: string
+  to_currency: string
+  rate: string
+  date: string
 }
