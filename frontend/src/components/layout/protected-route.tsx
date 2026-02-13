@@ -1,5 +1,5 @@
 import { Navigate } from 'react-router'
-import { useAuth } from '@/hooks/use-auth'
+import { useAuth } from '@/hooks/use-auth.ts'
 import type { ReactNode } from 'react'
 
 function LoadingScreen() {

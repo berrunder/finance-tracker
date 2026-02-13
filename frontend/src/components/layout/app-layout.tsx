@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Sidebar } from './sidebar'
+import { cn } from '@/lib/utils'
 import {
   Sheet,
   SheetContent,
@@ -11,6 +12,7 @@ import { Menu, Wallet } from 'lucide-react'
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [tabletExpanded, setTabletExpanded] = useState(false)
 
   return (
     <div className="flex h-screen">
@@ -20,8 +22,16 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       </aside>
 
       {/* Tablet sidebar (768-1023px) — collapsed icons only */}
-      <aside className="hidden border-r md:flex md:w-16 md:flex-col lg:hidden">
-        <Sidebar collapsed />
+      <aside
+        className={cn(
+          'hidden border-r md:flex md:flex-col lg:hidden',
+          'transition-all duration-200',
+          tabletExpanded ? 'md:w-64' : 'md:w-16',
+        )}
+        onMouseEnter={() => setTabletExpanded(true)}
+        onMouseLeave={() => setTabletExpanded(false)}
+      >
+        <Sidebar collapsed={!tabletExpanded} />
       </aside>
 
       {/* Mobile top bar + sheet overlay (< 768px) */}

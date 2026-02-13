@@ -1,7 +1,14 @@
-import { NavLink } from 'react-router'
-import { useAuth } from '@/hooks/use-auth'
+import { NavLink, useNavigate } from 'react-router'
+import { useAuth } from '@/hooks/use-auth.ts'
+import { useAccounts } from '@/hooks/use-accounts'
+import { formatMoney } from '@/lib/money'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
 import {
   LayoutDashboard,
@@ -29,6 +36,8 @@ interface SidebarProps {
 
 export function Sidebar({ collapsed = false, onNavigate }: SidebarProps) {
   const { user, logout } = useAuth()
+  const { data: accounts = [], isLoading: accountsLoading } = useAccounts()
+  const navigate = useNavigate()
 
   return (
     <div className="flex h-full flex-col">
@@ -48,7 +57,7 @@ export function Sidebar({ collapsed = false, onNavigate }: SidebarProps) {
       <Separator />
 
       {/* Navigation links */}
-      <nav className="flex-1 space-y-1 p-2">
+      <nav className="space-y-1 p-2">
         {NAV_ITEMS.map(({ to, label, icon: Icon }) => (
           <NavLink
             key={to}
@@ -69,6 +78,83 @@ export function Sidebar({ collapsed = false, onNavigate }: SidebarProps) {
           </NavLink>
         ))}
       </nav>
+
+      <Separator />
+
+      {/* Account balances */}
+      {!collapsed ? (
+        <div className="flex-1 overflow-y-auto p-2">
+          <p className="text-muted-foreground mb-1 px-3 text-xs font-medium">
+            Accounts
+          </p>
+          {accountsLoading ? (
+            <div className="space-y-2 px-3">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="bg-muted h-6 animate-pulse rounded" />
+              ))}
+            </div>
+          ) : accounts.length === 0 ? (
+            <p className="text-muted-foreground px-3 text-xs">No accounts</p>
+          ) : (
+            <div className="space-y-0.5">
+              {accounts.map((account) => (
+                <button
+                  key={account.id}
+                  onClick={() => {
+                    navigate(`/transactions?account_id=${account.id}`)
+                    onNavigate?.()
+                  }}
+                  className="hover:bg-accent flex w-full items-center justify-between rounded-md px-3 py-1.5 text-left transition-colors"
+                >
+                  <span className="truncate text-xs font-medium">
+                    {account.name}
+                  </span>
+                  <span className="text-muted-foreground shrink-0 text-xs">
+                    {formatMoney(account.balance, account.currency)}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="flex-1 overflow-y-auto p-2">
+          {accountsLoading ? (
+            <div className="space-y-2 px-1">
+              {[1, 2].map((i) => (
+                <div
+                  key={i}
+                  className="bg-muted mx-auto h-6 w-8 animate-pulse rounded"
+                />
+              ))}
+            </div>
+          ) : (
+            accounts.map((account) => (
+              <Tooltip key={account.id}>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={() => {
+                      navigate(`/transactions?account_id=${account.id}`)
+                      onNavigate?.()
+                    }}
+                    className="hover:bg-accent flex w-full justify-center rounded-md px-2 py-1.5 transition-colors"
+                  >
+                    <span className="text-muted-foreground text-xs">
+                      {account.currency}
+                    </span>
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="right">
+                  <p>
+                    {account.name}:{' '}
+                    {formatMoney(account.balance, account.currency)}
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            ))
+          )}
+        </div>
+      )}
 
       <Separator />
 

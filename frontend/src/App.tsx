@@ -1,7 +1,8 @@
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Toaster } from '@/components/ui/sonner'
-import { AuthProvider } from '@/hooks/use-auth'
+import { TooltipProvider } from '@/components/ui/tooltip'
+import { AuthProvider } from '@/hooks/use-auth.ts'
 import { ProtectedRoute, GuestRoute } from '@/components/layout/protected-route'
 import { AppLayout } from '@/components/layout/app-layout'
 import LoginPage from '@/pages/login'
@@ -37,38 +38,40 @@ function ProtectedLayout() {
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <BrowserRouter>
-          <Routes>
-            <Route
-              path="/login"
-              element={
-                <GuestRoute>
-                  <LoginPage />
-                </GuestRoute>
-              }
-            />
-            <Route
-              path="/register"
-              element={
-                <GuestRoute>
-                  <RegisterPage />
-                </GuestRoute>
-              }
-            />
-            <Route element={<ProtectedLayout />}>
-              <Route index element={<Navigate to="/dashboard" replace />} />
-              <Route path="dashboard" element={<DashboardPage />} />
-              <Route path="transactions" element={<TransactionsPage />} />
-              <Route path="accounts" element={<AccountsPage />} />
-              <Route path="reports" element={<ReportsPage />} />
-              <Route path="import" element={<ImportPage />} />
-              <Route path="settings" element={<SettingsPage />} />
-            </Route>
-          </Routes>
-        </BrowserRouter>
-        <Toaster />
-      </AuthProvider>
+      <TooltipProvider>
+        <AuthProvider>
+          <BrowserRouter>
+            <Routes>
+              <Route
+                path="/login"
+                element={
+                  <GuestRoute>
+                    <LoginPage />
+                  </GuestRoute>
+                }
+              />
+              <Route
+                path="/register"
+                element={
+                  <GuestRoute>
+                    <RegisterPage />
+                  </GuestRoute>
+                }
+              />
+              <Route element={<ProtectedLayout />}>
+                <Route index element={<Navigate to="/dashboard" replace />} />
+                <Route path="dashboard" element={<DashboardPage />} />
+                <Route path="transactions" element={<TransactionsPage />} />
+                <Route path="accounts" element={<AccountsPage />} />
+                <Route path="reports" element={<ReportsPage />} />
+                <Route path="import" element={<ImportPage />} />
+                <Route path="settings" element={<SettingsPage />} />
+              </Route>
+            </Routes>
+          </BrowserRouter>
+          <Toaster />
+        </AuthProvider>
+      </TooltipProvider>
     </QueryClientProvider>
   )
 }

@@ -14,6 +14,7 @@ export const queryKeys = {
     detail: (id: string) => ['transactions', id] as const,
   },
   reports: {
+    all: ['reports'] as const,
     spending: (params: Record<string, unknown>) =>
       ['reports', 'spending', params] as const,
     incomeExpense: (params: Record<string, unknown>) =>

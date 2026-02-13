@@ -1,20 +1,20 @@
 import {
   createContext,
-  useContext,
-  useState,
+  createElement,
+  type ReactNode,
   useCallback,
+  useContext,
   useEffect,
   useMemo,
-  type ReactNode,
+  useState,
 } from 'react'
-import { createElement } from 'react'
 import type { User } from '@/types/api'
 import {
   login as apiLogin,
-  register as apiRegister,
   refreshToken,
+  register as apiRegister,
 } from '@/api/auth'
-import { setAccessToken, clearTokens, setOnAuthFailure } from '@/api/client'
+import { clearTokens, setAccessToken, setOnAuthFailure } from '@/api/client'
 import { REFRESH_TOKEN_KEY } from '@/lib/constants'
 
 interface AuthContextValue {
@@ -36,7 +36,8 @@ const AuthContext = createContext<AuthContextValue | null>(null)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const hasStoredToken = !!localStorage.getItem(REFRESH_TOKEN_KEY)
+  const [isLoading, setIsLoading] = useState(hasStoredToken)
 
   // Register auth failure callback so the API client can clear state via React
   // instead of using window.location.href (which causes a full page reload)
@@ -51,7 +52,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const storedRefreshToken = localStorage.getItem(REFRESH_TOKEN_KEY)
     if (!storedRefreshToken) {
-      setIsLoading(false)
       return
     }
 

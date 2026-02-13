@@ -123,16 +123,16 @@ export async function apiClient<T>(
   options?: RequestOptions,
 ): Promise<T> {
   const url = `/api/v1${endpoint}`
-  const { skipAuth: _, ...fetchOptions } = options ?? {}
+  const { skipAuth, ...fetchOptions } = options ?? {}
 
   const headers: Record<string, string> = {}
   // Skip Content-Type for FormData — the browser sets it with the correct boundary
   if (!(fetchOptions.body instanceof FormData)) {
     headers['Content-Type'] = 'application/json'
   }
-  Object.assign(headers, options?.headers as Record<string, string>)
+  Object.assign(headers, fetchOptions.headers as Record<string, string>)
 
-  if (accessToken && !options?.skipAuth) {
+  if (accessToken && !skipAuth) {
     headers['Authorization'] = `Bearer ${accessToken}`
   }
 
