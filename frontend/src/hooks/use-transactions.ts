@@ -3,6 +3,7 @@ import {
   useMutation,
   useQuery,
   useQueryClient,
+  type QueryClient,
 } from '@tanstack/react-query'
 import {
   createTransaction,
@@ -15,6 +16,12 @@ import {
 } from '@/api/transactions'
 import { queryKeys } from '@/lib/query-keys'
 import type { UpdateTransactionRequest } from '@/types/api'
+
+function invalidateTransactionRelated(queryClient: QueryClient): void {
+  queryClient.invalidateQueries({ queryKey: queryKeys.transactions.all })
+  queryClient.invalidateQueries({ queryKey: queryKeys.accounts.all })
+  queryClient.invalidateQueries({ queryKey: queryKeys.reports.all })
+}
 
 export function useTransactions(filters: TransactionFilters = {}) {
   const { page: _, ...filterKey } = filters
@@ -42,11 +49,7 @@ export function useCreateTransaction() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: createTransaction,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.transactions.all })
-      queryClient.invalidateQueries({ queryKey: queryKeys.accounts.all })
-      queryClient.invalidateQueries({ queryKey: queryKeys.reports.all })
-    },
+    onSuccess: () => invalidateTransactionRelated(queryClient),
   })
 }
 
@@ -54,11 +57,7 @@ export function useCreateTransfer() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: createTransfer,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.transactions.all })
-      queryClient.invalidateQueries({ queryKey: queryKeys.accounts.all })
-      queryClient.invalidateQueries({ queryKey: queryKeys.reports.all })
-    },
+    onSuccess: () => invalidateTransactionRelated(queryClient),
   })
 }
 
@@ -72,11 +71,7 @@ export function useUpdateTransaction() {
       id: string
       data: UpdateTransactionRequest
     }) => updateTransaction(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.transactions.all })
-      queryClient.invalidateQueries({ queryKey: queryKeys.accounts.all })
-      queryClient.invalidateQueries({ queryKey: queryKeys.reports.all })
-    },
+    onSuccess: () => invalidateTransactionRelated(queryClient),
   })
 }
 
@@ -84,10 +79,6 @@ export function useDeleteTransaction() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: deleteTransaction,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.transactions.all })
-      queryClient.invalidateQueries({ queryKey: queryKeys.accounts.all })
-      queryClient.invalidateQueries({ queryKey: queryKeys.reports.all })
-    },
+    onSuccess: () => invalidateTransactionRelated(queryClient),
   })
 }

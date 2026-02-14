@@ -4,8 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { Link } from 'react-router'
 import { useAuth } from '@/hooks/use-auth.ts'
 import { registerSchema, type RegisterFormData } from '@/lib/validators'
-import { mapApiErrorToFieldError } from '@/lib/error-mapping'
-import { ApiError } from '@/api/client'
+import { handleFormSubmitError } from '@/lib/form-helpers'
 import { CURRENCIES } from '@/lib/constants'
 import { Button } from '@/components/ui/button'
 import {
@@ -24,6 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { FormError } from '@/components/ui/form-error'
 
 export default function RegisterPage() {
   const { register: registerUser } = useAuth()
@@ -48,28 +48,13 @@ export default function RegisterPage() {
     mode: 'onBlur',
   })
 
-  const onSubmit = async (data: RegisterFormData) => {
+  async function onSubmit(data: RegisterFormData) {
     setServerError(null)
     try {
       const { confirm_password: _, ...apiData } = data
       await registerUser(apiData)
     } catch (error) {
-      if (error instanceof ApiError) {
-        const fieldError = mapApiErrorToFieldError(error)
-        if (fieldError) {
-          if (fieldError.field === 'root') {
-            setServerError(fieldError.message)
-          } else {
-            setError(fieldError.field as keyof RegisterFormData, {
-              message: fieldError.message,
-            })
-          }
-        } else {
-          setServerError(error.message)
-        }
-      } else {
-        setServerError('An unexpected error occurred')
-      }
+      setServerError(handleFormSubmitError(error, setError))
     }
   }
 
@@ -93,21 +78,13 @@ export default function RegisterPage() {
             <div className="space-y-2">
               <Label htmlFor="username">Username</Label>
               <Input id="username" {...register('username')} />
-              {errors.username && (
-                <p className="text-destructive text-sm">
-                  {errors.username.message}
-                </p>
-              )}
+              <FormError message={errors.username?.message} />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
               <Input id="password" type="password" {...register('password')} />
-              {errors.password && (
-                <p className="text-destructive text-sm">
-                  {errors.password.message}
-                </p>
-              )}
+              <FormError message={errors.password?.message} />
             </div>
 
             <div className="space-y-2">
@@ -117,21 +94,13 @@ export default function RegisterPage() {
                 type="password"
                 {...register('confirm_password')}
               />
-              {errors.confirm_password && (
-                <p className="text-destructive text-sm">
-                  {errors.confirm_password.message}
-                </p>
-              )}
+              <FormError message={errors.confirm_password?.message} />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="display_name">Display Name</Label>
               <Input id="display_name" {...register('display_name')} />
-              {errors.display_name && (
-                <p className="text-destructive text-sm">
-                  {errors.display_name.message}
-                </p>
-              )}
+              <FormError message={errors.display_name?.message} />
             </div>
 
             <div className="space-y-2">
@@ -152,21 +121,13 @@ export default function RegisterPage() {
                   ))}
                 </SelectContent>
               </Select>
-              {errors.base_currency && (
-                <p className="text-destructive text-sm">
-                  {errors.base_currency.message}
-                </p>
-              )}
+              <FormError message={errors.base_currency?.message} />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="invite_code">Invite Code</Label>
               <Input id="invite_code" {...register('invite_code')} />
-              {errors.invite_code && (
-                <p className="text-destructive text-sm">
-                  {errors.invite_code.message}
-                </p>
-              )}
+              <FormError message={errors.invite_code?.message} />
             </div>
 
             <Button type="submit" className="w-full" disabled={isSubmitting}>

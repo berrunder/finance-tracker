@@ -23,6 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { FormError } from '@/components/ui/form-error'
 import type { Account } from '@/types/api'
 
 interface AccountFormProps {
@@ -106,9 +107,7 @@ export function AccountForm({ open, onOpenChange, account }: AccountFormProps) {
           <div className="space-y-2">
             <Label htmlFor="name">Name</Label>
             <Input id="name" {...register('name')} />
-            {errors.name && (
-              <p className="text-destructive text-sm">{errors.name.message}</p>
-            )}
+            <FormError message={errors.name?.message} />
           </div>
 
           <div className="space-y-2">
@@ -127,14 +126,12 @@ export function AccountForm({ open, onOpenChange, account }: AccountFormProps) {
               <SelectContent>
                 {ACCOUNT_TYPES.map((t) => (
                   <SelectItem key={t} value={t}>
-                    {t.replace('_', ' ')}
+                    {t.replaceAll('_', ' ')}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
-            {errors.type && (
-              <p className="text-destructive text-sm">{errors.type.message}</p>
-            )}
+            <FormError message={errors.type?.message} />
           </div>
 
           <div className="space-y-2">
@@ -157,11 +154,7 @@ export function AccountForm({ open, onOpenChange, account }: AccountFormProps) {
                 ))}
               </SelectContent>
             </Select>
-            {errors.currency && (
-              <p className="text-destructive text-sm">
-                {errors.currency.message}
-              </p>
-            )}
+            <FormError message={errors.currency?.message} />
           </div>
 
           <div className="space-y-2">
@@ -171,11 +164,7 @@ export function AccountForm({ open, onOpenChange, account }: AccountFormProps) {
               inputMode="decimal"
               {...register('initial_balance')}
             />
-            {errors.initial_balance && (
-              <p className="text-destructive text-sm">
-                {errors.initial_balance.message}
-              </p>
-            )}
+            <FormError message={errors.initial_balance?.message} />
           </div>
 
           <DialogFooter>

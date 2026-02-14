@@ -18,15 +18,19 @@ interface TransactionFiltersProps {
   onFiltersChange: (filters: Filters) => void
 }
 
-const DEBOUNCE_TIMEOUT = 200
+const DEBOUNCE_MS = 200
 
 export function TransactionFilters({
   filters,
   onFiltersChange,
 }: TransactionFiltersProps) {
   const { data: accounts = [] } = useAccounts()
-  const dateFromTimer = useRef<number | null>(null)
-  const dateToTimer = useRef<number | null>(null)
+  const dateTimers = useRef<Record<string, number>>({})
+
+  const categoryFilterType =
+    filters.type === 'income' || filters.type === 'expense'
+      ? filters.type
+      : undefined
 
   const hasFilters =
     filters.account_id ||
@@ -45,31 +49,19 @@ export function TransactionFilters({
 
   useEffect(() => {
     return () => {
-      if (dateFromTimer.current !== null) {
-        window.clearTimeout(dateFromTimer.current)
-      }
-      if (dateToTimer.current !== null) {
-        window.clearTimeout(dateToTimer.current)
+      for (const timer of Object.values(dateTimers.current)) {
+        window.clearTimeout(timer)
       }
     }
   }, [])
 
-  function handleDateFromChange(value: string | undefined) {
-    if (dateFromTimer.current !== null) {
-      window.clearTimeout(dateFromTimer.current)
+  function debouncedUpdate(key: keyof Filters, value: string | undefined) {
+    if (dateTimers.current[key] !== undefined) {
+      window.clearTimeout(dateTimers.current[key])
     }
-    dateFromTimer.current = window.setTimeout(() => {
-      update({ date_from: value })
-    }, DEBOUNCE_TIMEOUT)
-  }
-
-  function handleDateToChange(value: string | undefined) {
-    if (dateToTimer.current !== null) {
-      window.clearTimeout(dateToTimer.current)
-    }
-    dateToTimer.current = window.setTimeout(() => {
-      update({ date_to: value })
-    }, DEBOUNCE_TIMEOUT)
+    dateTimers.current[key] = window.setTimeout(() => {
+      update({ [key]: value })
+    }, DEBOUNCE_MS)
   }
 
   return (
@@ -99,11 +91,7 @@ export function TransactionFilters({
         <CategoryCombobox
           value={filters.category_id ?? null}
           onValueChange={(v) => update({ category_id: v || undefined })}
-          type={
-            filters.type === 'income' || filters.type === 'expense'
-              ? filters.type
-              : undefined
-          }
+          type={categoryFilterType}
           allowClear
           placeholder="All categories"
         />
@@ -128,7 +116,7 @@ export function TransactionFilters({
       <div className="w-44">
         <DatePicker
           value={filters.date_from}
-          onChange={handleDateFromChange}
+          onChange={(v) => debouncedUpdate('date_from', v)}
           placeholder="From date"
         />
       </div>
@@ -136,7 +124,7 @@ export function TransactionFilters({
       <div className="w-44">
         <DatePicker
           value={filters.date_to}
-          onChange={handleDateToChange}
+          onChange={(v) => debouncedUpdate('date_to', v)}
           placeholder="To date"
         />
       </div>

@@ -26,6 +26,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { FormError } from '@/components/ui/form-error'
 import { CATEGORY_TYPES } from '@/lib/constants'
 import type { Category } from '@/types/api'
 
@@ -125,9 +126,7 @@ export function CategoryForm({
           <div className="space-y-2">
             <Label htmlFor="cat-name">Name</Label>
             <Input id="cat-name" {...register('name')} />
-            {errors.name && (
-              <p className="text-destructive text-sm">{errors.name.message}</p>
-            )}
+            <FormError message={errors.name?.message} />
           </div>
 
           <div className="space-y-2">
@@ -152,9 +151,7 @@ export function CategoryForm({
                 ))}
               </SelectContent>
             </Select>
-            {errors.type && (
-              <p className="text-destructive text-sm">{errors.type.message}</p>
-            )}
+            <FormError message={errors.type?.message} />
           </div>
 
           <div className="space-y-2">

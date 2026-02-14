@@ -39,6 +39,11 @@ export function Sidebar({ collapsed = false, onNavigate }: SidebarProps) {
   const { data: accounts = [], isLoading: accountsLoading } = useAccounts()
   const navigate = useNavigate()
 
+  function navigateToAccount(accountId: string) {
+    navigate(`/transactions?account_id=${accountId}`)
+    onNavigate?.()
+  }
+
   return (
     <div className="flex h-full flex-col">
       {/* App logo/name */}
@@ -100,10 +105,7 @@ export function Sidebar({ collapsed = false, onNavigate }: SidebarProps) {
               {accounts.map((account) => (
                 <button
                   key={account.id}
-                  onClick={() => {
-                    navigate(`/transactions?account_id=${account.id}`)
-                    onNavigate?.()
-                  }}
+                  onClick={() => navigateToAccount(account.id)}
                   className="hover:bg-accent flex w-full items-center justify-between rounded-md px-3 py-1.5 text-left transition-colors"
                 >
                   <span className="truncate text-xs font-medium">
@@ -133,10 +135,7 @@ export function Sidebar({ collapsed = false, onNavigate }: SidebarProps) {
               <Tooltip key={account.id}>
                 <TooltipTrigger asChild>
                   <button
-                    onClick={() => {
-                      navigate(`/transactions?account_id=${account.id}`)
-                      onNavigate?.()
-                    }}
+                    onClick={() => navigateToAccount(account.id)}
                     className="hover:bg-accent flex w-full justify-center rounded-md px-2 py-1.5 transition-colors"
                   >
                     <span className="text-muted-foreground text-xs">
@@ -160,10 +159,7 @@ export function Sidebar({ collapsed = false, onNavigate }: SidebarProps) {
 
       {/* User section */}
       <div
-        className={cn(
-          'p-4',
-          collapsed ? 'flex flex-col items-center gap-2' : '',
-        )}
+        className={cn('p-4', collapsed && 'flex flex-col items-center gap-2')}
       >
         {!collapsed && (
           <p className="mb-2 truncate text-sm font-medium">

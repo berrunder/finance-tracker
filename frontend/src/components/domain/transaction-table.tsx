@@ -36,7 +36,7 @@ function getCategoryLabel(
   categoryId: string | null,
   categories: Category[],
 ): string {
-  if (!categoryId) return '—'
+  if (!categoryId) return '\u2014'
   for (const cat of categories) {
     if (cat.id === categoryId) return cat.name
     if (cat.children) {
@@ -45,11 +45,11 @@ function getCategoryLabel(
       }
     }
   }
-  return '—'
+  return '\u2014'
 }
 
 function getAccountName(accountId: string, accounts: Account[]): string {
-  return accounts.find((a) => a.id === accountId)?.name ?? '—'
+  return accounts.find((a) => a.id === accountId)?.name ?? '\u2014'
 }
 
 function getTransferDescription(
@@ -57,18 +57,52 @@ function getTransferDescription(
   transactions: Transaction[],
   accounts: Account[],
 ): string {
-  if (!tx.transfer_id) return tx.description || '—'
+  if (!tx.transfer_id) return tx.description || '\u2014'
 
   const linked = transactions.find((item) => item.id === tx.transfer_id)
   const currentAccount = getAccountName(tx.account_id, accounts)
   const linkedAccount = linked
     ? getAccountName(linked.account_id, accounts)
-    : '—'
+    : '\u2014'
 
-  const source = tx.type === 'expense' ? currentAccount : linkedAccount
-  const destination = tx.type === 'expense' ? linkedAccount : currentAccount
+  if (tx.type === 'expense') {
+    return `Transfer: ${currentAccount} \u2192 ${linkedAccount}`
+  }
+  return `Transfer: ${linkedAccount} \u2192 ${currentAccount}`
+}
 
-  return `Transfer: ${source} → ${destination}`
+function amountColorClass(type: string): string {
+  if (type === 'income') return 'text-green-600 dark:text-green-400'
+  if (type === 'expense') return 'text-red-600 dark:text-red-400'
+  return ''
+}
+
+function TransactionActions({
+  onEdit,
+  onDelete,
+}: {
+  onEdit: () => void
+  onDelete: () => void
+}) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="icon" className="h-8 w-8">
+          <MoreHorizontal className="h-4 w-4" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem onClick={onEdit}>
+          <Pencil className="mr-2 h-4 w-4" />
+          Edit
+        </DropdownMenuItem>
+        <DropdownMenuItem variant="destructive" onClick={onDelete}>
+          <Trash2 className="mr-2 h-4 w-4" />
+          Delete
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
 }
 
 export function TransactionTable({
@@ -125,36 +159,18 @@ export function TransactionTable({
                 <TableCell
                   className={cn(
                     'text-right font-medium',
-                    tx.type === 'income' &&
-                      'text-green-600 dark:text-green-400',
-                    tx.type === 'expense' && 'text-red-600 dark:text-red-400',
+                    amountColorClass(tx.type),
                   )}
                 >
-                  {tx.type === 'expense' ? '−' : '+'}
+                  {tx.type === 'expense' ? '\u2212' : '+'}
                   {formatMoney(tx.amount, tx.currency)}
                 </TableCell>
                 <TableCell>{getAccountName(tx.account_id, accounts)}</TableCell>
                 <TableCell>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => onEdit(tx)}>
-                        <Pencil className="mr-2 h-4 w-4" />
-                        Edit
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        variant="destructive"
-                        onClick={() => onDelete(tx)}
-                      >
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  <TransactionActions
+                    onEdit={() => onEdit(tx)}
+                    onDelete={() => onDelete(tx)}
+                  />
                 </TableCell>
               </TableRow>
             ))}
@@ -190,35 +206,15 @@ export function TransactionTable({
             </div>
             <div className="flex items-center gap-1">
               <span
-                className={cn(
-                  'text-sm font-medium',
-                  tx.type === 'income' && 'text-green-600 dark:text-green-400',
-                  tx.type === 'expense' && 'text-red-600 dark:text-red-400',
-                )}
+                className={cn('text-sm font-medium', amountColorClass(tx.type))}
               >
-                {tx.type === 'expense' ? '−' : '+'}
+                {tx.type === 'expense' ? '\u2212' : '+'}
                 {formatMoney(tx.amount, tx.currency)}
               </span>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8">
-                    <MoreHorizontal className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => onEdit(tx)}>
-                    <Pencil className="mr-2 h-4 w-4" />
-                    Edit
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    variant="destructive"
-                    onClick={() => onDelete(tx)}
-                  >
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    Delete
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <TransactionActions
+                onEdit={() => onEdit(tx)}
+                onDelete={() => onDelete(tx)}
+              />
             </div>
           </div>
         ))}

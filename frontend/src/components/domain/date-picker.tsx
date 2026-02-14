@@ -1,5 +1,6 @@
+import { parseISO } from 'date-fns'
 import { CalendarIcon } from 'lucide-react'
-import { format, parseISO } from 'date-fns'
+import { formatDate, toISODate } from '@/lib/dates'
 import { Button } from '@/components/ui/button'
 import { Calendar } from '@/components/ui/calendar'
 import {
@@ -33,7 +34,7 @@ export function DatePicker({
           )}
         >
           <CalendarIcon className="mr-2 h-4 w-4" />
-          {selected ? format(selected, 'PP') : placeholder}
+          {value ? formatDate(value) : placeholder}
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="start">
@@ -41,7 +42,7 @@ export function DatePicker({
           mode="single"
           selected={selected}
           onSelect={(date) => {
-            onChange(date ? format(date, 'yyyy-MM-dd') : undefined)
+            onChange(date ? toISODate(date) : undefined)
           }}
           autoFocus
         />

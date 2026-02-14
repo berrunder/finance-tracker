@@ -4,8 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { Link } from 'react-router'
 import { useAuth } from '@/hooks/use-auth.ts'
 import { loginSchema, type LoginFormData } from '@/lib/validators'
-import { mapApiErrorToFieldError } from '@/lib/error-mapping'
-import { ApiError } from '@/api/client'
+import { handleFormSubmitError } from '@/lib/form-helpers'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -16,6 +15,7 @@ import {
 } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { FormError } from '@/components/ui/form-error'
 
 export default function LoginPage() {
   const { login } = useAuth()
@@ -32,27 +32,12 @@ export default function LoginPage() {
     mode: 'onBlur',
   })
 
-  const onSubmit = async (data: LoginFormData) => {
+  async function onSubmit(data: LoginFormData) {
     setServerError(null)
     try {
       await login(data.username, data.password)
     } catch (error) {
-      if (error instanceof ApiError) {
-        const fieldError = mapApiErrorToFieldError(error)
-        if (fieldError) {
-          if (fieldError.field === 'root') {
-            setServerError(fieldError.message)
-          } else {
-            setError(fieldError.field as keyof LoginFormData, {
-              message: fieldError.message,
-            })
-          }
-        } else {
-          setServerError(error.message)
-        }
-      } else {
-        setServerError('An unexpected error occurred')
-      }
+      setServerError(handleFormSubmitError(error, setError))
     }
   }
 
@@ -73,20 +58,12 @@ export default function LoginPage() {
             <div className="space-y-2">
               <Label htmlFor="username">Username</Label>
               <Input id="username" {...register('username')} />
-              {errors.username && (
-                <p className="text-destructive text-sm">
-                  {errors.username.message}
-                </p>
-              )}
+              <FormError message={errors.username?.message} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
               <Input id="password" type="password" {...register('password')} />
-              {errors.password && (
-                <p className="text-destructive text-sm">
-                  {errors.password.message}
-                </p>
-              )}
+              <FormError message={errors.password?.message} />
             </div>
             <Button type="submit" className="w-full" disabled={isSubmitting}>
               {isSubmitting ? 'Logging in...' : 'Log in'}

@@ -1,4 +1,9 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+  type QueryClient,
+} from '@tanstack/react-query'
 import {
   createAccount,
   deleteAccount,
@@ -8,6 +13,11 @@ import {
 } from '@/api/accounts'
 import { queryKeys } from '@/lib/query-keys'
 import type { UpdateAccountRequest } from '@/types/api'
+
+function invalidateAccountRelated(queryClient: QueryClient): void {
+  queryClient.invalidateQueries({ queryKey: queryKeys.accounts.all })
+  queryClient.invalidateQueries({ queryKey: queryKeys.reports.all })
+}
 
 export function useAccounts() {
   return useQuery({
@@ -29,10 +39,7 @@ export function useCreateAccount() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: createAccount,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.accounts.all })
-      queryClient.invalidateQueries({ queryKey: queryKeys.reports.all })
-    },
+    onSuccess: () => invalidateAccountRelated(queryClient),
   })
 }
 
@@ -41,10 +48,7 @@ export function useUpdateAccount() {
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: UpdateAccountRequest }) =>
       updateAccount(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.accounts.all })
-      queryClient.invalidateQueries({ queryKey: queryKeys.reports.all })
-    },
+    onSuccess: () => invalidateAccountRelated(queryClient),
   })
 }
 
@@ -52,9 +56,6 @@ export function useDeleteAccount() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (id: string) => deleteAccount(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.accounts.all })
-      queryClient.invalidateQueries({ queryKey: queryKeys.reports.all })
-    },
+    onSuccess: () => invalidateAccountRelated(queryClient),
   })
 }

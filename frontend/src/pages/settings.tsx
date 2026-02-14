@@ -40,7 +40,6 @@ export default function SettingsPage() {
     try {
       await deleteCategory.mutateAsync(deleteTarget.id)
       toast.success('Category deleted')
-      setDeleteTarget(null)
     } catch (error) {
       if (error instanceof ApiError) {
         const fieldError = mapApiErrorToFieldError(error)
@@ -48,6 +47,7 @@ export default function SettingsPage() {
       } else {
         toast.error('Failed to delete category')
       }
+    } finally {
       setDeleteTarget(null)
     }
   }

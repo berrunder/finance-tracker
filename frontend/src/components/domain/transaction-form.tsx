@@ -29,6 +29,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
+import { FormError } from '@/components/ui/form-error'
 import { CategoryCombobox } from '@/components/domain/category-combobox'
 import { DatePicker } from '@/components/domain/date-picker'
 import { TransferCurrencyFields } from '@/components/domain/transfer-currency-fields'
@@ -46,7 +47,7 @@ function resolveTransferPair(
 }
 
 function computeDestinationAmount(
-  isCrossCurrency: boolean | undefined,
+  isCrossCurrency: boolean,
   data: { amount: string; to_amount?: string; exchange_rate?: string },
 ): string {
   if (isCrossCurrency && data.to_amount) return data.to_amount
@@ -156,41 +157,22 @@ export function TransactionForm({
 
   function handleTypeChange(value: string) {
     if (!value) return
-    if (value === 'income' || value === 'expense' || value === 'transfer') {
-      setTxType(value)
-      if (value !== 'transfer') {
-        txForm.setValue('type', value)
-      }
+    const newType = value as TxType
+    setTxType(newType)
+    if (newType !== 'transfer') {
+      txForm.setValue('type', newType)
     }
   }
 
   async function handleTxSubmit(data: TransactionFormData) {
     try {
       if (isEdit) {
-        await updateTransaction.mutateAsync({
-          id: editTransaction!.id,
-          data: {
-            account_id: data.account_id,
-            category_id: data.category_id,
-            type: data.type,
-            amount: data.amount,
-            description: data.description,
-            date: data.date,
-          },
-        })
+        await updateTransaction.mutateAsync({ id: editTransaction!.id, data })
         toast.success('Transaction updated')
         onClose()
       } else {
-        await createTransaction.mutateAsync({
-          account_id: data.account_id,
-          category_id: data.category_id,
-          type: data.type,
-          amount: data.amount,
-          description: data.description,
-          date: data.date,
-        })
+        await createTransaction.mutateAsync(data)
         toast.success('Transaction created')
-        // Clear form but keep account + date
         txForm.reset({
           account_id: data.account_id,
           category_id: '',
@@ -217,7 +199,7 @@ export function TransactionForm({
         }
 
         const destinationAmount = computeDestinationAmount(
-          isCrossCurrency,
+          !!isCrossCurrency,
           data,
         )
 
@@ -251,13 +233,9 @@ export function TransactionForm({
       }
 
       await createTransfer.mutateAsync({
-        from_account_id: data.from_account_id,
-        to_account_id: data.to_account_id,
-        amount: data.amount,
+        ...data,
         to_amount: data.to_amount || undefined,
         exchange_rate: data.exchange_rate || undefined,
-        description: data.description,
-        date: data.date,
       })
       toast.success('Transfer created')
       trForm.reset({
@@ -331,11 +309,7 @@ export function TransactionForm({
                   ))}
                 </SelectContent>
               </Select>
-              {trForm.formState.errors.from_account_id && (
-                <p className="text-destructive text-sm">
-                  {trForm.formState.errors.from_account_id.message}
-                </p>
-              )}
+              <FormError message={trForm.formState.errors.from_account_id?.message} />
             </div>
 
             <div className="space-y-2">
@@ -361,11 +335,7 @@ export function TransactionForm({
                     ))}
                 </SelectContent>
               </Select>
-              {trForm.formState.errors.to_account_id && (
-                <p className="text-destructive text-sm">
-                  {trForm.formState.errors.to_account_id.message}
-                </p>
-              )}
+              <FormError message={trForm.formState.errors.to_account_id?.message} />
             </div>
           </div>
 
@@ -390,11 +360,7 @@ export function TransactionForm({
                 {...trForm.register('amount')}
                 placeholder="0.00"
               />
-              {trForm.formState.errors.amount && (
-                <p className="text-destructive text-sm">
-                  {trForm.formState.errors.amount.message}
-                </p>
-              )}
+              <FormError message={trForm.formState.errors.amount?.message} />
             </div>
           )}
 
@@ -411,11 +377,7 @@ export function TransactionForm({
                 trForm.setValue('date', v ?? '', { shouldValidate: true })
               }
             />
-            {trForm.formState.errors.date && (
-              <p className="text-destructive text-sm">
-                {trForm.formState.errors.date.message}
-              </p>
-            )}
+            <FormError message={trForm.formState.errors.date?.message} />
           </div>
 
           <div className="flex justify-end gap-2">
@@ -462,11 +424,7 @@ export function TransactionForm({
                   ))}
                 </SelectContent>
               </Select>
-              {txForm.formState.errors.account_id && (
-                <p className="text-destructive text-sm">
-                  {txForm.formState.errors.account_id.message}
-                </p>
-              )}
+              <FormError message={txForm.formState.errors.account_id?.message} />
             </div>
 
             <div className="space-y-2">
@@ -491,11 +449,7 @@ export function TransactionForm({
                 {...txForm.register('amount')}
                 placeholder="0.00"
               />
-              {txForm.formState.errors.amount && (
-                <p className="text-destructive text-sm">
-                  {txForm.formState.errors.amount.message}
-                </p>
-              )}
+              <FormError message={txForm.formState.errors.amount?.message} />
             </div>
 
             <div className="space-y-2">
@@ -506,11 +460,7 @@ export function TransactionForm({
                   txForm.setValue('date', v ?? '', { shouldValidate: true })
                 }
               />
-              {txForm.formState.errors.date && (
-                <p className="text-destructive text-sm">
-                  {txForm.formState.errors.date.message}
-                </p>
-              )}
+              <FormError message={txForm.formState.errors.date?.message} />
             </div>
           </div>
 

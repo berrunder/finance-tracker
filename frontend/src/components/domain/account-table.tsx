@@ -54,7 +54,7 @@ export function AccountTable({
             <TableCell className="font-medium">{account.name}</TableCell>
             <TableCell>
               <Badge variant="secondary">
-                {account.type.replace('_', ' ')}
+                {account.type.replaceAll('_', ' ')}
               </Badge>
             </TableCell>
             <TableCell>{account.currency}</TableCell>

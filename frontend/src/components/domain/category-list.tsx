@@ -11,6 +11,30 @@ interface CategoryListProps {
   onDelete: (category: Category) => void
 }
 
+function CategoryActions({
+  onEdit,
+  onDelete,
+}: {
+  onEdit: () => void
+  onDelete: () => void
+}) {
+  return (
+    <div className="flex gap-1 opacity-0 group-hover:opacity-100">
+      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onEdit}>
+        <Pencil className="h-3.5 w-3.5" />
+      </Button>
+      <Button
+        variant="ghost"
+        size="icon"
+        className="h-7 w-7"
+        onClick={onDelete}
+      >
+        <Trash2 className="h-3.5 w-3.5" />
+      </Button>
+    </div>
+  )
+}
+
 function CategoryRow({
   category,
   indent = false,
@@ -30,24 +54,10 @@ function CategoryRow({
       )}
     >
       <span className="text-sm">{category.name}</span>
-      <div className="flex gap-1 opacity-0 group-hover:opacity-100">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-7 w-7"
-          onClick={() => onEdit(category)}
-        >
-          <Pencil className="h-3.5 w-3.5" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-7 w-7"
-          onClick={() => onDelete(category)}
-        >
-          <Trash2 className="h-3.5 w-3.5" />
-        </Button>
-      </div>
+      <CategoryActions
+        onEdit={() => onEdit(category)}
+        onDelete={() => onDelete(category)}
+      />
     </div>
   )
 }
@@ -62,7 +72,7 @@ function CategoryGroup({
   onDelete: (category: Category) => void
 }) {
   const [expanded, setExpanded] = useState(true)
-  const hasChildren = category.children && category.children.length > 0
+  const hasChildren = (category.children?.length ?? 0) > 0
 
   return (
     <div>
@@ -85,24 +95,10 @@ function CategoryGroup({
         )}
         <div className="flex flex-1 items-center justify-between rounded-md px-2 py-2 hover:bg-accent">
           <span className="text-sm font-medium">{category.name}</span>
-          <div className="flex gap-1 opacity-0 group-hover:opacity-100">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7"
-              onClick={() => onEdit(category)}
-            >
-              <Pencil className="h-3.5 w-3.5" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7"
-              onClick={() => onDelete(category)}
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-            </Button>
-          </div>
+          <CategoryActions
+            onEdit={() => onEdit(category)}
+            onDelete={() => onDelete(category)}
+          />
         </div>
       </div>
       {expanded &&

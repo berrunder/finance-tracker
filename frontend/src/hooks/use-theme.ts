@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { THEME_KEY } from '@/lib/constants'
 
 type Theme = 'light' | 'dark' | 'system'
