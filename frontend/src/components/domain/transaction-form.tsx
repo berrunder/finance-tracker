@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import Decimal from 'decimal.js'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -17,22 +17,11 @@ import {
   useCreateTransfer,
   useUpdateTransaction,
 } from '@/hooks/use-transactions'
-import { handleMutationError, getSubmitLabel } from '@/lib/form-helpers'
+import { handleMutationError } from '@/lib/form-helpers'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
-import { FormError } from '@/components/ui/form-error'
-import { CategoryCombobox } from '@/components/domain/category-combobox'
-import { DatePicker } from '@/components/domain/date-picker'
-import { TransferCurrencyFields } from '@/components/domain/transfer-currency-fields'
+import { TransferForm } from '@/components/domain/transfer-form'
+import { IncomeExpenseForm } from '@/components/domain/income-expense-form'
 import type { Transaction } from '@/types/api'
 
 type TxType = 'income' | 'expense' | 'transfer'
@@ -147,14 +136,6 @@ export function TransactionForm({
     }
   }, [editTransaction, linkedTransferTransaction, trForm, txForm])
 
-  // Determine if cross-currency transfer
-  const fromAccountId = trForm.watch('from_account_id')
-  const toAccountId = trForm.watch('to_account_id')
-  const fromAccount = accounts.find((a) => a.id === fromAccountId)
-  const toAccount = accounts.find((a) => a.id === toAccountId)
-  const isCrossCurrency =
-    fromAccount && toAccount && fromAccount.currency !== toAccount.currency
-
   function handleTypeChange(value: string) {
     if (!value) return
     const newType = value as TxType
@@ -197,6 +178,13 @@ export function TransactionForm({
           toast.error('Unable to edit this transfer. Reload and try again.')
           return
         }
+
+        const fromAccount = accounts.find((a) => a.id === data.from_account_id)
+        const toAccount = accounts.find((a) => a.id === data.to_account_id)
+        const isCrossCurrency =
+          fromAccount &&
+          toAccount &&
+          fromAccount.currency !== toAccount.currency
 
         const destinationAmount = computeDestinationAmount(
           !!isCrossCurrency,
@@ -252,10 +240,6 @@ export function TransactionForm({
     }
   }
 
-  const handleExchangeRateChange = useCallback(
-    (value: string) => trForm.setValue('exchange_rate', value),
-    [trForm],
-  )
   return (
     <div className="rounded-lg border p-4">
       <div className="mb-4 flex items-center justify-between">
@@ -283,209 +267,25 @@ export function TransactionForm({
       )}
 
       {isTransfer ? (
-        <form
-          onSubmit={trForm.handleSubmit(handleTransferSubmit)}
-          className="space-y-4"
-        >
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label>From Account</Label>
-              <Select
-                value={fromAccountId}
-                onValueChange={(v) =>
-                  trForm.setValue('from_account_id', v, {
-                    shouldValidate: true,
-                  })
-                }
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select account" />
-                </SelectTrigger>
-                <SelectContent>
-                  {accounts.map((a) => (
-                    <SelectItem key={a.id} value={a.id}>
-                      {a.name} ({a.currency})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FormError message={trForm.formState.errors.from_account_id?.message} />
-            </div>
-
-            <div className="space-y-2">
-              <Label>To Account</Label>
-              <Select
-                value={toAccountId}
-                onValueChange={(v) =>
-                  trForm.setValue('to_account_id', v, {
-                    shouldValidate: true,
-                  })
-                }
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select account" />
-                </SelectTrigger>
-                <SelectContent>
-                  {accounts
-                    .filter((a) => a.id !== fromAccountId)
-                    .map((a) => (
-                      <SelectItem key={a.id} value={a.id}>
-                        {a.name} ({a.currency})
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
-              <FormError message={trForm.formState.errors.to_account_id?.message} />
-            </div>
-          </div>
-
-          {isCrossCurrency ? (
-            <TransferCurrencyFields
-              amount={trForm.watch('amount')}
-              toAmount={trForm.watch('to_amount') ?? ''}
-              exchangeRate={trForm.watch('exchange_rate') ?? ''}
-              onAmountChange={(v) =>
-                trForm.setValue('amount', v, { shouldValidate: true })
-              }
-              onToAmountChange={(v) => trForm.setValue('to_amount', v)}
-              onExchangeRateChange={handleExchangeRateChange}
-              fromCurrency={fromAccount?.currency ?? ''}
-              toCurrency={toAccount?.currency ?? ''}
-            />
-          ) : (
-            <div className="space-y-2">
-              <Label>Amount</Label>
-              <Input
-                inputMode="decimal"
-                {...trForm.register('amount')}
-                placeholder="0.00"
-              />
-              <FormError message={trForm.formState.errors.amount?.message} />
-            </div>
-          )}
-
-          <div className="space-y-2">
-            <Label>Description</Label>
-            <Input {...trForm.register('description')} />
-          </div>
-
-          <div className="space-y-2">
-            <Label>Date</Label>
-            <DatePicker
-              value={trForm.watch('date')}
-              onChange={(v) =>
-                trForm.setValue('date', v ?? '', { shouldValidate: true })
-              }
-            />
-            <FormError message={trForm.formState.errors.date?.message} />
-          </div>
-
-          <div className="flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={onClose}>
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              disabled={createTransfer.isPending || updateTransaction.isPending}
-            >
-              {getSubmitLabel(
-                isEdit,
-                createTransfer.isPending || updateTransaction.isPending,
-                'Save Transfer',
-                'Create Transfer',
-              )}
-            </Button>
-          </div>
-        </form>
+        <TransferForm
+          form={trForm}
+          accounts={accounts}
+          onSubmit={handleTransferSubmit}
+          onCancel={onClose}
+          isEdit={isEdit}
+          createTransfer={createTransfer}
+          updateTransaction={updateTransaction}
+        />
       ) : (
-        <form
-          onSubmit={txForm.handleSubmit(handleTxSubmit)}
-          className="space-y-4"
-        >
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label>Account</Label>
-              <Select
-                value={txForm.watch('account_id')}
-                onValueChange={(v) =>
-                  txForm.setValue('account_id', v, {
-                    shouldValidate: true,
-                  })
-                }
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select account" />
-                </SelectTrigger>
-                <SelectContent>
-                  {accounts.map((a) => (
-                    <SelectItem key={a.id} value={a.id}>
-                      {a.name} ({a.currency})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FormError message={txForm.formState.errors.account_id?.message} />
-            </div>
-
-            <div className="space-y-2">
-              <Label>Category</Label>
-              <CategoryCombobox
-                value={txForm.watch('category_id')}
-                onValueChange={(v) =>
-                  txForm.setValue('category_id', v, {
-                    shouldValidate: true,
-                  })
-                }
-                type={txForm.watch('type')}
-              />
-            </div>
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label>Amount</Label>
-              <Input
-                inputMode="decimal"
-                {...txForm.register('amount')}
-                placeholder="0.00"
-              />
-              <FormError message={txForm.formState.errors.amount?.message} />
-            </div>
-
-            <div className="space-y-2">
-              <Label>Date</Label>
-              <DatePicker
-                value={txForm.watch('date')}
-                onChange={(v) =>
-                  txForm.setValue('date', v ?? '', { shouldValidate: true })
-                }
-              />
-              <FormError message={txForm.formState.errors.date?.message} />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label>Description</Label>
-            <Input {...txForm.register('description')} />
-          </div>
-
-          <div className="flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={onClose}>
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              disabled={
-                createTransaction.isPending || updateTransaction.isPending
-              }
-            >
-              {getSubmitLabel(
-                isEdit,
-                createTransaction.isPending || updateTransaction.isPending,
-              )}
-            </Button>
-          </div>
-        </form>
+        <IncomeExpenseForm
+          form={txForm}
+          accounts={accounts}
+          onSubmit={handleTxSubmit}
+          onCancel={onClose}
+          isEdit={isEdit}
+          createTransaction={createTransaction}
+          updateTransaction={updateTransaction}
+        />
       )}
     </div>
   )
