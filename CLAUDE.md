@@ -4,7 +4,7 @@ Guidance for Claude Code working in this repository.
 
 ## Repo Structure
 
-Monorepo: Go API in `/backend`, React app in `/frontend` (TBD).
+Monorepo: Go API in `/backend`, React app in `/frontend`.
 
 ## Commands
 
@@ -20,8 +20,11 @@ make sqlc                        # Regenerate sqlc code after editing queries/*.
 cd backend && go test ./...      # Run all tests
 cd backend && go test ./internal/service/ -run TestFunctionName  # Single test
 
-# Frontend (TBD)
-make dev-frontend
+# Frontend
+make dev-frontend                # Vite dev server (proxies /api to :8080)
+cd frontend && npm run build     # Type-check + production build
+cd frontend && npm run lint      # ESLint
+cd frontend && npm run check:types  # TypeScript check only
 ```
 
 ## Environment Variables
@@ -30,10 +33,10 @@ Required: `DATABASE_URL` (postgres connection string), `JWT_SECRET` (HMAC key, 3
 
 ## Specifications
 
-Implementation specifications for frontend located at `frontend/SPEC.md`
+Implementation specifications for frontend located at `frontend/SPEC.md`. Frontend-specific guidance in `frontend/CLAUDE.md`.
 
 ## Conventions
 
 - API changes must be reflected in [backend/docs/API.md](backend/docs/API.md)
-- Architecture changes must be reflected in [backend/docs/Architecture.md](backend/docs/Architecture.md)
+- Backend architecture changes must be reflected in [backend/docs/Architecture.md](backend/docs/Architecture.md)
 - Backend feature changes must be reflected in [backend/README.md](backend/README.md)

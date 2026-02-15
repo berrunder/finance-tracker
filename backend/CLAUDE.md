@@ -40,5 +40,5 @@ Config: `sqlc.yaml` — generates to `internal/store/` package, uses `pgx/v5`, m
 ## Documentation
 
 - API changes -> [docs/API.md](docs/API.md)
-- Architecture changes -> [docs/Architecture.md](docs/Architecture.md)
+- Architecture changes -> [docs/Architecture.md](docs/ARCHITECTURE.md)
 - Feature/command changes -> [README.md](README.md)
