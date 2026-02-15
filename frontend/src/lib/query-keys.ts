@@ -1,3 +1,5 @@
+import type { ReportFilters } from '@/api/reports'
+
 export const queryKeys = {
   auth: ['auth'] as const,
   accounts: {
@@ -15,13 +17,13 @@ export const queryKeys = {
   },
   reports: {
     all: ['reports'] as const,
-    spending: (params: Record<string, unknown>) =>
+    spending: (params: ReportFilters) =>
       ['reports', 'spending', params] as const,
-    incomeExpense: (params: Record<string, unknown>) =>
+    incomeExpense: (params: ReportFilters) =>
       ['reports', 'income-expense', params] as const,
-    balanceHistory: (params: Record<string, unknown>) =>
+    balanceHistory: (params: ReportFilters) =>
       ['reports', 'balance-history', params] as const,
-    summary: (params: Record<string, unknown>) =>
+    summary: (params: ReportFilters) =>
       ['reports', 'summary', params] as const,
   },
   exchangeRates: ['exchange-rates'] as const,
