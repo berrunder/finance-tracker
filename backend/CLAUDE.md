@@ -37,6 +37,10 @@ handler -> service -> store (sqlc-generated)
 
 Config: `sqlc.yaml` — generates to `internal/store/` package, uses `pgx/v5`, maps `uuid` to `google/uuid.UUID`. Annotations: `-- name: FuncName :one/:many/:exec/:copyfrom`.
 
+## Verification
+
+- After Go changes, always run `go build ./...` and `go test ./...`.
+
 ## Documentation
 
 - API changes -> [docs/API.md](docs/API.md)

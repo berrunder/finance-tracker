@@ -1,0 +1,8 @@
+{
+  "hooks": {
+    "afterEdit": {
+      "*.ts,*.tsx": "npx tsc --noEmit --pretty 2>&1 | head -20",
+      "*.go": "go build ./... 2>&1 | head -20"
+    }
+  }
+}

@@ -31,6 +31,10 @@ src/
   types/        # Shared TypeScript types
 ```
 
+## Verification
+
+- After making multi-file refactoring changes in TypeScript, always run `npx tsc --noEmit` to verify there are no type errors before reporting completion. After Go changes, always run `go build ./...` and `go test ./...`.
+
 ## Conventions
 
 - **Path alias**: use `@/` for imports from `src/` (configured in tsconfig and vite).
@@ -42,6 +46,7 @@ src/
 - **`use-auth.ts`** uses `createElement` instead of JSX intentionally — keeping the file as `.ts` (not `.tsx`) ensures React Fast Refresh works, since Fast Refresh requires files to only export components. The file exports both `AuthProvider` (component) and `useAuth` (hook), so using `.tsx` would trigger the `react-refresh/only-export-components` lint error.
 - **ESLint**: `react-refresh/only-export-components` is set to `error`. If a file exports both components and non-components, keep it as `.ts` with `createElement` or split the exports.
 - **Unused vars**: prefix with `_` (enforced by ESLint rule `argsIgnorePattern: '^_'`).
+- When renaming or moving files in the frontend, check for fast-refresh compatibility — never rename .ts to .tsx or vice versa for hook files without verifying import chains and HMR behavior.
 
 ## Documentation
 

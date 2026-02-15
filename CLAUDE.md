@@ -35,8 +35,13 @@ Required: `DATABASE_URL` (postgres connection string), `JWT_SECRET` (HMAC key, 3
 
 Implementation specifications for frontend located at `frontend/SPEC.md`. Frontend-specific guidance in `frontend/CLAUDE.md`.
 
+## Code Quality
+
+- When fixing linter or type errors, prefer proper configuration changes (e.g., ESLint rules, tsconfig settings) over inline disables or quick-fix suppressions. Always ask before adding eslint-disable comments.
+
 ## Conventions
 
 - API changes must be reflected in [backend/docs/API.md](backend/docs/API.md)
 - Backend architecture changes must be reflected in [backend/docs/Architecture.md](backend/docs/Architecture.md)
 - Backend feature changes must be reflected in [backend/README.md](backend/README.md)
+- When the user asks for a code review or simplification suggestions, present findings first and wait for user approval before implementing changes. Do not continue fixing iteratively without checking in.
