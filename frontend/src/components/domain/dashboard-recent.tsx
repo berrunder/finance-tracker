@@ -21,7 +21,7 @@ function getCategoryName(
   categoryId: string | null,
   categories: Category[],
 ): string {
-  if (!categoryId) return 'Uncategorized'
+  if (!categoryId) return 'Transfer'
   return categories.find((c) => c.id === categoryId)?.name ?? '\u2014'
 }
 
@@ -32,7 +32,6 @@ export function DashboardRecent({
   isError,
   onRetry,
 }: DashboardRecentProps) {
-
   if (isError) {
     return (
       <Card>
