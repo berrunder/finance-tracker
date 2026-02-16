@@ -52,6 +52,12 @@ interface TransactionFormProps {
   linkedTransferTransaction?: Transaction | null
 }
 
+function getInitialTxType(editTransaction?: Transaction | null): TxType {
+  if (!editTransaction) return 'expense'
+  if (editTransaction.transfer_id) return 'transfer'
+  return editTransaction.type as 'income' | 'expense'
+}
+
 export function TransactionForm({
   onClose,
   editTransaction,
@@ -93,47 +99,45 @@ export function TransactionForm({
     mode: 'onBlur',
   })
 
-  const isTransfer = txType === 'transfer'
+  const activeTxType = isEdit ? getInitialTxType(editTransaction) : txType
+  const isTransfer = activeTxType === 'transfer'
 
   // Populate edit mode
   useEffect(() => {
-    if (editTransaction) {
-      if (editTransaction.transfer_id) {
-        const { source: sourceTx, destination: destinationTx } =
-          resolveTransferPair(editTransaction, linkedTransferTransaction)
+    if (!editTransaction) return
 
-        if (!sourceTx || !destinationTx) {
-          return
-        }
+    if (editTransaction.transfer_id) {
+      const { source: sourceTx, destination: destinationTx } =
+        resolveTransferPair(editTransaction, linkedTransferTransaction)
 
-        setTxType('transfer')
-        trForm.reset({
-          from_account_id: sourceTx.account_id,
-          to_account_id: destinationTx.account_id,
-          amount: sourceTx.amount,
-          to_amount:
-            sourceTx.currency !== destinationTx.currency
-              ? destinationTx.amount
-              : '',
-          exchange_rate:
-            sourceTx.exchange_rate ?? destinationTx.exchange_rate ?? '',
-          description: sourceTx.description,
-          date: sourceTx.date,
-        })
+      if (!sourceTx || !destinationTx) {
         return
       }
 
-      const type = editTransaction.type as 'income' | 'expense'
-      setTxType(type)
-      txForm.reset({
-        account_id: editTransaction.account_id,
-        category_id: editTransaction.category_id ?? '',
-        type,
-        amount: editTransaction.amount,
-        description: editTransaction.description,
-        date: editTransaction.date,
+      trForm.reset({
+        from_account_id: sourceTx.account_id,
+        to_account_id: destinationTx.account_id,
+        amount: sourceTx.amount,
+        to_amount:
+          sourceTx.currency !== destinationTx.currency
+            ? destinationTx.amount
+            : '',
+        exchange_rate: sourceTx.exchange_rate ?? destinationTx.exchange_rate ?? '',
+        description: sourceTx.description,
+        date: sourceTx.date,
       })
+      return
     }
+
+    const type = editTransaction.type as 'income' | 'expense'
+    txForm.reset({
+      account_id: editTransaction.account_id,
+      category_id: editTransaction.category_id ?? '',
+      type,
+      amount: editTransaction.amount,
+      description: editTransaction.description,
+      date: editTransaction.date,
+    })
   }, [editTransaction, linkedTransferTransaction, trForm, txForm])
 
   function handleTypeChange(value: string) {
@@ -141,7 +145,11 @@ export function TransactionForm({
     const newType = value as TxType
     setTxType(newType)
     if (newType !== 'transfer') {
-      txForm.setValue('type', newType)
+      const previousType = txForm.getValues('type')
+      txForm.setValue('type', newType, { shouldValidate: true })
+      if (previousType !== newType) {
+        txForm.setValue('category_id', '', { shouldValidate: true })
+      }
     }
   }
 

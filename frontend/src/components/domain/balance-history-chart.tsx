@@ -11,7 +11,7 @@ import {
 import { formatMoney } from '@/lib/money'
 import { formatDateShort } from '@/lib/dates'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { ErrorBanner } from '@/components/ui/error-banner'
+import { ErrorBanner } from '@/components/domain/error-banner'
 import type { BalanceHistoryItem } from '@/types/api'
 
 interface BalanceHistoryChartProps {
@@ -29,46 +29,10 @@ export function BalanceHistoryChart({
   isError,
   onRetry,
 }: BalanceHistoryChartProps) {
-  // Transform data for Recharts
   const chartData = data.map((item) => ({
     date: formatDateShort(item.date),
     balance: new Decimal(item.balance).toNumber(),
   }))
-
-  if (isError) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>
-            Balance History {accountName && `- ${accountName}`}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ErrorBanner
-            message="Failed to load balance history."
-            onRetry={onRetry || (() => {})}
-          />
-        </CardContent>
-      </Card>
-    )
-  }
-
-  if (chartData.length === 0) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>
-            Balance History {accountName && `- ${accountName}`}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground">
-            No balance history available for the selected period.
-          </p>
-        </CardContent>
-      </Card>
-    )
-  }
 
   return (
     <Card>
@@ -78,25 +42,38 @@ export function BalanceHistoryChart({
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <ResponsiveContainer width="100%" height={300}>
-          <LineChart data={chartData}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="date" />
-            <YAxis />
-            <Tooltip
-              formatter={(value: number | undefined) =>
-                value !== undefined ? formatMoney(String(value), currency) : ''
-              }
-            />
-            <Line
-              type="monotone"
-              dataKey="balance"
-              stroke="#3b82f6"
-              strokeWidth={2}
-              name="Balance"
-            />
-          </LineChart>
-        </ResponsiveContainer>
+        {isError ? (
+          <ErrorBanner
+            message="Failed to load balance history."
+            onRetry={onRetry}
+          />
+        ) : chartData.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            No balance history available for the selected period.
+          </p>
+        ) : (
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart data={chartData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="date" />
+              <YAxis />
+              <Tooltip
+                formatter={(value: number | undefined) =>
+                  value !== undefined
+                    ? formatMoney(String(value), currency)
+                    : ''
+                }
+              />
+              <Line
+                type="monotone"
+                dataKey="balance"
+                stroke="#3b82f6"
+                strokeWidth={2}
+                name="Balance"
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        )}
       </CardContent>
     </Card>
   )

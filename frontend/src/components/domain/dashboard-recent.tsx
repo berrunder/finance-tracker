@@ -2,7 +2,7 @@ import { Link } from 'react-router'
 import { formatMoney } from '@/lib/money'
 import { formatDate } from '@/lib/dates'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { ErrorBanner } from '@/components/ui/error-banner'
+import { ErrorBanner } from '@/components/domain/error-banner'
 import type { Transaction, Account, Category } from '@/types/api'
 
 interface DashboardRecentProps {
@@ -13,6 +13,18 @@ interface DashboardRecentProps {
   onRetry?: () => void
 }
 
+function getAccountName(accountId: string, accounts: Account[]): string {
+  return accounts.find((a) => a.id === accountId)?.name ?? '\u2014'
+}
+
+function getCategoryName(
+  categoryId: string | null,
+  categories: Category[],
+): string {
+  if (!categoryId) return 'Uncategorized'
+  return categories.find((c) => c.id === categoryId)?.name ?? '\u2014'
+}
+
 export function DashboardRecent({
   transactions,
   accounts,
@@ -20,14 +32,6 @@ export function DashboardRecent({
   isError,
   onRetry,
 }: DashboardRecentProps) {
-  const getAccountName = (accountId: string): string => {
-    return accounts.find((a) => a.id === accountId)?.name ?? 'Unknown'
-  }
-
-  const getCategoryName = (categoryId: string | null): string => {
-    if (!categoryId) return 'Uncategorized'
-    return categories.find((c) => c.id === categoryId)?.name ?? 'Unknown'
-  }
 
   if (isError) {
     return (
@@ -38,7 +42,7 @@ export function DashboardRecent({
         <CardContent>
           <ErrorBanner
             message="Failed to load recent transactions."
-            onRetry={onRetry || (() => {})}
+            onRetry={onRetry}
           />
         </CardContent>
       </Card>
@@ -83,8 +87,8 @@ export function DashboardRecent({
                   {transaction.description || 'No description'}
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  {getAccountName(transaction.account_id)} •{' '}
-                  {getCategoryName(transaction.category_id)} •{' '}
+                  {getAccountName(transaction.account_id, accounts)} •{' '}
+                  {getCategoryName(transaction.category_id, categories)} •{' '}
                   {formatDate(transaction.date)}
                 </p>
               </div>

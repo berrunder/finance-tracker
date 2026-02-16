@@ -10,17 +10,16 @@ import {
   Legend,
 } from 'recharts'
 import { formatMoney } from '@/lib/money'
-import { toISODate } from '@/lib/dates'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { ErrorBanner } from '@/components/ui/error-banner'
+import { ErrorBanner } from '@/components/domain/error-banner'
 import type { SpendingByCategoryItem } from '@/types/api'
 
 interface SpendingChartProps {
   data: SpendingByCategoryItem[]
   currency: string
-  dateFrom?: Date
-  dateTo?: Date
+  dateFrom?: string
+  dateTo?: string
   isError?: boolean
   onRetry?: () => void
 }
@@ -70,62 +69,29 @@ export function SpendingChart({
     categoryId: item.category_id,
   }))
 
-  const hasChildren = (categoryId: string): boolean => {
+  function hasChildren(categoryId: string): boolean {
     return data.some((item) => item.parent_id === categoryId)
   }
 
-  const handleSegmentClick = (categoryId: string) => {
+  function handleSegmentClick(categoryId: string) {
     if (hasChildren(categoryId)) {
-      // Drill down to subcategories
       setDrillDownParentId(categoryId)
     } else {
-      // Navigate to transactions page with filters
       const params = new URLSearchParams({
         category_id: categoryId,
       })
       if (dateFrom) {
-        params.set('date_from', toISODate(dateFrom))
+        params.set('date_from', dateFrom)
       }
       if (dateTo) {
-        params.set('date_to', toISODate(dateTo))
+        params.set('date_to', dateTo)
       }
       navigate(`/transactions?${params.toString()}`)
     }
   }
 
-  const handleBack = () => {
+  function handleBack() {
     setDrillDownParentId(null)
-  }
-
-  if (isError) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Spending by Category</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ErrorBanner
-            message="Failed to load spending data."
-            onRetry={onRetry || (() => {})}
-          />
-        </CardContent>
-      </Card>
-    )
-  }
-
-  if (chartData.length === 0) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Spending by Category</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground">
-            No spending data available for the selected period.
-          </p>
-        </CardContent>
-      </Card>
-    )
   }
 
   return (
@@ -139,35 +105,48 @@ export function SpendingChart({
         )}
       </CardHeader>
       <CardContent>
-        <ResponsiveContainer width="100%" height={300}>
-          <PieChart>
-            <Pie
-              data={chartData}
-              cx="50%"
-              cy="50%"
-              labelLine={false}
-              label={(entry) => entry.name}
-              outerRadius={80}
-              fill="#8884d8"
-              dataKey="value"
-              onClick={(entry) => handleSegmentClick(entry.categoryId)}
-              style={{ cursor: 'pointer' }}
-            >
-              {chartData.map((_entry, index) => (
-                <Cell
-                  key={`cell-${index}`}
-                  fill={COLORS[index % COLORS.length]}
-                />
-              ))}
-            </Pie>
-            <Tooltip
-              formatter={(value: number | undefined) =>
-                value !== undefined ? formatMoney(String(value), currency) : ''
-              }
-            />
-            <Legend />
-          </PieChart>
-        </ResponsiveContainer>
+        {isError ? (
+          <ErrorBanner
+            message="Failed to load spending data."
+            onRetry={onRetry}
+          />
+        ) : chartData.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            No spending data available for the selected period.
+          </p>
+        ) : (
+          <ResponsiveContainer width="100%" height={300}>
+            <PieChart>
+              <Pie
+                data={chartData}
+                cx="50%"
+                cy="50%"
+                labelLine={false}
+                label={(entry) => entry.name}
+                outerRadius={80}
+                fill="#8884d8"
+                dataKey="value"
+                onClick={(entry) => handleSegmentClick(entry.categoryId)}
+                style={{ cursor: 'pointer' }}
+              >
+                {chartData.map((_entry, index) => (
+                  <Cell
+                    key={`cell-${index}`}
+                    fill={COLORS[index % COLORS.length]}
+                  />
+                ))}
+              </Pie>
+              <Tooltip
+                formatter={(value: number | undefined) =>
+                  value !== undefined
+                    ? formatMoney(String(value), currency)
+                    : ''
+                }
+              />
+              <Legend />
+            </PieChart>
+          </ResponsiveContainer>
+        )}
       </CardContent>
     </Card>
   )

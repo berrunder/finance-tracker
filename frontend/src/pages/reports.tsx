@@ -85,7 +85,7 @@ export default function ReportsPage() {
       {/* Date Range Pickers */}
       <div className="grid gap-4 md:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor="date-from">From Date</Label>
+          <Label>From Date</Label>
           <DatePicker
             value={dateFrom}
             onChange={(date) =>
@@ -95,7 +95,7 @@ export default function ReportsPage() {
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="date-to">To Date</Label>
+          <Label>To Date</Label>
           <DatePicker
             value={dateTo}
             onChange={(date) =>
@@ -114,8 +114,8 @@ export default function ReportsPage() {
           <SpendingChart
             data={spendingData}
             currency={user.base_currency}
-            dateFrom={new Date(dateFrom)}
-            dateTo={new Date(dateTo)}
+            dateFrom={dateFrom}
+            dateTo={dateTo}
             isError={isSpendingError}
             onRetry={refetchSpending}
           />
@@ -137,7 +137,7 @@ export default function ReportsPage() {
       {/* Account Selector and Balance History Chart */}
       <div className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="account-select">Account</Label>
+          <Label>Account</Label>
           {isAccountsLoading ? (
             <p className="text-muted-foreground text-sm">Loading accounts...</p>
           ) : (

@@ -15,7 +15,7 @@ import type { BarRectangleItem } from 'recharts'
 import { formatMoney } from '@/lib/money'
 import { toISODate } from '@/lib/dates'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { ErrorBanner } from '@/components/ui/error-banner'
+import { ErrorBanner } from '@/components/domain/error-banner'
 import type { MonthlyIncomeExpenseItem } from '@/types/api'
 
 interface IncomeExpenseChartProps {
@@ -79,59 +79,23 @@ export function IncomeExpenseChart({
 }: IncomeExpenseChartProps) {
   const navigate = useNavigate()
 
-  // Transform data for Recharts
   const chartData: ChartData[] = data.map((item) => ({
     month: item.month,
     income: new Decimal(item.income).toNumber(),
     expense: new Decimal(item.expense).toNumber(),
   }))
 
-  // Handle bar click - navigate to transactions for that month
-  const handleBarClick = (data: BarRectangleItem) => {
-    // Extract chart data from the payload
-    const chartData = data.payload as ChartData
-    if (!chartData.month) return
+  function handleBarClick(data: BarRectangleItem) {
+    const barData = data.payload as ChartData
+    if (!barData.month) return
 
-    // Parse month string (e.g., "2024-01") to Date
-    const [year, month] = chartData.month.split('-')
+    const [year, month] = barData.month.split('-')
     const monthDate = new Date(Number(year), Number(month) - 1, 1)
 
-    // Calculate first and last day of month
     const dateFrom = toISODate(startOfMonth(monthDate))
     const dateTo = toISODate(endOfMonth(monthDate))
 
     navigate(`/transactions?date_from=${dateFrom}&date_to=${dateTo}`)
-  }
-
-  if (isError) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Income vs Expense</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ErrorBanner
-            message="Failed to load income vs expense data."
-            onRetry={onRetry || (() => {})}
-          />
-        </CardContent>
-      </Card>
-    )
-  }
-
-  if (chartData.length === 0) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Income vs Expense</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground">
-            No income or expense data available for the selected period.
-          </p>
-        </CardContent>
-      </Card>
-    )
   }
 
   return (
@@ -140,29 +104,40 @@ export function IncomeExpenseChart({
         <CardTitle>Income vs Expense</CardTitle>
       </CardHeader>
       <CardContent>
-        <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={chartData}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="month" />
-            <YAxis />
-            <Tooltip content={<CustomTooltip currency={currency} />} />
-            <Legend />
-            <Bar
-              dataKey="income"
-              fill="#22c55e"
-              name="Income"
-              cursor="pointer"
-              onClick={handleBarClick}
-            />
-            <Bar
-              dataKey="expense"
-              fill="#ef4444"
-              name="Expense"
-              cursor="pointer"
-              onClick={handleBarClick}
-            />
-          </BarChart>
-        </ResponsiveContainer>
+        {isError ? (
+          <ErrorBanner
+            message="Failed to load income vs expense data."
+            onRetry={onRetry}
+          />
+        ) : chartData.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            No income or expense data available for the selected period.
+          </p>
+        ) : (
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={chartData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="month" />
+              <YAxis />
+              <Tooltip content={<CustomTooltip currency={currency} />} />
+              <Legend />
+              <Bar
+                dataKey="income"
+                fill="#22c55e"
+                name="Income"
+                cursor="pointer"
+                onClick={handleBarClick}
+              />
+              <Bar
+                dataKey="expense"
+                fill="#ef4444"
+                name="Expense"
+                cursor="pointer"
+                onClick={handleBarClick}
+              />
+            </BarChart>
+          </ResponsiveContainer>
+        )}
       </CardContent>
     </Card>
   )

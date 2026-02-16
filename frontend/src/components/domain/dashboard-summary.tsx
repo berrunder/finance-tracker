@@ -1,7 +1,7 @@
 import Decimal from 'decimal.js'
 import { formatMoney } from '@/lib/money'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { ErrorBanner } from '@/components/ui/error-banner'
+import { ErrorBanner } from '@/components/domain/error-banner'
 
 interface DashboardSummaryProps {
   totalIncome: string
@@ -29,7 +29,7 @@ export function DashboardSummary({
         <CardContent>
           <ErrorBanner
             message="Failed to load dashboard summary."
-            onRetry={onRetry || (() => {})}
+            onRetry={onRetry}
           />
         </CardContent>
       </Card>

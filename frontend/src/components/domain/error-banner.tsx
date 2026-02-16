@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button'
 
 interface ErrorBannerProps {
   message?: string
-  onRetry: () => void
+  onRetry?: () => void
 }
 
 export function ErrorBanner({ message, onRetry }: ErrorBannerProps) {
@@ -15,10 +15,17 @@ export function ErrorBanner({ message, onRetry }: ErrorBannerProps) {
           {message || 'Failed to load data. Please try again.'}
         </p>
       </div>
-      <Button variant="outline" size="sm" onClick={onRetry} className="shrink-0">
-        <RefreshCw className="h-4 w-4 mr-1" />
-        Retry
-      </Button>
+      {onRetry && (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onRetry}
+          className="shrink-0"
+        >
+          <RefreshCw className="h-4 w-4 mr-1" />
+          Retry
+        </Button>
+      )}
     </div>
   )
 }

@@ -1,4 +1,5 @@
 import { apiClient } from './client'
+import { buildQueryString } from '@/lib/query-string'
 import type {
   SpendingByCategoryItem,
   MonthlyIncomeExpenseItem,
@@ -10,17 +11,6 @@ export interface ReportFilters {
   date_from?: string
   date_to?: string
   account_id?: string
-}
-
-function buildQueryString(filters: ReportFilters): string {
-  const params = new URLSearchParams()
-  for (const [key, value] of Object.entries(filters)) {
-    if (value !== undefined && value !== '') {
-      params.set(key, String(value))
-    }
-  }
-  const qs = params.toString()
-  return qs ? `?${qs}` : ''
 }
 
 export function getSpendingByCategory(

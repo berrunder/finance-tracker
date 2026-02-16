@@ -1,4 +1,5 @@
 import { apiClient } from './client'
+import { buildQueryString } from '@/lib/query-string'
 import type {
   Transaction,
   PaginatedResponse,
@@ -15,17 +16,6 @@ export interface TransactionFilters {
   date_to?: string
   page?: number
   per_page?: number
-}
-
-function buildQueryString(filters: TransactionFilters): string {
-  const params = new URLSearchParams()
-  for (const [key, value] of Object.entries(filters)) {
-    if (value !== undefined && value !== '') {
-      params.set(key, String(value))
-    }
-  }
-  const qs = params.toString()
-  return qs ? `?${qs}` : ''
 }
 
 export function getTransactions(
