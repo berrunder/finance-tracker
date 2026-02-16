@@ -2,18 +2,23 @@ import { Link } from 'react-router'
 import { formatMoney } from '@/lib/money'
 import { formatDate } from '@/lib/dates'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { ErrorBanner } from '@/components/ui/error-banner'
 import type { Transaction, Account, Category } from '@/types/api'
 
 interface DashboardRecentProps {
   transactions: Transaction[]
   accounts: Account[]
   categories: Category[]
+  isError?: boolean
+  onRetry?: () => void
 }
 
 export function DashboardRecent({
   transactions,
   accounts,
   categories,
+  isError,
+  onRetry,
 }: DashboardRecentProps) {
   const getAccountName = (accountId: string): string => {
     return accounts.find((a) => a.id === accountId)?.name ?? 'Unknown'
@@ -22,6 +27,22 @@ export function DashboardRecent({
   const getCategoryName = (categoryId: string | null): string => {
     if (!categoryId) return 'Uncategorized'
     return categories.find((c) => c.id === categoryId)?.name ?? 'Unknown'
+  }
+
+  if (isError) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Recent Transactions</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ErrorBanner
+            message="Failed to load recent transactions."
+            onRetry={onRetry || (() => {})}
+          />
+        </CardContent>
+      </Card>
+    )
   }
 
   if (transactions.length === 0) {

@@ -13,6 +13,7 @@ import { formatMoney } from '@/lib/money'
 import { toISODate } from '@/lib/dates'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { ErrorBanner } from '@/components/ui/error-banner'
 import type { SpendingByCategoryItem } from '@/types/api'
 
 interface SpendingChartProps {
@@ -20,6 +21,8 @@ interface SpendingChartProps {
   currency: string
   dateFrom?: Date
   dateTo?: Date
+  isError?: boolean
+  onRetry?: () => void
 }
 
 const COLORS = [
@@ -46,6 +49,8 @@ export function SpendingChart({
   currency,
   dateFrom,
   dateTo,
+  isError,
+  onRetry,
 }: SpendingChartProps) {
   const navigate = useNavigate()
   const [drillDownParentId, setDrillDownParentId] = useState<string | null>(
@@ -90,6 +95,22 @@ export function SpendingChart({
 
   const handleBack = () => {
     setDrillDownParentId(null)
+  }
+
+  if (isError) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Spending by Category</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ErrorBanner
+            message="Failed to load spending data."
+            onRetry={onRetry || (() => {})}
+          />
+        </CardContent>
+      </Card>
+    )
   }
 
   if (chartData.length === 0) {

@@ -11,24 +11,47 @@ import {
 import { formatMoney } from '@/lib/money'
 import { formatDateShort } from '@/lib/dates'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { ErrorBanner } from '@/components/ui/error-banner'
 import type { BalanceHistoryItem } from '@/types/api'
 
 interface BalanceHistoryChartProps {
   data: BalanceHistoryItem[]
   currency: string
   accountName?: string
+  isError?: boolean
+  onRetry?: () => void
 }
 
 export function BalanceHistoryChart({
   data,
   currency,
   accountName,
+  isError,
+  onRetry,
 }: BalanceHistoryChartProps) {
   // Transform data for Recharts
   const chartData = data.map((item) => ({
     date: formatDateShort(item.date),
     balance: new Decimal(item.balance).toNumber(),
   }))
+
+  if (isError) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>
+            Balance History {accountName && `- ${accountName}`}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ErrorBanner
+            message="Failed to load balance history."
+            onRetry={onRetry || (() => {})}
+          />
+        </CardContent>
+      </Card>
+    )
+  }
 
   if (chartData.length === 0) {
     return (

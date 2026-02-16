@@ -12,6 +12,7 @@ import { DatePicker } from '@/components/domain/date-picker'
 import { SpendingChart } from '@/components/domain/spending-chart'
 import { IncomeExpenseChart } from '@/components/domain/income-expense-chart'
 import { BalanceHistoryChart } from '@/components/domain/balance-history-chart'
+import { MultiCurrencyNote } from '@/components/domain/multi-currency-note'
 import { Label } from '@/components/ui/label'
 import {
   Select,
@@ -36,24 +37,36 @@ export default function ReportsPage() {
   const { data: accounts = [], isLoading: isAccountsLoading } = useAccounts()
 
   // Fetch reports data
-  const { data: spendingData = [], isLoading: isSpendingLoading } =
-    useSpendingByCategory({
-      date_from: dateFrom,
-      date_to: dateTo,
-    })
+  const {
+    data: spendingData = [],
+    isLoading: isSpendingLoading,
+    isError: isSpendingError,
+    refetch: refetchSpending,
+  } = useSpendingByCategory({
+    date_from: dateFrom,
+    date_to: dateTo,
+  })
 
-  const { data: incomeExpenseData = [], isLoading: isIncomeExpenseLoading } =
-    useIncomeExpense({
-      date_from: dateFrom,
-      date_to: dateTo,
-    })
+  const {
+    data: incomeExpenseData = [],
+    isLoading: isIncomeExpenseLoading,
+    isError: isIncomeExpenseError,
+    refetch: refetchIncomeExpense,
+  } = useIncomeExpense({
+    date_from: dateFrom,
+    date_to: dateTo,
+  })
 
-  const { data: balanceHistoryData = [], isLoading: isBalanceHistoryLoading } =
-    useBalanceHistory({
-      account_id: selectedAccountId,
-      date_from: dateFrom,
-      date_to: dateTo,
-    })
+  const {
+    data: balanceHistoryData = [],
+    isLoading: isBalanceHistoryLoading,
+    isError: isBalanceHistoryError,
+    refetch: refetchBalanceHistory,
+  } = useBalanceHistory({
+    account_id: selectedAccountId,
+    date_from: dateFrom,
+    date_to: dateTo,
+  })
 
   if (!user) {
     return null
@@ -66,6 +79,8 @@ export default function ReportsPage() {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">Reports</h1>
+
+      <MultiCurrencyNote baseCurrency={user.base_currency} accounts={accounts} />
 
       {/* Date Range Pickers */}
       <div className="grid gap-4 md:grid-cols-2">
@@ -93,30 +108,30 @@ export default function ReportsPage() {
 
       {/* Spending and Income/Expense Charts */}
       <div className="grid gap-4 md:grid-cols-2">
-        <div>
-          {isSpendingLoading ? (
-            <p className="text-muted-foreground">Loading spending data...</p>
-          ) : (
-            <SpendingChart
-              data={spendingData}
-              currency={user.base_currency}
-              dateFrom={new Date(dateFrom)}
-              dateTo={new Date(dateTo)}
-            />
-          )}
-        </div>
-        <div>
-          {isIncomeExpenseLoading ? (
-            <p className="text-muted-foreground">
-              Loading income/expense data...
-            </p>
-          ) : (
-            <IncomeExpenseChart
-              data={incomeExpenseData}
-              currency={user.base_currency}
-            />
-          )}
-        </div>
+        {isSpendingLoading ? (
+          <p className="text-muted-foreground">Loading spending data...</p>
+        ) : (
+          <SpendingChart
+            data={spendingData}
+            currency={user.base_currency}
+            dateFrom={new Date(dateFrom)}
+            dateTo={new Date(dateTo)}
+            isError={isSpendingError}
+            onRetry={refetchSpending}
+          />
+        )}
+        {isIncomeExpenseLoading ? (
+          <p className="text-muted-foreground">
+            Loading income/expense data...
+          </p>
+        ) : (
+          <IncomeExpenseChart
+            data={incomeExpenseData}
+            currency={user.base_currency}
+            isError={isIncomeExpenseError}
+            onRetry={refetchIncomeExpense}
+          />
+        )}
       </div>
 
       {/* Account Selector and Balance History Chart */}
@@ -144,21 +159,18 @@ export default function ReportsPage() {
           )}
         </div>
 
-        {selectedAccountId && (
-          <div>
-            {isBalanceHistoryLoading ? (
-              <p className="text-muted-foreground">
-                Loading balance history...
-              </p>
-            ) : (
-              <BalanceHistoryChart
-                data={balanceHistoryData}
-                currency={selectedAccountCurrency}
-                accountName={selectedAccount?.name}
-              />
-            )}
-          </div>
-        )}
+        {selectedAccountId &&
+          (isBalanceHistoryLoading ? (
+            <p className="text-muted-foreground">Loading balance history...</p>
+          ) : (
+            <BalanceHistoryChart
+              data={balanceHistoryData}
+              currency={selectedAccountCurrency}
+              accountName={selectedAccount?.name}
+              isError={isBalanceHistoryError}
+              onRetry={refetchBalanceHistory}
+            />
+          ))}
       </div>
     </div>
   )

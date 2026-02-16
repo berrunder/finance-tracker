@@ -1,12 +1,15 @@
 import Decimal from 'decimal.js'
 import { formatMoney } from '@/lib/money'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { ErrorBanner } from '@/components/ui/error-banner'
 
 interface DashboardSummaryProps {
   totalIncome: string
   totalExpense: string
   netIncome: string
   currency: string
+  isError?: boolean
+  onRetry?: () => void
 }
 
 export function DashboardSummary({
@@ -14,7 +17,25 @@ export function DashboardSummary({
   totalExpense,
   netIncome,
   currency,
+  isError,
+  onRetry,
 }: DashboardSummaryProps) {
+  if (isError) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Summary</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ErrorBanner
+            message="Failed to load dashboard summary."
+            onRetry={onRetry || (() => {})}
+          />
+        </CardContent>
+      </Card>
+    )
+  }
+
   const netValue = new Decimal(netIncome)
   const isPositive = netValue.greaterThanOrEqualTo(0)
 

@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "check:types": "tsc --noEmit",
+    "check:types": "tsc -b",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",

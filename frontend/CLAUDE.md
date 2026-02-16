@@ -33,7 +33,7 @@ src/
 
 ## Verification
 
-- After making multi-file refactoring changes in TypeScript, always run `npx tsc --noEmit` to verify there are no type errors before reporting completion. After Go changes, always run `go build ./...` and `go test ./...`.
+- After making multi-file refactoring changes in TypeScript, always run `npm run check:types` to verify there are no type errors before reporting completion. After Go changes, always run `go build ./...` and `go test ./...`.
 
 ## Conventions
 
@@ -47,6 +47,7 @@ src/
 - **ESLint**: `react-refresh/only-export-components` is set to `error`. If a file exports both components and non-components, keep it as `.ts` with `createElement` or split the exports.
 - **Unused vars**: prefix with `_` (enforced by ESLint rule `argsIgnorePattern: '^_'`).
 - When renaming or moving files in the frontend, check for fast-refresh compatibility — never rename .ts to .tsx or vice versa for hook files without verifying import chains and HMR behavior.
+- ALWAYS use proper typing. NEVER use `any` or `as unknown as Type` without a very good reason and approval. If you find yourself needing to do this, stop and ask for help — there's almost always a better way.
 
 ## Documentation
 
