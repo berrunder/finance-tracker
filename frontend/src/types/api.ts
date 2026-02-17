@@ -139,6 +139,16 @@ export interface UpdateTransactionRequest {
   date: string
 }
 
+export interface UpdateTransferRequest {
+  from_account_id: string
+  to_account_id: string
+  amount: string
+  to_amount?: string
+  exchange_rate?: string
+  description: string
+  date: string
+}
+
 // Import
 export interface CSVPreviewRow {
   values: Record<string, string>

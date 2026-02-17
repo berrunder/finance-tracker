@@ -6,6 +6,7 @@ import type {
   CreateTransactionRequest,
   CreateTransferRequest,
   UpdateTransactionRequest,
+  UpdateTransferRequest,
 } from '@/types/api'
 
 export interface TransactionFilters {
@@ -53,6 +54,16 @@ export function updateTransaction(
   data: UpdateTransactionRequest,
 ): Promise<Transaction> {
   return apiClient<Transaction>(`/transactions/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  })
+}
+
+export function updateTransfer(
+  id: string,
+  data: UpdateTransferRequest,
+): Promise<{ data: Transaction[] }> {
+  return apiClient<{ data: Transaction[] }>(`/transactions/transfer/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),
   })

@@ -2,7 +2,7 @@ import { useCallback } from 'react'
 import type { UseFormReturn } from 'react-hook-form'
 import type {
   useCreateTransfer,
-  useUpdateTransaction,
+  useUpdateTransfer,
 } from '@/hooks/use-transactions'
 import type { TransferFormData } from '@/lib/validators'
 import { getSubmitLabel } from '@/lib/form-helpers'
@@ -28,7 +28,7 @@ interface TransferFormProps {
   onCancel: () => void
   isEdit: boolean
   createTransfer: ReturnType<typeof useCreateTransfer>
-  updateTransaction: ReturnType<typeof useUpdateTransaction>
+  updateTransfer: ReturnType<typeof useUpdateTransfer>
 }
 
 export function TransferForm({
@@ -38,7 +38,7 @@ export function TransferForm({
   onCancel,
   isEdit,
   createTransfer,
-  updateTransaction,
+  updateTransfer,
 }: TransferFormProps) {
   const fromAccountId = form.watch('from_account_id')
   const toAccountId = form.watch('to_account_id')
@@ -153,11 +153,11 @@ export function TransferForm({
         </Button>
         <Button
           type="submit"
-          disabled={createTransfer.isPending || updateTransaction.isPending}
+          disabled={createTransfer.isPending || updateTransfer.isPending}
         >
           {getSubmitLabel(
             isEdit,
-            createTransfer.isPending || updateTransaction.isPending,
+            createTransfer.isPending || updateTransfer.isPending,
             'Save Transfer',
             'Create Transfer',
           )}
