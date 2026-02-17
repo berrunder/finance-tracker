@@ -78,7 +78,11 @@ export default function TransactionsPage() {
     setEditTransaction(transaction)
     if (transaction.transfer_id) {
       setLinkedTransferTransaction(
-        transactions.find((tx) => tx.id === transaction.transfer_id) ?? null,
+        transactions.find(
+          (tx) =>
+            tx.transfer_id === transaction.transfer_id &&
+            tx.id !== transaction.id,
+        ) ?? null,
       )
     } else {
       setLinkedTransferTransaction(null)
