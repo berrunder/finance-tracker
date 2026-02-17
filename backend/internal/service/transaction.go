@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -24,6 +25,7 @@ type transactionStore interface {
 	GetTransactionsByTransferID(ctx context.Context, arg store.GetTransactionsByTransferIDParams) ([]store.Transaction, error)
 	UpdateTransferTransaction(ctx context.Context, arg store.UpdateTransferTransactionParams) (store.Transaction, error)
 	GetAccount(ctx context.Context, arg store.GetAccountParams) (store.Account, error)
+	ListAccounts(ctx context.Context, userID uuid.UUID) ([]store.Account, error)
 	WithTx(tx pgx.Tx) *store.Queries
 }
 
@@ -156,16 +158,21 @@ func (s *Transaction) List(ctx context.Context, userID uuid.UUID, params ListTra
 		txnType = pgtype.Text{String: params.Type, Valid: true}
 	}
 	var dateFrom, dateTo pgtype.Date
+	monthStart, monthEnd := currentMonthBounds()
 	if params.DateFrom != "" {
 		d, err := dateFromString(params.DateFrom)
 		if err == nil {
 			dateFrom = d
+		} else {
+			dateFrom = monthStart
 		}
 	}
 	if params.DateTo != "" {
 		d, err := dateFromString(params.DateTo)
 		if err == nil {
 			dateTo = d
+		} else {
+			dateTo = monthEnd
 		}
 	}
 
@@ -197,9 +204,19 @@ func (s *Transaction) List(ctx context.Context, userID uuid.UUID, params ListTra
 		return nil, err
 	}
 
+	accounts, err := s.queries.ListAccounts(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	accountCurrencies := make(map[uuid.UUID]string, len(accounts))
+	for _, account := range accounts {
+		accountCurrencies[account.ID] = account.Currency
+	}
+
 	result := make([]dto.TransactionResponse, 0, len(txns))
 	for _, t := range txns {
-		result = append(result, *s.toResponse(ctx, t))
+		result = append(result, *s.toResponseWithCurrency(t, accountCurrencies[t.AccountID]))
 	}
 
 	return &dto.PaginatedResponse{
@@ -354,6 +371,9 @@ func (s *Transaction) Delete(ctx context.Context, userID, txnID uuid.UUID) error
 	// If this is a transfer, delete the linked transaction too
 	txn, err := s.queries.GetTransaction(ctx, store.GetTransactionParams{ID: txnID, UserID: userID})
 	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return ErrNotFound
+		}
 		return err
 	}
 
@@ -375,6 +395,10 @@ func (s *Transaction) toResponse(ctx context.Context, t store.Transaction) *dto.
 		currency = acct.Currency
 	}
 
+	return s.toResponseWithCurrency(t, currency)
+}
+
+func (s *Transaction) toResponseWithCurrency(t store.Transaction, currency string) *dto.TransactionResponse {
 	resp := &dto.TransactionResponse{
 		ID:          t.ID,
 		AccountID:   t.AccountID,
@@ -395,6 +419,14 @@ func (s *Transaction) toResponse(ctx context.Context, t store.Transaction) *dto.
 	}
 
 	return resp
+}
+
+func currentMonthBounds() (pgtype.Date, pgtype.Date) {
+	now := time.Now()
+	start := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location())
+	end := start.AddDate(0, 1, -1)
+
+	return pgtype.Date{Time: start, Valid: true}, pgtype.Date{Time: end, Valid: true}
 }
 
 type ListTransactionsParams struct {
