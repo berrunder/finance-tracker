@@ -94,7 +94,7 @@ sqlc annotations: `-- name: FuncName :one/:many/:exec/:copyfrom`
 ## API Conventions
 
 - Prefix: `/api/v1/`
-- Public: `/auth/register`, `/auth/login`, `/auth/refresh`
+- Public: `/auth/register`, `/auth/login`, `/auth/refresh`, `/currencies`
 - Protected: everything else (requires Bearer token)
 - List responses: `{ "data": [...] }` or `{ "data": [...], "pagination": { page, per_page, total } }`
 - Errors: `{ "error": { "code": "SNAKE_CASE", "message": "human text" } }`

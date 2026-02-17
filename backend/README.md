@@ -73,6 +73,12 @@ POST /auth/refresh     { refresh_token }
 
 All return `{ access_token, refresh_token, user }`.
 
+### Other public endpoints
+
+```
+GET /currencies        [{ code, name, symbol }]
+```
+
 ### Protected Endpoints (require `Authorization: Bearer <access_token>`)
 
 ```
