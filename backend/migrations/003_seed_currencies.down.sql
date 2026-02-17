@@ -1,0 +1,1 @@
+-- No rollback: removing currency rows would cascade-delete accounts and exchange rates.

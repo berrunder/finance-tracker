@@ -27,4 +27,5 @@ export const queryKeys = {
       ['reports', 'summary', params] as const,
   },
   exchangeRates: ['exchange-rates'] as const,
+  currencies: ['currencies'] as const,
 } as const

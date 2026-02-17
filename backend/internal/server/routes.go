@@ -19,6 +19,7 @@ func NewRouter(
 	reportH *handler.Report,
 	importH *handler.Import,
 	exchangeRateH *handler.ExchangeRate,
+	currencyH *handler.Currency,
 ) http.Handler {
 	r := chi.NewRouter()
 
@@ -33,6 +34,7 @@ func NewRouter(
 			r.Post("/login", authH.Login)
 			r.Post("/refresh", authH.Refresh)
 		})
+		r.Get("/currencies", currencyH.List)
 
 		// Protected routes
 		r.Group(func(r chi.Router) {
@@ -79,6 +81,7 @@ func NewRouter(
 				r.Get("/", exchangeRateH.List)
 				r.Post("/", exchangeRateH.Create)
 			})
+
 		})
 	})
 

@@ -190,6 +190,13 @@ export interface SummaryResponse {
   accounts: Account[]
 }
 
+// Currency
+export interface Currency {
+  code: string
+  name: string
+  symbol: string
+}
+
 // Exchange Rate
 export interface ExchangeRate {
   id: string

@@ -5,7 +5,7 @@ import { Link } from 'react-router'
 import { useAuth } from '@/hooks/use-auth.ts'
 import { registerSchema, type RegisterFormData } from '@/lib/validators'
 import { handleFormSubmitError } from '@/lib/form-helpers'
-import { CURRENCIES } from '@/lib/constants'
+import { useCurrencies } from '@/hooks/use-currencies'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -28,6 +28,7 @@ import { FormError } from '@/components/ui/form-error'
 export default function RegisterPage() {
   const { register: registerUser } = useAuth()
   const [serverError, setServerError] = useState<string | null>(null)
+  const { data: currencies = [] } = useCurrencies()
 
   const {
     register,
@@ -114,7 +115,7 @@ export default function RegisterPage() {
                   <SelectValue placeholder="Select a currency" />
                 </SelectTrigger>
                 <SelectContent>
-                  {CURRENCIES.map((c) => (
+                  {currencies.map((c) => (
                     <SelectItem key={c.code} value={c.code}>
                       {c.symbol} {c.code} — {c.name}
                     </SelectItem>

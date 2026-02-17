@@ -392,6 +392,22 @@ Overall financial summary.
 
 ---
 
+## Currencies (public)
+
+### `GET /currencies`
+
+```json
+// Response 200
+{
+  "data": [
+    {"code": "AMD", "name": "Armenian Dram", "symbol": "֏"},
+    {"code": "EUR", "name": "Euro", "symbol": "€"}
+  ]
+}
+```
+
+---
+
 ## Exchange Rates (protected)
 
 ### `GET /exchange-rates`

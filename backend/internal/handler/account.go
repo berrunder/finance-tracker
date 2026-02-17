@@ -2,6 +2,7 @@ package handler
 
 import (
 	"errors"
+	"log/slog"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -25,6 +26,7 @@ func (h *Account) List(w http.ResponseWriter, r *http.Request) {
 	userID := middleware.UserID(r.Context())
 	accounts, err := h.svc.List(r.Context(), userID)
 	if err != nil {
+		slog.Error("failed to list accounts", "error", err, "user_id", userID)
 		respond.Error(w, http.StatusInternalServerError, "INTERNAL_ERROR", "failed to list accounts")
 		return
 	}
@@ -45,6 +47,7 @@ func (h *Account) Create(w http.ResponseWriter, r *http.Request) {
 
 	acct, err := h.svc.Create(r.Context(), userID, req)
 	if err != nil {
+		slog.Error("failed to create account", "error", err, "user_id", userID)
 		respond.Error(w, http.StatusInternalServerError, "INTERNAL_ERROR", "failed to create account")
 		return
 	}
@@ -65,6 +68,7 @@ func (h *Account) Get(w http.ResponseWriter, r *http.Request) {
 			respond.Error(w, http.StatusNotFound, "NOT_FOUND", "account not found")
 			return
 		}
+		slog.Error("failed to get account", "error", err, "user_id", userID, "account_id", id)
 		respond.Error(w, http.StatusInternalServerError, "INTERNAL_ERROR", "failed to get account")
 		return
 	}
@@ -95,6 +99,7 @@ func (h *Account) Update(w http.ResponseWriter, r *http.Request) {
 			respond.Error(w, http.StatusNotFound, "NOT_FOUND", "account not found")
 			return
 		}
+		slog.Error("failed to update account", "error", err, "user_id", userID, "account_id", id)
 		respond.Error(w, http.StatusInternalServerError, "INTERNAL_ERROR", "failed to update account")
 		return
 	}
@@ -110,6 +115,7 @@ func (h *Account) Delete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.svc.Delete(r.Context(), userID, id); err != nil {
+		slog.Error("failed to delete account", "error", err, "user_id", userID, "account_id", id)
 		respond.Error(w, http.StatusInternalServerError, "INTERNAL_ERROR", "failed to delete account")
 		return
 	}

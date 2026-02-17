@@ -3,8 +3,9 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from 'sonner'
 import { accountSchema, type AccountFormData } from '@/lib/validators'
-import { ACCOUNT_TYPES, CURRENCIES } from '@/lib/constants'
+import { ACCOUNT_TYPES } from '@/lib/constants'
 import { useCreateAccount, useUpdateAccount } from '@/hooks/use-accounts'
+import { useCurrencies } from '@/hooks/use-currencies'
 import { handleMutationError, getSubmitLabel } from '@/lib/form-helpers'
 import {
   Dialog,
@@ -36,6 +37,7 @@ export function AccountForm({ open, onOpenChange, account }: AccountFormProps) {
   const isEdit = !!account
   const createAccount = useCreateAccount()
   const updateAccount = useUpdateAccount()
+  const { data: currencies = [] } = useCurrencies()
 
   const {
     register,
@@ -147,7 +149,7 @@ export function AccountForm({ open, onOpenChange, account }: AccountFormProps) {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {CURRENCIES.map((c) => (
+                {currencies.map((c) => (
                   <SelectItem key={c.code} value={c.code}>
                     {c.symbol} {c.code} — {c.name}
                   </SelectItem>

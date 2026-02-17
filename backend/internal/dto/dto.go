@@ -212,6 +212,13 @@ type SummaryResponse struct {
 	Accounts     []AccountResponse `json:"accounts"`
 }
 
+// Currency
+type CurrencyResponse struct {
+	Code   string `json:"code"`
+	Name   string `json:"name"`
+	Symbol string `json:"symbol"`
+}
+
 // Exchange Rate
 type CreateExchangeRateRequest struct {
 	FromCurrency string `json:"from_currency" validate:"required,len=3"`
