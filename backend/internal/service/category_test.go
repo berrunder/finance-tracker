@@ -99,6 +99,47 @@ func TestCategoryList_OrphanChild(t *testing.T) {
 	require.Equal(t, "Orphan", result[0].Name)
 }
 
+func TestCategoryList_ManyParentsWithChildren(t *testing.T) {
+	userID := uuid.New()
+
+	// Create enough parents to force slice reallocation, each with a child.
+	// This catches pointer-invalidation bugs where pointers into the roots
+	// slice become stale after append triggers a backing-array realloc.
+	const numParents = 20
+	type pair struct{ parentID, childID uuid.UUID }
+	pairs := make([]pair, numParents)
+	var rows []store.Category
+	for i := range numParents {
+		p := pair{parentID: uuid.New(), childID: uuid.New()}
+		pairs[i] = p
+		rows = append(rows, store.Category{
+			ID: p.parentID, UserID: userID, Name: "Parent" + string(rune('A'+i)),
+			Type: "expense", ParentID: pgtype.UUID{Valid: false}, CreatedAt: makeTimestamp(),
+		})
+	}
+	for i, p := range pairs {
+		rows = append(rows, store.Category{
+			ID: p.childID, UserID: userID, Name: "Child" + string(rune('A'+i)),
+			Type: "expense", ParentID: pgtype.UUID{Bytes: p.parentID, Valid: true}, CreatedAt: makeTimestamp(),
+		})
+	}
+
+	mock := &mockCategoryStore{
+		listCategoriesFn: func(ctx context.Context, uid uuid.UUID) ([]store.Category, error) {
+			return rows, nil
+		},
+	}
+
+	svc := &Category{queries: mock}
+	result, err := svc.List(context.Background(), userID)
+
+	require.NoError(t, err)
+	require.Len(t, result, numParents)
+	for i, root := range result {
+		require.Len(t, root.Children, 1, "parent %d (%s) should have 1 child", i, root.Name)
+	}
+}
+
 func TestCategoryDelete_HasChildren(t *testing.T) {
 	mock := &mockCategoryStore{
 		hasChildCategoriesFn: func(ctx context.Context, parentID pgtype.UUID) (bool, error) {

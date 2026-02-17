@@ -55,32 +55,36 @@ func (s *Category) List(ctx context.Context, userID uuid.UUID) ([]dto.CategoryRe
 
 	// Build tree: parents with nested children
 	parentMap := make(map[uuid.UUID]*dto.CategoryResponse)
-	var roots []dto.CategoryResponse
+	var rootOrder []uuid.UUID
 
-	// First pass: collect all items
+	// First pass: collect parents
 	for _, c := range cats {
 		r := catToResponse(c)
 		if r.ParentID == nil {
-			roots = append(roots, *r)
-			parentMap[r.ID] = &roots[len(roots)-1]
+			parentMap[r.ID] = r
+			rootOrder = append(rootOrder, r.ID)
 		}
 	}
 
 	// Second pass: attach children
+	var orphans []dto.CategoryResponse
 	for _, c := range cats {
 		r := catToResponse(c)
 		if r.ParentID != nil {
 			if parent, ok := parentMap[*r.ParentID]; ok {
 				parent.Children = append(parent.Children, *r)
 			} else {
-				roots = append(roots, *r)
+				orphans = append(orphans, *r)
 			}
 		}
 	}
 
-	if roots == nil {
-		roots = []dto.CategoryResponse{}
+	// Build result in original order
+	roots := make([]dto.CategoryResponse, 0, len(rootOrder)+len(orphans))
+	for _, id := range rootOrder {
+		roots = append(roots, *parentMap[id])
 	}
+	roots = append(roots, orphans...)
 	return roots, nil
 }
 
