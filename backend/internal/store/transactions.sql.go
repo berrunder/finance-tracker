@@ -258,6 +258,48 @@ func (q *Queries) GetTransaction(ctx context.Context, arg GetTransactionParams) 
 	return i, err
 }
 
+const getTransactionsByTransferID = `-- name: GetTransactionsByTransferID :many
+SELECT id, user_id, account_id, category_id, type, amount, description, date, transfer_id, exchange_rate, created_at, updated_at FROM transactions WHERE transfer_id = $1 AND user_id = $2
+`
+
+type GetTransactionsByTransferIDParams struct {
+	TransferID pgtype.UUID `json:"transfer_id"`
+	UserID     uuid.UUID   `json:"user_id"`
+}
+
+func (q *Queries) GetTransactionsByTransferID(ctx context.Context, arg GetTransactionsByTransferIDParams) ([]Transaction, error) {
+	rows, err := q.db.Query(ctx, getTransactionsByTransferID, arg.TransferID, arg.UserID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Transaction{}
+	for rows.Next() {
+		var i Transaction
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.AccountID,
+			&i.CategoryID,
+			&i.Type,
+			&i.Amount,
+			&i.Description,
+			&i.Date,
+			&i.TransferID,
+			&i.ExchangeRate,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listTransactions = `-- name: ListTransactions :many
 SELECT id, user_id, account_id, category_id, type, amount, description, date, transfer_id, exchange_rate, created_at, updated_at FROM transactions
 WHERE user_id = $1
@@ -450,6 +492,51 @@ func (q *Queries) UpdateTransaction(ctx context.Context, arg UpdateTransactionPa
 		arg.Amount,
 		arg.Description,
 		arg.Date,
+		arg.UserID,
+	)
+	var i Transaction
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.AccountID,
+		&i.CategoryID,
+		&i.Type,
+		&i.Amount,
+		&i.Description,
+		&i.Date,
+		&i.TransferID,
+		&i.ExchangeRate,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const updateTransferTransaction = `-- name: UpdateTransferTransaction :one
+UPDATE transactions
+SET account_id = $2, amount = $3, description = $4, date = $5, exchange_rate = $6, updated_at = now()
+WHERE id = $1 AND user_id = $7
+RETURNING id, user_id, account_id, category_id, type, amount, description, date, transfer_id, exchange_rate, created_at, updated_at
+`
+
+type UpdateTransferTransactionParams struct {
+	ID           uuid.UUID      `json:"id"`
+	AccountID    uuid.UUID      `json:"account_id"`
+	Amount       pgtype.Numeric `json:"amount"`
+	Description  string         `json:"description"`
+	Date         pgtype.Date    `json:"date"`
+	ExchangeRate pgtype.Numeric `json:"exchange_rate"`
+	UserID       uuid.UUID      `json:"user_id"`
+}
+
+func (q *Queries) UpdateTransferTransaction(ctx context.Context, arg UpdateTransferTransactionParams) (Transaction, error) {
+	row := q.db.QueryRow(ctx, updateTransferTransaction,
+		arg.ID,
+		arg.AccountID,
+		arg.Amount,
+		arg.Description,
+		arg.Date,
+		arg.ExchangeRate,
 		arg.UserID,
 	)
 	var i Transaction

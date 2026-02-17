@@ -279,6 +279,28 @@ Creates two linked transactions (expense on source account, income on destinatio
 {"data": [/* expense transaction */, /* income transaction */]}
 ```
 
+### `PUT /transactions/transfer/{id}`
+
+Atomically updates both legs of a transfer. The `{id}` can be either transaction's ID.
+
+```json
+// Request
+{
+  "from_account_id": "uuid",  // required, source account
+  "to_account_id": "uuid",    // required, destination account
+  "amount": "string",         // required, amount leaving source account
+  "to_amount": "string",      // optional, amount arriving (if different currency)
+  "exchange_rate": "string",  // optional
+  "description": "string",    // optional, defaults to "Transfer"
+  "date": "string"            // required, YYYY-MM-DD
+}
+
+// Response 200
+{"data": [/* updated expense transaction */, /* updated income transaction */]}
+```
+
+Errors: `NOT_FOUND` (404) if transaction doesn't exist, `NOT_A_TRANSFER` (400) if transaction is not part of a transfer.
+
 ### `GET /transactions/{id}`
 
 Response 200 — single transaction object.

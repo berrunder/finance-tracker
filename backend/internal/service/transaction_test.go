@@ -20,9 +20,11 @@ type mockTransactionStore struct {
 	countTransactionsFn            func(ctx context.Context, arg store.CountTransactionsParams) (int64, error)
 	updateTransactionFn            func(ctx context.Context, arg store.UpdateTransactionParams) (store.Transaction, error)
 	deleteTransactionFn            func(ctx context.Context, arg store.DeleteTransactionParams) error
-	deleteTransactionByTransferIDFn func(ctx context.Context, arg store.DeleteTransactionByTransferIDParams) error
-	getAccountFn                   func(ctx context.Context, arg store.GetAccountParams) (store.Account, error)
-	withTxFn                       func(tx pgx.Tx) *store.Queries
+	deleteTransactionByTransferIDFn  func(ctx context.Context, arg store.DeleteTransactionByTransferIDParams) error
+	getTransactionsByTransferIDFn    func(ctx context.Context, arg store.GetTransactionsByTransferIDParams) ([]store.Transaction, error)
+	updateTransferTransactionFn      func(ctx context.Context, arg store.UpdateTransferTransactionParams) (store.Transaction, error)
+	getAccountFn                     func(ctx context.Context, arg store.GetAccountParams) (store.Account, error)
+	withTxFn                         func(tx pgx.Tx) *store.Queries
 }
 
 func (m *mockTransactionStore) CreateTransaction(ctx context.Context, arg store.CreateTransactionParams) (store.Transaction, error) {
@@ -48,6 +50,12 @@ func (m *mockTransactionStore) DeleteTransactionByTransferID(ctx context.Context
 }
 func (m *mockTransactionStore) GetAccount(ctx context.Context, arg store.GetAccountParams) (store.Account, error) {
 	return m.getAccountFn(ctx, arg)
+}
+func (m *mockTransactionStore) GetTransactionsByTransferID(ctx context.Context, arg store.GetTransactionsByTransferIDParams) ([]store.Transaction, error) {
+	return m.getTransactionsByTransferIDFn(ctx, arg)
+}
+func (m *mockTransactionStore) UpdateTransferTransaction(ctx context.Context, arg store.UpdateTransferTransactionParams) (store.Transaction, error) {
+	return m.updateTransferTransactionFn(ctx, arg)
 }
 func (m *mockTransactionStore) WithTx(tx pgx.Tx) *store.Queries {
 	if m.withTxFn != nil {
@@ -188,4 +196,47 @@ func TestTransactionList_PaginationDefaults(t *testing.T) {
 		require.Equal(t, 20, resp.Pagination.PerPage)
 		require.Equal(t, int32(20), capturedListParams.Lim)
 	})
+}
+
+func TestUpdateTransfer_NotFound(t *testing.T) {
+	mock := &mockTransactionStore{
+		getTransactionFn: func(ctx context.Context, arg store.GetTransactionParams) (store.Transaction, error) {
+			return store.Transaction{}, pgx.ErrNoRows
+		},
+	}
+
+	svc := &Transaction{queries: mock}
+	_, err := svc.UpdateTransfer(context.Background(), uuid.New(), uuid.New(), dto.UpdateTransferRequest{
+		FromAccountID: uuid.New(),
+		ToAccountID:   uuid.New(),
+		Amount:        "100.00",
+		Date:          "2024-01-15",
+	})
+
+	require.ErrorIs(t, err, ErrNotFound)
+}
+
+func TestUpdateTransfer_NotATransfer(t *testing.T) {
+	txnID := uuid.New()
+	userID := uuid.New()
+
+	mock := &mockTransactionStore{
+		getTransactionFn: func(ctx context.Context, arg store.GetTransactionParams) (store.Transaction, error) {
+			return store.Transaction{
+				ID:         txnID,
+				UserID:     userID,
+				TransferID: pgtype.UUID{Valid: false},
+			}, nil
+		},
+	}
+
+	svc := &Transaction{queries: mock}
+	_, err := svc.UpdateTransfer(context.Background(), userID, txnID, dto.UpdateTransferRequest{
+		FromAccountID: uuid.New(),
+		ToAccountID:   uuid.New(),
+		Amount:        "100.00",
+		Date:          "2024-01-15",
+	})
+
+	require.ErrorIs(t, err, ErrNotATransfer)
 }

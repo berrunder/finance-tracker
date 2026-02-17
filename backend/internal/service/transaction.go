@@ -21,6 +21,8 @@ type transactionStore interface {
 	UpdateTransaction(ctx context.Context, arg store.UpdateTransactionParams) (store.Transaction, error)
 	DeleteTransaction(ctx context.Context, arg store.DeleteTransactionParams) error
 	DeleteTransactionByTransferID(ctx context.Context, arg store.DeleteTransactionByTransferIDParams) error
+	GetTransactionsByTransferID(ctx context.Context, arg store.GetTransactionsByTransferIDParams) ([]store.Transaction, error)
+	UpdateTransferTransaction(ctx context.Context, arg store.UpdateTransferTransactionParams) (store.Transaction, error)
 	GetAccount(ctx context.Context, arg store.GetAccountParams) (store.Account, error)
 	WithTx(tx pgx.Tx) *store.Queries
 }
@@ -244,6 +246,108 @@ func (s *Transaction) Update(ctx context.Context, userID, txnID uuid.UUID, req d
 		return nil, err
 	}
 	return s.toResponse(ctx, txn), nil
+}
+
+var ErrNotATransfer = errors.New("transaction is not a transfer")
+
+func (s *Transaction) UpdateTransfer(ctx context.Context, userID, txnID uuid.UUID, req dto.UpdateTransferRequest) ([]dto.TransactionResponse, error) {
+	date, err := dateFromString(req.Date)
+	if err != nil {
+		return nil, errors.New("invalid date format, use YYYY-MM-DD")
+	}
+
+	// Get the transaction to find its transfer_id
+	txn, err := s.queries.GetTransaction(ctx, store.GetTransactionParams{ID: txnID, UserID: userID})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrNotFound
+		}
+		return nil, err
+	}
+
+	if !txn.TransferID.Valid {
+		return nil, ErrNotATransfer
+	}
+
+	// Fetch both legs of the transfer
+	legs, err := s.queries.GetTransactionsByTransferID(ctx, store.GetTransactionsByTransferIDParams{
+		TransferID: txn.TransferID,
+		UserID:     userID,
+	})
+	if err != nil {
+		return nil, err
+	}
+	if len(legs) != 2 {
+		return nil, errors.New("transfer is corrupted: expected 2 transactions")
+	}
+
+	// Identify source (expense) and destination (income)
+	var srcIdx, dstIdx int
+	if legs[0].Type == "expense" {
+		srcIdx, dstIdx = 0, 1
+	} else {
+		srcIdx, dstIdx = 1, 0
+	}
+
+	amount := numericFromString(req.Amount)
+	toAmount := numericFromString(req.ToAmount)
+	if !toAmount.Valid {
+		toAmount = amount
+	}
+	exchangeRate := numericFromString(req.ExchangeRate)
+
+	description := req.Description
+	if description == "" {
+		description = "Transfer"
+	}
+
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		if err != nil {
+			_ = tx.Rollback(ctx)
+		}
+	}()
+
+	q := s.queries.WithTx(tx)
+
+	srcTxn, err := q.UpdateTransferTransaction(ctx, store.UpdateTransferTransactionParams{
+		ID:           legs[srcIdx].ID,
+		AccountID:    req.FromAccountID,
+		Amount:       amount,
+		Description:  description,
+		Date:         date,
+		ExchangeRate: exchangeRate,
+		UserID:       userID,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	dstTxn, err := q.UpdateTransferTransaction(ctx, store.UpdateTransferTransactionParams{
+		ID:           legs[dstIdx].ID,
+		AccountID:    req.ToAccountID,
+		Amount:       toAmount,
+		Description:  description,
+		Date:         date,
+		ExchangeRate: exchangeRate,
+		UserID:       userID,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	err = tx.Commit(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return []dto.TransactionResponse{
+		*s.toResponse(ctx, srcTxn),
+		*s.toResponse(ctx, dstTxn),
+	}, nil
 }
 
 func (s *Transaction) Delete(ctx context.Context, userID, txnID uuid.UUID) error {

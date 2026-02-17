@@ -107,6 +107,15 @@ FROM daily d
 CROSS JOIN start_balance sb
 ORDER BY d.date;
 
+-- name: GetTransactionsByTransferID :many
+SELECT * FROM transactions WHERE transfer_id = $1 AND user_id = $2;
+
+-- name: UpdateTransferTransaction :one
+UPDATE transactions
+SET account_id = $2, amount = $3, description = $4, date = $5, exchange_rate = $6, updated_at = now()
+WHERE id = $1 AND user_id = $7
+RETURNING *;
+
 -- name: BulkCreateTransactions :copyfrom
 INSERT INTO transactions (user_id, account_id, category_id, type, amount, description, date)
 VALUES ($1, $2, $3, $4, $5, $6, $7);

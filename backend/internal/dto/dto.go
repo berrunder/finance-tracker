@@ -127,6 +127,16 @@ type CreateTransferRequest struct {
 	Date          string    `json:"date" validate:"required"`
 }
 
+type UpdateTransferRequest struct {
+	FromAccountID uuid.UUID `json:"from_account_id" validate:"required"`
+	ToAccountID   uuid.UUID `json:"to_account_id" validate:"required"`
+	Amount        string    `json:"amount" validate:"required"`
+	ToAmount      string    `json:"to_amount"`
+	ExchangeRate  string    `json:"exchange_rate"`
+	Description   string    `json:"description"`
+	Date          string    `json:"date" validate:"required"`
+}
+
 type UpdateTransactionRequest struct {
 	AccountID   uuid.UUID  `json:"account_id" validate:"required"`
 	CategoryID  *uuid.UUID `json:"category_id"`
