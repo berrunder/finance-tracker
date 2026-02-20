@@ -27,7 +27,7 @@ pages/          Route-level components (one per route)
   |     |
   |     +-- components/ui/  shadcn/ui primitives
   |
-  +-- hooks/                Data-fetching hooks (TanStack Query)
+  +-- hooks/                Data-fetching hooks + utility hooks
         |
         +-- api/            HTTP functions (apiClient wrappers)
               |
@@ -51,13 +51,21 @@ shadcn/ui primitives (Button, Dialog, Select, etc.). These are managed by the `n
 
 ### Hooks (`src/hooks/`)
 
-Thin wrappers around TanStack Query's `useQuery`, `useInfiniteQuery`, and `useMutation`. Each resource domain (accounts, categories, transactions) has its own hook file that:
+Two categories of hooks live here:
+
+**Data-fetching hooks** — thin wrappers around TanStack Query's `useQuery`, `useInfiniteQuery`, and `useMutation`. Each resource domain (accounts, categories, transactions) has its own hook file that:
 
 - Uses centralized query keys from `lib/query-keys.ts`
 - Wires up cache invalidation on mutation success (e.g., creating a transaction invalidates `transactions`, `accounts`, and `reports` caches)
 - Exports one hook per operation (`useAccounts`, `useCreateAccount`, `useDeleteAccount`, etc.)
 
 Transactions use `useInfiniteQuery` for cursor-based pagination with a "Load more" pattern.
+
+**Utility hooks** — non-query hooks for cross-cutting concerns:
+
+- `use-theme.ts` — dark mode preference management
+- `use-online-status.ts` — offline/online detection via `useSyncExternalStore` + browser `online`/`offline` events
+- `use-keyboard-shortcuts.ts` — `useHotkey` hook for global keyboard shortcuts (mod+key format, auto-disabled on input focus)
 
 ### API Layer (`src/api/`)
 
@@ -144,6 +152,16 @@ Two strategies depending on context:
 
 1. **Form submissions** — `handleFormSubmitError` maps `ApiError.code` to specific form field errors (e.g., `USER_EXISTS` -> username field) or a root-level server error displayed above the form.
 2. **Non-form mutations** (delete, etc.) — `handleMutationError` shows a toast via Sonner with the error message.
+
+## Offline Detection
+
+`useOnlineStatus` uses `useSyncExternalStore` to subscribe to browser `online`/`offline` events. The `OfflineBanner` component (rendered inside `AppLayout`) shows a persistent warning when offline and mutation buttons across pages are disabled to prevent writes that would fail.
+
+## Keyboard Shortcuts
+
+`useHotkey(key, callback)` registers global keyboard shortcuts. Key format uses `mod+<key>` where `mod` resolves to Ctrl (Windows/Linux) or Cmd (Mac). Shortcuts are automatically suppressed when an input, textarea, select, or contenteditable element is focused.
+
+Pages wire up their own shortcuts (e.g., `mod+n` for new transaction on the transactions page). The `Escape` key closes open modals and forms.
 
 ## Key Design Decisions
 
