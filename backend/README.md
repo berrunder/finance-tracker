@@ -73,6 +73,12 @@ POST /auth/refresh     { refresh_token }
 
 All return `{ access_token, refresh_token, user }`.
 
+### Currencies (public)
+
+```
+GET /currencies
+```
+
 ### Protected Endpoints (require `Authorization: Bearer <access_token>`)
 
 ```
@@ -86,6 +92,7 @@ PUT|DELETE       /categories/:id
 
 GET|POST         /transactions          ?account_id=&category_id=&type=&date_from=&date_to=&page=&per_page=
 POST             /transactions/transfer
+PUT              /transactions/transfer/:id
 GET|PUT|DELETE   /transactions/:id
 
 GET /reports/spending          ?date_from=&date_to=
