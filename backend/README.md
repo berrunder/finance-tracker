@@ -82,6 +82,8 @@ GET /currencies        [{ code, name, symbol }]
 ### Protected Endpoints (require `Authorization: Bearer <access_token>`)
 
 ```
+PUT              /user                  { display_name, base_currency }
+
 GET|POST         /accounts
 GET|PUT|DELETE   /accounts/:id
 
@@ -90,6 +92,7 @@ PUT|DELETE       /categories/:id
 
 GET|POST         /transactions          ?account_id=&category_id=&type=&date_from=&date_to=&page=&per_page=
 POST             /transactions/transfer
+PUT              /transactions/transfer/:id
 GET|PUT|DELETE   /transactions/:id
 
 GET /reports/spending          ?date_from=&date_to=

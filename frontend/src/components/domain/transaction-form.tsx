@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react'
-import Decimal from 'decimal.js'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from 'sonner'
@@ -16,13 +15,14 @@ import {
   useCreateTransaction,
   useCreateTransfer,
   useUpdateTransaction,
+  useUpdateTransfer,
 } from '@/hooks/use-transactions'
 import { handleMutationError } from '@/lib/form-helpers'
 import { Button } from '@/components/ui/button'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { TransferForm } from '@/components/domain/transfer-form'
 import { IncomeExpenseForm } from '@/components/domain/income-expense-form'
-import type { Transaction, UpdateTransactionRequest } from '@/types/api'
+import type { Transaction, UpdateTransferRequest } from '@/types/api'
 
 type TxType = 'income' | 'expense' | 'transfer'
 type IncomeExpenseTxType = Exclude<TxType, 'transfer'>
@@ -77,17 +77,6 @@ function resolveTransferPair(
   return { source: source ?? null, destination: destination ?? null }
 }
 
-function resolveTransferDestinationAmount(
-  isCrossCurrency: boolean,
-  data: { amount: string; to_amount?: string; exchange_rate?: string },
-): string {
-  if (isCrossCurrency && data.to_amount) return data.to_amount
-  if (isCrossCurrency && data.exchange_rate) {
-    return new Decimal(data.amount).mul(data.exchange_rate).toFixed(2)
-  }
-  return data.amount
-}
-
 function getTransferDefaultValues(
   transferPair: TransferPair,
 ): TransferFormData {
@@ -120,6 +109,18 @@ function getTransferDefaultValues(
   }
 }
 
+function buildTransferRequest(data: TransferFormData): UpdateTransferRequest {
+  return {
+    from_account_id: data.from_account_id,
+    to_account_id: data.to_account_id,
+    amount: data.amount,
+    to_amount: data.to_amount || undefined,
+    exchange_rate: data.exchange_rate || undefined,
+    description: data.description,
+    date: data.date,
+  }
+}
+
 function getTransferResetValues(data: TransferFormData): TransferFormData {
   return {
     from_account_id: data.from_account_id,
@@ -128,33 +129,6 @@ function getTransferResetValues(data: TransferFormData): TransferFormData {
     to_amount: '',
     exchange_rate: '',
     description: '',
-    date: data.date,
-  }
-}
-
-function buildSourceTransferUpdate(
-  data: TransferFormData,
-): UpdateTransactionRequest {
-  return {
-    account_id: data.from_account_id,
-    category_id: null,
-    type: 'expense',
-    amount: data.amount,
-    description: data.description,
-    date: data.date,
-  }
-}
-
-function buildDestinationTransferUpdate(
-  data: TransferFormData,
-  destinationAmount: string,
-): UpdateTransactionRequest {
-  return {
-    account_id: data.to_account_id,
-    category_id: null,
-    type: 'income',
-    amount: destinationAmount,
-    description: data.description,
     date: data.date,
   }
 }
@@ -252,7 +226,7 @@ function TransferModeForm({
   const isEdit = !!editTransaction
   const { data: accounts = [] } = useAccounts()
   const createTransfer = useCreateTransfer()
-  const updateTransaction = useUpdateTransaction()
+  const updateTransfer = useUpdateTransfer()
 
   const transferPair = useMemo(
     () =>
@@ -260,11 +234,6 @@ function TransferModeForm({
         ? resolveTransferPair(editTransaction, linkedTransferTransaction)
         : { source: null, destination: null },
     [editTransaction, linkedTransferTransaction],
-  )
-
-  const accountsById = useMemo(
-    () => new Map(accounts.map((account) => [account.id, account])),
-    [accounts],
   )
 
   const trForm = useForm<TransferFormData>({
@@ -280,47 +249,16 @@ function TransferModeForm({
   async function handleTransferSubmit(data: TransferFormData) {
     try {
       if (isEdit && editTransaction?.transfer_id) {
-        const { source: sourceTx, destination: destinationTx } = transferPair
-
-        if (!sourceTx || !destinationTx) {
-          toast.error('Unable to edit this transfer. Reload and try again.')
-          return
-        }
-
-        const fromAccount = accountsById.get(data.from_account_id)
-        const toAccount = accountsById.get(data.to_account_id)
-        const isCrossCurrency =
-          fromAccount &&
-          toAccount &&
-          fromAccount.currency !== toAccount.currency
-
-        const destinationAmount = resolveTransferDestinationAmount(
-          !!isCrossCurrency,
-          data,
-        )
-
-        // TODO: add transfer update endpoint that accepts both transactions update in one request to avoid potential inconsistencies
-        await Promise.all([
-          updateTransaction.mutateAsync({
-            id: sourceTx.id,
-            data: buildSourceTransferUpdate(data),
-          }),
-          updateTransaction.mutateAsync({
-            id: destinationTx.id,
-            data: buildDestinationTransferUpdate(data, destinationAmount),
-          }),
-        ])
-
+        await updateTransfer.mutateAsync({
+          id: editTransaction.id,
+          data: buildTransferRequest(data),
+        })
         toast.success('Transfer updated')
         onClose()
         return
       }
 
-      await createTransfer.mutateAsync({
-        ...data,
-        to_amount: data.to_amount || undefined,
-        exchange_rate: data.exchange_rate || undefined,
-      })
+      await createTransfer.mutateAsync(buildTransferRequest(data))
       toast.success('Transfer created')
       trForm.reset(getTransferResetValues(data))
     } catch (error) {
@@ -336,7 +274,7 @@ function TransferModeForm({
       onCancel={onClose}
       isEdit={isEdit}
       createTransfer={createTransfer}
-      updateTransaction={updateTransaction}
+      updateTransfer={updateTransfer}
     />
   )
 }

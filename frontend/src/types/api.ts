@@ -26,6 +26,11 @@ export interface RegisterRequest {
   invite_code: string
 }
 
+export interface UpdateUserRequest {
+  display_name: string
+  base_currency: string
+}
+
 // Error
 export interface ApiErrorDetail {
   code: string
@@ -135,6 +140,16 @@ export interface UpdateTransactionRequest {
   category_id?: string | null
   type: string
   amount: string
+  description: string
+  date: string
+}
+
+export interface UpdateTransferRequest {
+  from_account_id: string
+  to_account_id: string
+  amount: string
+  to_amount?: string
+  exchange_rate?: string
   description: string
   date: string
 }

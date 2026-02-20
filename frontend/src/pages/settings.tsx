@@ -7,6 +7,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { CategoryList } from '@/components/domain/category-list'
 import { CategoryForm } from '@/components/domain/category-form'
 import { ConfirmDialog } from '@/components/domain/confirm-dialog'
+import { ProfileForm } from '@/components/domain/profile-form'
+import { AppearanceSettings } from '@/components/domain/appearance-settings'
 import type { Category } from '@/types/api'
 
 export default function SettingsPage() {
@@ -79,13 +81,11 @@ export default function SettingsPage() {
         </TabsContent>
 
         <TabsContent value="profile" className="mt-4">
-          <p className="text-muted-foreground">Profile settings coming soon.</p>
+          <ProfileForm />
         </TabsContent>
 
         <TabsContent value="appearance" className="mt-4">
-          <p className="text-muted-foreground">
-            Appearance settings coming soon.
-          </p>
+          <AppearanceSettings />
         </TabsContent>
       </Tabs>
 

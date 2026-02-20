@@ -61,6 +61,12 @@ type UserResponse struct {
 	CreatedAt    time.Time `json:"created_at"`
 }
 
+// User
+type UpdateUserRequest struct {
+	DisplayName  string `json:"display_name" validate:"required,max=100"`
+	BaseCurrency string `json:"base_currency" validate:"required,len=3"`
+}
+
 // Account
 type CreateAccountRequest struct {
 	Name           string `json:"name" validate:"required,max=100"`
