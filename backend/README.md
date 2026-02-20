@@ -76,6 +76,8 @@ All return `{ access_token, refresh_token, user }`.
 ### Protected Endpoints (require `Authorization: Bearer <access_token>`)
 
 ```
+PUT              /user                  { display_name, base_currency }
+
 GET|POST         /accounts
 GET|PUT|DELETE   /accounts/:id
 

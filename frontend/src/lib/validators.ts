@@ -91,9 +91,18 @@ export const transferSchema = z
     path: ['to_account_id'],
   })
 
+export const profileSchema = z.object({
+  display_name: z
+    .string()
+    .min(1, 'Display name is required')
+    .max(100, 'Display name must be at most 100 characters'),
+  base_currency: z.string().length(3, 'Please select a currency'),
+})
+
 export type LoginFormData = z.infer<typeof loginSchema>
 export type RegisterFormData = z.infer<typeof registerSchema>
 export type AccountFormData = z.infer<typeof accountSchema>
 export type CategoryFormData = z.infer<typeof categorySchema>
 export type TransactionFormData = z.infer<typeof transactionSchema>
+export type ProfileFormData = z.infer<typeof profileSchema>
 export type TransferFormData = z.infer<typeof transferSchema>

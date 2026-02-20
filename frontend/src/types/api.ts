@@ -26,6 +26,11 @@ export interface RegisterRequest {
   invite_code: string
 }
 
+export interface UpdateUserRequest {
+  display_name: string
+  base_currency: string
+}
+
 // Error
 export interface ApiErrorDetail {
   code: string

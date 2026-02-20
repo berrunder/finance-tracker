@@ -88,6 +88,31 @@ All errors return:
 
 ---
 
+## User (protected)
+
+### `PUT /user`
+
+Update the authenticated user's profile.
+
+```json
+// Request
+{
+  "display_name": "string",  // required, max 100 chars
+  "base_currency": "string"  // required, exactly 3 chars
+}
+
+// Response 200
+{
+  "id": "uuid",
+  "username": "string",
+  "display_name": "string",
+  "base_currency": "string",
+  "created_at": "2024-01-01T00:00:00Z"
+}
+```
+
+---
+
 ## Accounts (protected)
 
 All monetary amounts are **decimal strings** (e.g. `"1500.50"`), never floats.

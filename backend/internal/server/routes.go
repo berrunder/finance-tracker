@@ -20,6 +20,7 @@ func NewRouter(
 	importH *handler.Import,
 	exchangeRateH *handler.ExchangeRate,
 	currencyH *handler.Currency,
+	userH *handler.User,
 ) http.Handler {
 	r := chi.NewRouter()
 
@@ -39,6 +40,8 @@ func NewRouter(
 		// Protected routes
 		r.Group(func(r chi.Router) {
 			r.Use(authMw.Authenticate)
+
+			r.Put("/user", userH.Update)
 
 			r.Route("/accounts", func(r chi.Router) {
 				r.Get("/", accountH.List)

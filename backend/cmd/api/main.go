@@ -54,6 +54,7 @@ func main() {
 	importSvc := service.NewImport(queries)
 	exchangeRateSvc := service.NewExchangeRate(queries)
 	currencySvc := service.NewCurrency(queries)
+	userSvc := service.NewUser(queries)
 
 	// Middleware
 	authMw := middleware.NewAuth(cfg.JWTSecret)
@@ -67,9 +68,10 @@ func main() {
 	importH := handler.NewImport(importSvc)
 	exchangeRateH := handler.NewExchangeRate(exchangeRateSvc)
 	currencyH := handler.NewCurrency(currencySvc)
+	userH := handler.NewUser(userSvc)
 
 	// Router
-	router := server.NewRouter(authMw, authH, accountH, categoryH, transactionH, reportH, importH, exchangeRateH, currencyH)
+	router := server.NewRouter(authMw, authH, accountH, categoryH, transactionH, reportH, importH, exchangeRateH, currencyH, userH)
 
 	// Server
 	srv := server.New(":"+cfg.Port, router)

@@ -8,12 +8,13 @@ import {
   useMemo,
   useState,
 } from 'react'
-import type { User } from '@/types/api'
+import type { UpdateUserRequest, User } from '@/types/api'
 import {
   login as apiLogin,
   refreshToken,
   register as apiRegister,
 } from '@/api/auth'
+import { updateUser as apiUpdateUser } from '@/api/user'
 import { clearTokens, setAccessToken, setOnAuthFailure } from '@/api/client'
 import { REFRESH_TOKEN_KEY } from '@/lib/constants'
 
@@ -30,6 +31,7 @@ interface AuthContextValue {
     invite_code: string
   }) => Promise<void>
   logout: () => void
+  updateUser: (data: UpdateUserRequest) => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
@@ -92,6 +94,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [],
   )
 
+  const updateUser = useCallback(async (data: UpdateUserRequest) => {
+    const updatedUser = await apiUpdateUser(data)
+    setUser(updatedUser)
+  }, [])
+
   const logout = useCallback(() => {
     clearTokens()
     setUser(null)
@@ -105,8 +112,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       login,
       register,
       logout,
+      updateUser,
     }),
-    [user, isLoading, login, register, logout],
+    [user, isLoading, login, register, logout, updateUser],
   )
 
   return createElement(AuthContext.Provider, { value }, children)
