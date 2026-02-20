@@ -3,6 +3,7 @@ import { toast } from 'sonner'
 import { useCategories, useDeleteCategory } from '@/hooks/use-categories'
 import { ApiError } from '@/api/client'
 import { mapApiErrorToFieldError } from '@/lib/error-mapping'
+import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { CategoryList } from '@/components/domain/category-list'
 import { CategoryForm } from '@/components/domain/category-form'
@@ -67,8 +68,23 @@ export default function SettingsPage() {
 
         <TabsContent value="categories" className="mt-4">
           {isLoading ? (
-            <div className="text-muted-foreground py-8 text-center">
-              Loading...
+            <div className="space-y-6">
+              {[1, 2].map((section) => (
+                <div key={section} className="space-y-3">
+                  <Skeleton className="h-5 w-36" />
+                  <div className="space-y-2 pl-2">
+                    {[1, 2, 3].map((i) => (
+                      <div
+                        key={i}
+                        className="flex items-center justify-between rounded-md border p-3"
+                      >
+                        <Skeleton className="h-4 w-32" />
+                        <Skeleton className="h-8 w-16" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
             </div>
           ) : (
             <CategoryList

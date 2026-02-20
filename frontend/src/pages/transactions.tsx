@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback, useEffect } from 'react'
-import { useSearchParams } from 'react-router'
+import { useSearchParams, useLocation } from 'react-router'
 import { startOfMonth, endOfMonth } from 'date-fns'
 import { Plus } from 'lucide-react'
 import { toast } from 'sonner'
@@ -8,17 +8,23 @@ import { useCategories } from '@/hooks/use-categories'
 import { useTransactions, useDeleteTransaction } from '@/hooks/use-transactions'
 import { handleMutationError } from '@/lib/form-helpers'
 import { Button } from '@/components/ui/button'
+import { Skeleton } from '@/components/ui/skeleton'
 import { TransactionFilters } from '@/components/domain/transaction-filters'
 import { TransactionTable } from '@/components/domain/transaction-table'
 import { TransactionForm } from '@/components/domain/transaction-form'
 import { ConfirmDialog } from '@/components/domain/confirm-dialog'
 import type { TransactionFilters as Filters } from '@/api/transactions'
 import type { Transaction } from '@/types/api'
+import { useHotkey } from '@/hooks/use-keyboard-shortcuts'
 import { toISODate } from '@/lib/dates'
 
 export default function TransactionsPage() {
   const [searchParams, setSearchParams] = useSearchParams()
-  const [formOpen, setFormOpen] = useState(false)
+  const location = useLocation()
+  const [formOpen, setFormOpen] = useState(() => {
+    const state = location.state as { openNewForm?: boolean } | null
+    return !!state?.openNewForm
+  })
   const [editTransaction, setEditTransaction] = useState<Transaction | null>(
     null,
   )
@@ -107,6 +113,30 @@ export default function TransactionsPage() {
     }
   }
 
+  // Clear navigation state after opening form via Ctrl+N from another page
+  useEffect(() => {
+    const state = location.state as { openNewForm?: boolean } | null
+    if (state?.openNewForm) {
+      window.history.replaceState({}, '')
+    }
+  }, [location.state])
+
+  // N: Open new transaction form
+  useHotkey('n', () => {
+    setEditTransaction(null)
+    setLinkedTransferTransaction(null)
+    setFormOpen(true)
+  })
+
+  // Escape: close form (enableOnInputs so it works from form fields)
+  useHotkey(
+    'escape',
+    () => {
+      if (formOpen) handleFormClose()
+    },
+    { enableOnInputs: true },
+  )
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -131,7 +161,23 @@ export default function TransactionsPage() {
       )}
 
       {isLoading ? (
-        <div className="text-muted-foreground py-8 text-center">Loading...</div>
+        <div className="space-y-3">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <div
+              key={i}
+              className="flex items-center justify-between rounded-md border p-4"
+            >
+              <div className="flex items-center gap-4">
+                <Skeleton className="h-4 w-20" />
+                <div className="space-y-1">
+                  <Skeleton className="h-4 w-40" />
+                  <Skeleton className="h-3 w-28" />
+                </div>
+              </div>
+              <Skeleton className="h-4 w-24" />
+            </div>
+          ))}
+        </div>
       ) : (
         <TransactionTable
           transactions={transactions}

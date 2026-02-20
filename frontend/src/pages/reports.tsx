@@ -8,6 +8,8 @@ import {
   useIncomeExpense,
   useBalanceHistory,
 } from '@/hooks/use-reports'
+import { Skeleton } from '@/components/ui/skeleton'
+import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { DatePicker } from '@/components/domain/date-picker'
 import { SpendingChart } from '@/components/domain/spending-chart'
 import { IncomeExpenseChart } from '@/components/domain/income-expense-chart'
@@ -109,7 +111,14 @@ export default function ReportsPage() {
       {/* Spending and Income/Expense Charts */}
       <div className="grid gap-4 md:grid-cols-2">
         {isSpendingLoading ? (
-          <p className="text-muted-foreground">Loading spending data...</p>
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-5 w-40" />
+            </CardHeader>
+            <CardContent className="flex items-center justify-center">
+              <Skeleton className="h-48 w-48 rounded-full" />
+            </CardContent>
+          </Card>
         ) : (
           <SpendingChart
             data={spendingData}
@@ -121,9 +130,20 @@ export default function ReportsPage() {
           />
         )}
         {isIncomeExpenseLoading ? (
-          <p className="text-muted-foreground">
-            Loading income/expense data...
-          </p>
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-5 w-48" />
+            </CardHeader>
+            <CardContent className="flex items-end gap-3">
+              {[40, 65, 30, 55, 45, 70].map((h, i) => (
+                <Skeleton
+                  key={i}
+                  className="w-8 rounded-t"
+                  style={{ height: `${h}%`, minHeight: h * 2 }}
+                />
+              ))}
+            </CardContent>
+          </Card>
         ) : (
           <IncomeExpenseChart
             data={incomeExpenseData}
@@ -139,7 +159,7 @@ export default function ReportsPage() {
         <div className="space-y-2">
           <Label>Account</Label>
           {isAccountsLoading ? (
-            <p className="text-muted-foreground text-sm">Loading accounts...</p>
+            <Skeleton className="h-10 w-full md:w-[300px]" />
           ) : (
             <Select
               value={selectedAccountId}
@@ -161,7 +181,14 @@ export default function ReportsPage() {
 
         {selectedAccountId &&
           (isBalanceHistoryLoading ? (
-            <p className="text-muted-foreground">Loading balance history...</p>
+            <Card>
+              <CardHeader>
+                <Skeleton className="h-5 w-36" />
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-48 w-full" />
+              </CardContent>
+            </Card>
           ) : (
             <BalanceHistoryChart
               data={balanceHistoryData}
