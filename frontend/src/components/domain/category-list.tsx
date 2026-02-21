@@ -49,11 +49,15 @@ function CategoryRow({
   return (
     <div
       className={cn(
-        'group flex items-center justify-between rounded-md px-3 py-2 hover:bg-accent',
-        indent && 'ml-6',
+        'group flex items-center justify-between rounded-md px-3 py-1.5 hover:bg-accent',
+        indent && 'ml-9 border-l-2 border-muted pl-3',
       )}
     >
-      <span className="text-sm">{category.name}</span>
+      <span
+        className={cn('text-sm', indent && 'text-muted-foreground')}
+      >
+        {category.name}
+      </span>
       <CategoryActions
         onEdit={() => onEdit(category)}
         onDelete={() => onDelete(category)}
