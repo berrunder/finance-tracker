@@ -66,7 +66,7 @@ export function TransactionFilters({
 
   return (
     <div className="flex flex-wrap items-end gap-3">
-      <div className="w-44">
+      <div className="w-full md:w-44">
         <Select
           value={filters.account_id ?? 'all'}
           onValueChange={(v) =>
@@ -87,7 +87,7 @@ export function TransactionFilters({
         </Select>
       </div>
 
-      <div className="w-52">
+      <div className="w-full md:w-52">
         <CategoryCombobox
           value={filters.category_id ?? null}
           onValueChange={(v) => update({ category_id: v || undefined })}
@@ -97,7 +97,7 @@ export function TransactionFilters({
         />
       </div>
 
-      <div className="w-32">
+      <div className="w-full md:w-32">
         <Select
           value={filters.type ?? 'all'}
           onValueChange={(v) => update({ type: v === 'all' ? undefined : v })}
@@ -113,7 +113,7 @@ export function TransactionFilters({
         </Select>
       </div>
 
-      <div className="w-44">
+      <div className="w-full md:w-44">
         <DatePicker
           value={filters.date_from}
           onChange={(v) => debouncedUpdate('date_from', v)}
@@ -121,7 +121,7 @@ export function TransactionFilters({
         />
       </div>
 
-      <div className="w-44">
+      <div className="w-full md:w-44">
         <DatePicker
           value={filters.date_to}
           onChange={(v) => debouncedUpdate('date_to', v)}

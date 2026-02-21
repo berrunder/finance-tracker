@@ -58,28 +58,46 @@ export default function AccountsPage() {
       </div>
 
       {isLoading ? (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Type</TableHead>
-              <TableHead>Currency</TableHead>
-              <TableHead className="text-right">Balance</TableHead>
-              <TableHead className="w-12" />
-            </TableRow>
-          </TableHeader>
-          <TableBody>
+        <>
+          <div className="hidden md:block">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Currency</TableHead>
+                  <TableHead className="text-right">Balance</TableHead>
+                  <TableHead className="w-12" />
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {[1, 2, 3, 4].map((i) => (
+                  <TableRow key={i}>
+                    <TableCell><Skeleton className="h-4 w-28" /></TableCell>
+                    <TableCell><Skeleton className="h-5 w-16 rounded-full" /></TableCell>
+                    <TableCell><Skeleton className="h-4 w-10" /></TableCell>
+                    <TableCell className="text-right"><Skeleton className="ml-auto h-4 w-20" /></TableCell>
+                    <TableCell><Skeleton className="h-8 w-8 rounded" /></TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+          <div className="space-y-2 md:hidden">
             {[1, 2, 3, 4].map((i) => (
-              <TableRow key={i}>
-                <TableCell><Skeleton className="h-4 w-28" /></TableCell>
-                <TableCell><Skeleton className="h-5 w-16 rounded-full" /></TableCell>
-                <TableCell><Skeleton className="h-4 w-10" /></TableCell>
-                <TableCell className="text-right"><Skeleton className="ml-auto h-4 w-20" /></TableCell>
-                <TableCell><Skeleton className="h-8 w-8 rounded" /></TableCell>
-              </TableRow>
+              <div key={i} className="flex items-center justify-between rounded-lg border p-3">
+                <div className="space-y-1.5">
+                  <div className="flex items-center gap-2">
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-5 w-14 rounded-full" />
+                  </div>
+                  <Skeleton className="h-3 w-32" />
+                </div>
+                <Skeleton className="h-8 w-8 rounded" />
+              </div>
             ))}
-          </TableBody>
-        </Table>
+          </div>
+        </>
       ) : (
         <AccountTable
           accounts={accounts}

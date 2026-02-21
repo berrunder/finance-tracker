@@ -27,13 +27,13 @@ export function StepIndicator({ current }: { current: Step }) {
           </div>
           <span
             className={cn(
-              'text-sm font-medium',
+              'hidden text-sm font-medium md:inline',
               current === n ? 'text-foreground' : 'text-muted-foreground',
             )}
           >
             {label}
           </span>
-          {idx < STEPS.length - 1 && <div className="mx-1 h-px w-8 bg-border" />}
+          {idx < STEPS.length - 1 && <div className="mx-1 h-px w-4 bg-border md:w-8" />}
         </div>
       ))}
     </div>
