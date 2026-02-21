@@ -1,9 +1,0 @@
-{
-  "stop": [
-    {
-      "command": "cd frontend && git diff --name-only --diff-filter=ACMR HEAD | grep -E '\\.(ts|tsx|js|jsx|json|css|md)$' && npm run format || true",
-      "blocking": false,
-      "description": "Auto-format frontend files with Prettier if any were modified"
-    }
-  ]
-}
