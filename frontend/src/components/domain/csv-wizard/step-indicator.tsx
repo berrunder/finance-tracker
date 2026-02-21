@@ -33,7 +33,9 @@ export function StepIndicator({ current }: { current: Step }) {
           >
             {label}
           </span>
-          {idx < STEPS.length - 1 && <div className="mx-1 h-px w-4 bg-border md:w-8" />}
+          {idx < STEPS.length - 1 && (
+            <div className="mx-1 h-px w-4 bg-border md:w-8" />
+          )}
         </div>
       ))}
     </div>

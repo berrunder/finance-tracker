@@ -82,7 +82,10 @@ export default function ReportsPage() {
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">Reports</h1>
 
-      <MultiCurrencyNote baseCurrency={user.base_currency} accounts={accounts} />
+      <MultiCurrencyNote
+        baseCurrency={user.base_currency}
+        accounts={accounts}
+      />
 
       {/* Date Range Pickers */}
       <div className="grid gap-4 md:grid-cols-2">

@@ -83,7 +83,9 @@ export function StepMap({
   )
 
   const canProceed = !!mapping.date && !!mapping.amount
-  const invalidCount = previewRows.filter((r) => !isRowValid(r, mapping, dateFormat)).length
+  const invalidCount = previewRows.filter(
+    (r) => !isRowValid(r, mapping, dateFormat),
+  ).length
 
   return (
     <div className="space-y-6">
@@ -192,7 +194,9 @@ export function StepMap({
           <ToggleGroupItem value="negative-expenses">
             Negative values are expenses
           </ToggleGroupItem>
-          <ToggleGroupItem value="all-expenses">All values are expenses</ToggleGroupItem>
+          <ToggleGroupItem value="all-expenses">
+            All values are expenses
+          </ToggleGroupItem>
         </ToggleGroup>
       </div>
 
@@ -228,9 +232,15 @@ export function StepMap({
             <TableBody>
               {previewRows.map((row, i) => {
                 const valid = isRowValid(row, mapping, dateFormat)
-                const type = valid ? getRowType(row, mapping, amountConvention) : null
-                const dateVal = mapping.date ? (row.values[mapping.date] ?? '—') : '—'
-                const amountVal = mapping.amount ? (row.values[mapping.amount] ?? '—') : '—'
+                const type = valid
+                  ? getRowType(row, mapping, amountConvention)
+                  : null
+                const dateVal = mapping.date
+                  ? (row.values[mapping.date] ?? '—')
+                  : '—'
+                const amountVal = mapping.amount
+                  ? (row.values[mapping.amount] ?? '—')
+                  : '—'
                 const descVal = mapping.description
                   ? (row.values[mapping.description] ?? '')
                   : ''
@@ -245,8 +255,16 @@ export function StepMap({
                     }
                   >
                     <TableCell className="font-mono text-xs">
-                      <span className={!valid && mapping.date ? 'text-destructive' : undefined}>
-                        {mapping.date ? formatDisplayDate(dateVal, dateFormat) : '—'}
+                      <span
+                        className={
+                          !valid && mapping.date
+                            ? 'text-destructive'
+                            : undefined
+                        }
+                      >
+                        {mapping.date
+                          ? formatDisplayDate(dateVal, dateFormat)
+                          : '—'}
                       </span>
                     </TableCell>
                     <TableCell className="max-w-48 truncate text-sm">
@@ -291,7 +309,11 @@ export function StepMap({
           <ArrowLeft className="size-4" />
           Back
         </Button>
-        <Button onClick={onNext} disabled={!canProceed || isPreparing} className="gap-2">
+        <Button
+          onClick={onNext}
+          disabled={!canProceed || isPreparing}
+          className="gap-2"
+        >
           {isPreparing ? 'Preparing…' : 'Next'}
           {!isPreparing && <ArrowRight className="size-4" />}
         </Button>

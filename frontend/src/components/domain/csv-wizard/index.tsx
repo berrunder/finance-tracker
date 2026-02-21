@@ -4,7 +4,11 @@ import { useAccounts } from '@/hooks/use-accounts'
 import { useUploadCSV, useConfirmImport } from '@/hooks/use-import'
 import { ApiError } from '@/api/client'
 import { handleMutationError } from '@/lib/form-helpers'
-import type { CSVColumnMapping, CSVPreviewRow, CSVUploadResponse } from '@/types/api'
+import type {
+  CSVColumnMapping,
+  CSVPreviewRow,
+  CSVUploadResponse,
+} from '@/types/api'
 
 import {
   type Step,
@@ -44,7 +48,9 @@ export function CsvWizard() {
   // Step 3 state
   const [modifiedRows, setModifiedRows] = useState<CSVPreviewRow[]>([])
   const [selectedRows, setSelectedRows] = useState<Set<number>>(new Set())
-  const [importResult, setImportResult] = useState<{ imported: number } | null>(null)
+  const [importResult, setImportResult] = useState<{ imported: number } | null>(
+    null,
+  )
   const [confirmError, setConfirmError] = useState<string | null>(null)
 
   const selectedAccount = accounts.find((a) => a.id === accountId)
@@ -53,12 +59,12 @@ export function CsvWizard() {
   const fullMapping: CSVColumnMapping | null =
     mapping.date && mapping.amount
       ? {
-        date: mapping.date,
-        amount: mapping.amount,
-        ...(mapping.description ? { description: mapping.description } : {}),
-        ...(mapping.type ? { type: mapping.type } : {}),
-        ...(mapping.category ? { category: mapping.category } : {}),
-      }
+          date: mapping.date,
+          amount: mapping.amount,
+          ...(mapping.description ? { description: mapping.description } : {}),
+          ...(mapping.type ? { type: mapping.type } : {}),
+          ...(mapping.category ? { category: mapping.category } : {}),
+        }
       : null
 
   const handleUpload = async () => {
@@ -106,7 +112,11 @@ export function CsvWizard() {
     if (!fullMapping) return
 
     setConfirmError(null)
-    const rowsToSubmit = normalizeRowsForSubmit(modifiedRows, fullMapping, dateFormat)
+    const rowsToSubmit = normalizeRowsForSubmit(
+      modifiedRows,
+      fullMapping,
+      dateFormat,
+    )
 
     try {
       const result = await confirmMutation.mutateAsync({

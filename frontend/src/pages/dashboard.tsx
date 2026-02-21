@@ -85,14 +85,16 @@ export default function DashboardPage() {
     return null
   }
 
-  const recentTransactions =
-    transactionsData?.pages[0]?.data.slice(0, 10) ?? []
+  const recentTransactions = transactionsData?.pages[0]?.data.slice(0, 10) ?? []
 
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">Dashboard</h1>
 
-      <MultiCurrencyNote baseCurrency={user.base_currency} accounts={accounts} />
+      <MultiCurrencyNote
+        baseCurrency={user.base_currency}
+        accounts={accounts}
+      />
 
       <DashboardSummary
         totalIncome={summary.total_income}

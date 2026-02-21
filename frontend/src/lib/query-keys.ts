@@ -23,8 +23,7 @@ export const queryKeys = {
       ['reports', 'income-expense', params] as const,
     balanceHistory: (params: ReportFilters) =>
       ['reports', 'balance-history', params] as const,
-    summary: (params: ReportFilters) =>
-      ['reports', 'summary', params] as const,
+    summary: (params: ReportFilters) => ['reports', 'summary', params] as const,
   },
   exchangeRates: ['exchange-rates'] as const,
   currencies: ['currencies'] as const,

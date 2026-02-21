@@ -53,9 +53,7 @@ function CategoryRow({
         indent && 'ml-9 border-l-2 border-muted pl-3',
       )}
     >
-      <span
-        className={cn('text-sm', indent && 'text-muted-foreground')}
-      >
+      <span className={cn('text-sm', indent && 'text-muted-foreground')}>
         {category.name}
       </span>
       <CategoryActions

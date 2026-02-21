@@ -10,10 +10,26 @@ export type AmountConvention = 'negative-expenses' | 'all-expenses'
 // ─── Date format config ───────────────────────────────────────────────────────
 
 export const DATE_FORMATS = [
-  { label: 'YYYY-MM-DD (2024-01-15)', value: 'yyyy-MM-dd', example: '2024-01-15' },
-  { label: 'MM/DD/YYYY (01/15/2024)', value: 'MM/dd/yyyy', example: '01/15/2024' },
-  { label: 'DD/MM/YYYY (15/01/2024)', value: 'dd/MM/yyyy', example: '15/01/2024' },
-  { label: 'DD.MM.YYYY (15.01.2024)', value: 'dd.MM.yyyy', example: '15.01.2024' },
+  {
+    label: 'YYYY-MM-DD (2024-01-15)',
+    value: 'yyyy-MM-dd',
+    example: '2024-01-15',
+  },
+  {
+    label: 'MM/DD/YYYY (01/15/2024)',
+    value: 'MM/dd/yyyy',
+    example: '01/15/2024',
+  },
+  {
+    label: 'DD/MM/YYYY (15/01/2024)',
+    value: 'dd/MM/yyyy',
+    example: '15/01/2024',
+  },
+  {
+    label: 'DD.MM.YYYY (15.01.2024)',
+    value: 'dd.MM.yyyy',
+    example: '15.01.2024',
+  },
 ] as const
 
 export type DateFormatValue = (typeof DATE_FORMATS)[number]['value']
@@ -63,7 +79,10 @@ export function parseCsvRowsFromFile(
   })
 }
 
-export function detectDateFormat(rows: CSVPreviewRow[], column: string): DateFormatValue {
+export function detectDateFormat(
+  rows: CSVPreviewRow[],
+  column: string,
+): DateFormatValue {
   const samples = rows
     .slice(0, 5)
     .map((r) => r.values[column])
@@ -167,7 +186,10 @@ export function flipRowClassification(
     const originalAmount = row.values[mapping.amount] ?? ''
     return {
       ...row,
-      values: { ...row.values, [mapping.amount]: negateAmountString(originalAmount) },
+      values: {
+        ...row.values,
+        [mapping.amount]: negateAmountString(originalAmount),
+      },
     }
   }
 
@@ -186,7 +208,10 @@ export function applyConventionToRows(
     if (!isNaN(num) && num > 0) {
       return {
         ...row,
-        values: { ...row.values, [mapping.amount!]: negateAmountString(amountVal) },
+        values: {
+          ...row.values,
+          [mapping.amount!]: negateAmountString(amountVal),
+        },
       }
     }
     return row

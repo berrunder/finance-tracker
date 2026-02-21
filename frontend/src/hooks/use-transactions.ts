@@ -16,7 +16,10 @@ import {
   updateTransfer,
 } from '@/api/transactions'
 import { queryKeys } from '@/lib/query-keys'
-import type { UpdateTransactionRequest, UpdateTransferRequest } from '@/types/api'
+import type {
+  UpdateTransactionRequest,
+  UpdateTransferRequest,
+} from '@/types/api'
 
 function invalidateTransactionRelated(queryClient: QueryClient): void {
   queryClient.invalidateQueries({ queryKey: queryKeys.transactions.all })
@@ -79,13 +82,8 @@ export function useUpdateTransaction() {
 export function useUpdateTransfer() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({
-      id,
-      data,
-    }: {
-      id: string
-      data: UpdateTransferRequest
-    }) => updateTransfer(id, data),
+    mutationFn: ({ id, data }: { id: string; data: UpdateTransferRequest }) =>
+      updateTransfer(id, data),
     onSuccess: () => invalidateTransactionRelated(queryClient),
   })
 }

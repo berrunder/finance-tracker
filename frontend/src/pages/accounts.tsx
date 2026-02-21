@@ -73,11 +73,21 @@ export default function AccountsPage() {
               <TableBody>
                 {[1, 2, 3, 4].map((i) => (
                   <TableRow key={i}>
-                    <TableCell><Skeleton className="h-4 w-28" /></TableCell>
-                    <TableCell><Skeleton className="h-5 w-16 rounded-full" /></TableCell>
-                    <TableCell><Skeleton className="h-4 w-10" /></TableCell>
-                    <TableCell className="text-right"><Skeleton className="ml-auto h-4 w-20" /></TableCell>
-                    <TableCell><Skeleton className="h-8 w-8 rounded" /></TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-28" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-5 w-16 rounded-full" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-10" />
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Skeleton className="ml-auto h-4 w-20" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-8 w-8 rounded" />
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -85,7 +95,10 @@ export default function AccountsPage() {
           </div>
           <div className="space-y-2 md:hidden">
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="flex items-center justify-between rounded-lg border p-3">
+              <div
+                key={i}
+                className="flex items-center justify-between rounded-lg border p-3"
+              >
                 <div className="space-y-1.5">
                   <div className="flex items-center gap-2">
                     <Skeleton className="h-4 w-24" />

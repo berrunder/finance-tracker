@@ -87,16 +87,16 @@ All API request/response interfaces in a single file, mirroring the backend's JS
 
 Stateless utilities:
 
-| File              | Purpose                                              |
-| ----------------- | ---------------------------------------------------- |
-| `constants.ts`    | Currencies, account types, category types, storage keys |
-| `validators.ts`   | Zod schemas for every form, with inferred types      |
-| `error-mapping.ts`| Maps API error codes to form field errors            |
-| `form-helpers.ts` | Shared form submission error handling, submit labels |
-| `money.ts`        | `formatMoney` via `Intl.NumberFormat` + `decimal.js` |
-| `dates.ts`        | Date formatting helpers via `date-fns`               |
-| `query-keys.ts`   | Centralized TanStack Query key factory               |
-| `utils.ts`        | `cn()` utility for Tailwind class merging            |
+| File               | Purpose                                                 |
+| ------------------ | ------------------------------------------------------- |
+| `constants.ts`     | Currencies, account types, category types, storage keys |
+| `validators.ts`    | Zod schemas for every form, with inferred types         |
+| `error-mapping.ts` | Maps API error codes to form field errors               |
+| `form-helpers.ts`  | Shared form submission error handling, submit labels    |
+| `money.ts`         | `formatMoney` via `Intl.NumberFormat` + `decimal.js`    |
+| `dates.ts`         | Date formatting helpers via `date-fns`                  |
+| `query-keys.ts`    | Centralized TanStack Query key factory                  |
+| `utils.ts`         | `cn()` utility for Tailwind class merging               |
 
 ## Authentication
 

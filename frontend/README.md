@@ -21,15 +21,15 @@ make up           # Builds and starts the full stack
 
 ## Scripts
 
-| Command              | Description                  |
-| -------------------- | ---------------------------- |
-| `npm run dev`        | Vite dev server with HMR     |
-| `npm run build`      | Type-check + production build|
-| `npm run check:types`| TypeScript type-check only   |
-| `npm run lint`       | ESLint                       |
-| `npm run format`     | Prettier (write)             |
-| `npm run format:check`| Prettier (check only)       |
-| `npm run preview`    | Preview production build     |
+| Command                | Description                   |
+| ---------------------- | ----------------------------- |
+| `npm run dev`          | Vite dev server with HMR      |
+| `npm run build`        | Type-check + production build |
+| `npm run check:types`  | TypeScript type-check only    |
+| `npm run lint`         | ESLint                        |
+| `npm run format`       | Prettier (write)              |
+| `npm run format:check` | Prettier (check only)         |
+| `npm run preview`      | Preview production build      |
 
 ## Project Structure
 

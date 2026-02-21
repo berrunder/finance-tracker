@@ -127,7 +127,8 @@ export function AccountTable({
                 </Badge>
               </div>
               <div className="text-muted-foreground mt-0.5 text-xs">
-                {account.currency} · {formatMoney(account.balance, account.currency)}
+                {account.currency} ·{' '}
+                {formatMoney(account.balance, account.currency)}
               </div>
             </div>
             <AccountActions

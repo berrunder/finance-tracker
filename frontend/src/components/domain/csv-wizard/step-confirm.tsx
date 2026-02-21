@@ -64,8 +64,8 @@ export function StepConfirm({
           <div>
             <p className="text-lg font-semibold">Import complete</p>
             <p className="mt-1 text-sm text-muted-foreground">
-              Successfully imported{' '}
-              <strong>{importResult.imported}</strong> transaction
+              Successfully imported <strong>{importResult.imported}</strong>{' '}
+              transaction
               {importResult.imported !== 1 ? 's' : ''} into{' '}
               <strong>{accountName}</strong>.
             </p>
@@ -84,8 +84,12 @@ export function StepConfirm({
     )
   }
 
-  const incomeRows = rows.filter((r) => getRowTypeFromPreparedData(r, mapping) === 'income')
-  const expenseRows = rows.filter((r) => getRowTypeFromPreparedData(r, mapping) === 'expense')
+  const incomeRows = rows.filter(
+    (r) => getRowTypeFromPreparedData(r, mapping) === 'income',
+  )
+  const expenseRows = rows.filter(
+    (r) => getRowTypeFromPreparedData(r, mapping) === 'expense',
+  )
   const validRows = rows.filter((r) => isRowValid(r, mapping, dateFormat))
   const invalidCount = rows.length - validRows.length
 
@@ -252,7 +256,8 @@ export function StepConfirm({
           ) : (
             <>
               <Check className="size-4" />
-              Import {validRows.length} Transaction{validRows.length !== 1 ? 's' : ''}
+              Import {validRows.length} Transaction
+              {validRows.length !== 1 ? 's' : ''}
             </>
           )}
         </Button>
