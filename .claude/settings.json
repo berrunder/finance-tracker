@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run check:types:*)",
+      "Bash(npm run lint:*)",
+      "Bash(go build:*)",
+      "Bash(go test:*)",
+      "Bash(npm run build:*)",
+      "Bash(grep:*)",
+      "Skill(playwright-cli)",
+      "Bash(npm run test)"
+    ]
+  },
+  "hooks": {
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "git diff --name-only HEAD | grep -qE '^frontend/.*[.](ts|tsx|js|jsx|json|css|md)$' && cd frontend && npm run format || true"
+          }
+        ]
+      }
+    ]
+  }
+}
