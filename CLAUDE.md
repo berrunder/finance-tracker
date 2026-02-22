@@ -25,6 +25,7 @@ make dev-frontend                # Vite dev server (proxies /api to :8080)
 cd frontend && npm run build     # Type-check + production build
 cd frontend && npm run lint      # ESLint
 cd frontend && npm run check:types  # TypeScript check only
+cd frontend && npm test          # Run all tests (Vitest)
 ```
 
 ## Environment Variables

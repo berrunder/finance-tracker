@@ -12,6 +12,7 @@ import TransactionsPage from '@/pages/transactions'
 import AccountsPage from '@/pages/accounts'
 import ReportsPage from '@/pages/reports'
 import ImportPage from '@/pages/import'
+import ImportFullPage from '@/pages/import-full'
 import SettingsPage from '@/pages/settings'
 
 const queryClient = new QueryClient({
@@ -64,7 +65,8 @@ export default function App() {
                 <Route path="transactions" element={<TransactionsPage />} />
                 <Route path="accounts" element={<AccountsPage />} />
                 <Route path="reports" element={<ReportsPage />} />
-                <Route path="import" element={<ImportPage />} />
+                <Route path="import/account" element={<ImportPage />} />
+                <Route path="import/full" element={<ImportFullPage />} />
                 <Route path="settings" element={<SettingsPage />} />
               </Route>
             </Routes>

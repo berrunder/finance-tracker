@@ -9,12 +9,40 @@ import (
 	"context"
 )
 
+const createCurrency = `-- name: CreateCurrency :one
+INSERT INTO currencies (code, name, symbol) VALUES ($1, $2, $3) RETURNING code, name, symbol
+`
+
+type CreateCurrencyParams struct {
+	Code   string `json:"code"`
+	Name   string `json:"name"`
+	Symbol string `json:"symbol"`
+}
+
+func (q *Queries) CreateCurrency(ctx context.Context, arg CreateCurrencyParams) (Currency, error) {
+	row := q.db.QueryRow(ctx, createCurrency, arg.Code, arg.Name, arg.Symbol)
+	var i Currency
+	err := row.Scan(&i.Code, &i.Name, &i.Symbol)
+	return i, err
+}
+
 const getCurrency = `-- name: GetCurrency :one
 SELECT code, name, symbol FROM currencies WHERE code = $1
 `
 
 func (q *Queries) GetCurrency(ctx context.Context, code string) (Currency, error) {
 	row := q.db.QueryRow(ctx, getCurrency, code)
+	var i Currency
+	err := row.Scan(&i.Code, &i.Name, &i.Symbol)
+	return i, err
+}
+
+const getCurrencyBySymbol = `-- name: GetCurrencyBySymbol :one
+SELECT code, name, symbol FROM currencies WHERE symbol = $1
+`
+
+func (q *Queries) GetCurrencyBySymbol(ctx context.Context, symbol string) (Currency, error) {
+	row := q.db.QueryRow(ctx, getCurrencyBySymbol, symbol)
 	var i Currency
 	err := row.Scan(&i.Code, &i.Name, &i.Symbol)
 	return i, err

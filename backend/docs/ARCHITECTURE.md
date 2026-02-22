@@ -42,6 +42,8 @@ Manual constructor injection, no DI framework:
 config.Load() -> pgxpool.New() -> store.New(pool) ->
   service.NewAuth(queries, jwtSecret)
   service.NewAccount(queries)
+  service.NewTransaction(queries, pool)   // pool for DB transactions
+  service.NewImportFull(queries, pool)    // pool for DB transactions
   ... (one service per domain) ->
     handler.NewAuth(authSvc)
     handler.NewAccount(accountSvc)

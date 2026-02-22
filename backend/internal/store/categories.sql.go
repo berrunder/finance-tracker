@@ -103,6 +103,60 @@ func (q *Queries) GetCategory(ctx context.Context, arg GetCategoryParams) (Categ
 	return i, err
 }
 
+const getCategoryByNameAndType = `-- name: GetCategoryByNameAndType :one
+SELECT id, user_id, parent_id, name, type, created_at FROM categories WHERE user_id = $1 AND name = $2 AND type = $3 AND parent_id IS NULL
+`
+
+type GetCategoryByNameAndTypeParams struct {
+	UserID uuid.UUID `json:"user_id"`
+	Name   string    `json:"name"`
+	Type   string    `json:"type"`
+}
+
+func (q *Queries) GetCategoryByNameAndType(ctx context.Context, arg GetCategoryByNameAndTypeParams) (Category, error) {
+	row := q.db.QueryRow(ctx, getCategoryByNameAndType, arg.UserID, arg.Name, arg.Type)
+	var i Category
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.ParentID,
+		&i.Name,
+		&i.Type,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const getSubcategoryByNameAndType = `-- name: GetSubcategoryByNameAndType :one
+SELECT id, user_id, parent_id, name, type, created_at FROM categories WHERE user_id = $1 AND name = $2 AND type = $3 AND parent_id = $4
+`
+
+type GetSubcategoryByNameAndTypeParams struct {
+	UserID   uuid.UUID   `json:"user_id"`
+	Name     string      `json:"name"`
+	Type     string      `json:"type"`
+	ParentID pgtype.UUID `json:"parent_id"`
+}
+
+func (q *Queries) GetSubcategoryByNameAndType(ctx context.Context, arg GetSubcategoryByNameAndTypeParams) (Category, error) {
+	row := q.db.QueryRow(ctx, getSubcategoryByNameAndType,
+		arg.UserID,
+		arg.Name,
+		arg.Type,
+		arg.ParentID,
+	)
+	var i Category
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.ParentID,
+		&i.Name,
+		&i.Type,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
 const hasCategoryTransactions = `-- name: HasCategoryTransactions :one
 SELECT EXISTS(SELECT 1 FROM transactions WHERE category_id = $1) AS has_transactions
 `

@@ -18,6 +18,9 @@ RETURNING *;
 -- name: DeleteAccount :exec
 DELETE FROM accounts WHERE id = $1 AND user_id = $2;
 
+-- name: GetAccountByName :one
+SELECT * FROM accounts WHERE user_id = $1 AND name = $2;
+
 -- name: GetAccountTransactionSums :one
 SELECT
     COALESCE(SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END), 0)::DECIMAL(15,2) AS total_income,

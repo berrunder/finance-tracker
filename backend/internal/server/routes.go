@@ -18,6 +18,7 @@ func NewRouter(
 	transactionH *handler.Transaction,
 	reportH *handler.Report,
 	importH *handler.Import,
+	importFullH *handler.ImportFull,
 	exchangeRateH *handler.ExchangeRate,
 	currencyH *handler.Currency,
 	userH *handler.User,
@@ -78,6 +79,7 @@ func NewRouter(
 			r.Route("/import", func(r chi.Router) {
 				r.Post("/csv", importH.Upload)
 				r.Post("/csv/confirm", importH.Confirm)
+				r.Post("/full", importFullH.Execute)
 			})
 
 			r.Route("/exchange-rates", func(r chi.Router) {

@@ -30,6 +30,7 @@ make up           # Builds and starts the full stack
 | `npm run format`       | Prettier (write)              |
 | `npm run format:check` | Prettier (check only)         |
 | `npm run preview`      | Preview production build      |
+| `npm test`             | Run all tests (Vitest)        |
 
 ## Project Structure
 
@@ -43,8 +44,15 @@ src/
   hooks/          Data-fetching hooks (TanStack Query wrappers)
   lib/            Utilities, constants, validators, query keys
   pages/          Route-level page components
+  test/           Test setup (Vitest + jest-dom matchers)
   types/          Shared TypeScript types
 ```
+
+## Testing
+
+Vitest with jsdom, `@testing-library/react`, and `@testing-library/jest-dom`. Config is inline in `vite.config.ts`.
+
+Tests live in `__tests__/` subdirectories next to the source they test, with filenames ending in `.test.ts` or `.test.tsx`. Example: `src/lib/__tests__/money.test.ts` tests `src/lib/money.ts`.
 
 ## Documentation
 

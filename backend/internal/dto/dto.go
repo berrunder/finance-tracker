@@ -240,3 +240,42 @@ type ExchangeRateResponse struct {
 	Rate         string    `json:"rate"`
 	Date         string    `json:"date"`
 }
+
+// Full Import
+type FullImportRow struct {
+	Date        string `json:"date"`
+	Account     string `json:"account"`
+	Category    string `json:"category"`
+	Total       string `json:"total"`
+	Currency    string `json:"currency"`
+	Description string `json:"description"`
+	Transfer    string `json:"transfer"`
+}
+
+type NewCurrency struct {
+	Code   string `json:"code" validate:"required,len=3"`
+	Name   string `json:"name" validate:"required"`
+	Symbol string `json:"symbol" validate:"required"`
+}
+
+type FullImportRequest struct {
+	DateFormat       string            `json:"date_format" validate:"required"`
+	DecimalSeparator string            `json:"decimal_separator" validate:"required,oneof=. ,"`
+	CurrencyMapping  map[string]string `json:"currency_mapping"`
+	NewCurrencies    []NewCurrency     `json:"new_currencies"`
+	Rows             []FullImportRow   `json:"rows" validate:"required,min=1"`
+}
+
+type FailedRow struct {
+	RowNumber int           `json:"row_number"`
+	Data      FullImportRow `json:"data"`
+	Error     string        `json:"error"`
+}
+
+type FullImportResponse struct {
+	Imported          int         `json:"imported"`
+	AccountsCreated   []string    `json:"accounts_created"`
+	CategoriesCreated []string    `json:"categories_created"`
+	CurrenciesCreated []string    `json:"currencies_created"`
+	FailedRows        []FailedRow `json:"failed_rows"`
+}

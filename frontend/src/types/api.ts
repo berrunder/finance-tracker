@@ -179,6 +179,45 @@ export interface CSVConfirmRequest {
   rows: CSVPreviewRow[]
 }
 
+// Full Import
+export interface FullImportRow {
+  date: string
+  account: string
+  category: string
+  total: string
+  currency: string
+  description: string
+  transfer: string
+}
+
+export interface NewCurrency {
+  code: string
+  name: string
+  symbol: string
+}
+
+export interface FullImportRequest {
+  date_format: string
+  decimal_separator: string
+  currency_mapping: Record<string, string>
+  new_currencies: NewCurrency[]
+  rows: FullImportRow[]
+}
+
+export interface FailedRow {
+  row_number: number
+  data: FullImportRow
+  error: string
+}
+
+export interface FullImportResponse {
+  imported: number
+  accounts_created: string[]
+  categories_created: string[]
+  currencies_created: string[]
+  failed_rows: FailedRow[]
+}
+
 // Reports
 export interface SpendingByCategoryItem {
   category_id: string

@@ -16,6 +16,7 @@ import {
   Wallet,
   BarChart3,
   Upload,
+  FileUp,
   Settings,
   LogOut,
 } from 'lucide-react'
@@ -25,7 +26,8 @@ const NAV_ITEMS = [
   { to: '/transactions', label: 'Transactions', icon: ArrowLeftRight },
   { to: '/accounts', label: 'Accounts', icon: Wallet },
   { to: '/reports', label: 'Reports', icon: BarChart3 },
-  { to: '/import', label: 'Import', icon: Upload },
+  { to: '/import/full', label: 'Full Import', icon: FileUp },
+  { to: '/import/account', label: 'Account Import', icon: Upload },
   { to: '/settings', label: 'Settings', icon: Settings },
 ]
 

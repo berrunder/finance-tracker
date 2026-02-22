@@ -24,6 +24,12 @@ SELECT EXISTS(SELECT 1 FROM categories WHERE parent_id = $1) AS has_children;
 -- name: HasCategoryTransactions :one
 SELECT EXISTS(SELECT 1 FROM transactions WHERE category_id = $1) AS has_transactions;
 
+-- name: GetCategoryByNameAndType :one
+SELECT * FROM categories WHERE user_id = $1 AND name = $2 AND type = $3 AND parent_id IS NULL;
+
+-- name: GetSubcategoryByNameAndType :one
+SELECT * FROM categories WHERE user_id = $1 AND name = $2 AND type = $3 AND parent_id = $4;
+
 -- name: CreateDefaultCategories :exec
 INSERT INTO categories (user_id, name, type) VALUES
     (@user_id, 'Salary', 'income'),

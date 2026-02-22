@@ -46,3 +46,43 @@ func (r iteratorForBulkCreateTransactions) Err() error {
 func (q *Queries) BulkCreateTransactions(ctx context.Context, arg []BulkCreateTransactionsParams) (int64, error) {
 	return q.db.CopyFrom(ctx, []string{"transactions"}, []string{"user_id", "account_id", "category_id", "type", "amount", "description", "date"}, &iteratorForBulkCreateTransactions{rows: arg})
 }
+
+// iteratorForBulkCreateTransactionsFull implements pgx.CopyFromSource.
+type iteratorForBulkCreateTransactionsFull struct {
+	rows                 []BulkCreateTransactionsFullParams
+	skippedFirstNextCall bool
+}
+
+func (r *iteratorForBulkCreateTransactionsFull) Next() bool {
+	if len(r.rows) == 0 {
+		return false
+	}
+	if !r.skippedFirstNextCall {
+		r.skippedFirstNextCall = true
+		return true
+	}
+	r.rows = r.rows[1:]
+	return len(r.rows) > 0
+}
+
+func (r iteratorForBulkCreateTransactionsFull) Values() ([]interface{}, error) {
+	return []interface{}{
+		r.rows[0].UserID,
+		r.rows[0].AccountID,
+		r.rows[0].CategoryID,
+		r.rows[0].Type,
+		r.rows[0].Amount,
+		r.rows[0].Description,
+		r.rows[0].Date,
+		r.rows[0].TransferID,
+		r.rows[0].ExchangeRate,
+	}, nil
+}
+
+func (r iteratorForBulkCreateTransactionsFull) Err() error {
+	return nil
+}
+
+func (q *Queries) BulkCreateTransactionsFull(ctx context.Context, arg []BulkCreateTransactionsFullParams) (int64, error) {
+	return q.db.CopyFrom(ctx, []string{"transactions"}, []string{"user_id", "account_id", "category_id", "type", "amount", "description", "date", "transfer_id", "exchange_rate"}, &iteratorForBulkCreateTransactionsFull{rows: arg})
+}

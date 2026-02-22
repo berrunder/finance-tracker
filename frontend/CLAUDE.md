@@ -14,6 +14,7 @@ npm run check:types    # Type-check only
 npm run lint           # ESLint
 npm run format         # Prettier write
 npm run format:check   # Prettier check
+npm test               # Run all tests (vitest run)
 ```
 
 ## Project Structure
@@ -30,6 +31,15 @@ src/
   pages/        # Route-level page components
   types/        # Shared TypeScript types
 ```
+
+## Testing
+
+- **Framework**: Vitest with jsdom environment, globals enabled.
+- **Libraries**: `@testing-library/react`, `@testing-library/jest-dom` (matchers extended via `src/test/setup.ts`).
+- **Test location**: Tests live in `__tests__/` subdirectories next to the code they test. Filenames end with `.test.ts` or `.test.tsx`.
+- **Example**: tests for `src/lib/money.ts` go in `src/lib/__tests__/money.test.ts`.
+- **Run all**: `npm test` (alias for `vitest run`).
+- **Config**: Vitest is configured inline in `vite.config.ts` (no separate vitest config file).
 
 ## Verification
 

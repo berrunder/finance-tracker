@@ -4,6 +4,7 @@ import {
   type QueryClient,
 } from '@tanstack/react-query'
 import { confirmImport, uploadCSV } from '@/api/import'
+import { importFull } from '@/api/import-full'
 import { queryKeys } from '@/lib/query-keys'
 
 function invalidateImportRelated(queryClient: QueryClient): void {
@@ -23,5 +24,17 @@ export function useConfirmImport() {
   return useMutation({
     mutationFn: confirmImport,
     onSuccess: () => invalidateImportRelated(queryClient),
+  })
+}
+
+export function useImportFull() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: importFull,
+    onSuccess: () => {
+      invalidateImportRelated(queryClient)
+      queryClient.invalidateQueries({ queryKey: queryKeys.categories.all })
+      queryClient.invalidateQueries({ queryKey: queryKeys.currencies })
+    },
   })
 }

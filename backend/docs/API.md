@@ -504,3 +504,47 @@ Content-Type: `multipart/form-data`. Form field: `file` (max 10 MB).
 // Response 200
 {"imported": 150}
 ```
+
+### `POST /import/full`
+
+Full-featured import supporting multiple accounts, currencies, categories with subcategories, and transfers. Fixed 7-column CSV schema (date, account, category, total, currency, description, transfer). Max body size: 50 MB.
+
+```json
+// Request
+{
+  "date_format": "dd.MM.yyyy",           // required, detected date format
+  "decimal_separator": ",",              // required, "," or "."
+  "currency_mapping": {"դր.": "AMD"},   // optional, maps non-standard currency strings to codes
+  "new_currencies": [                    // optional, currencies to create before import
+    {"code": "AMD", "name": "Armenian Dram", "symbol": "դր."}
+  ],
+  "rows": [                              // required, min 1
+    {
+      "date": "19.02.2026",
+      "account": "All Airlines",
+      "category": "Healthcare",          // empty for transfers; "Parent\Child" for subcategories
+      "total": "-6600,00",
+      "currency": "RUB",
+      "description": "Dental cleaning",
+      "transfer": ""                     // target account name for transfers, empty otherwise
+    }
+  ]
+}
+
+// Response 200
+{
+  "imported": 150,
+  "accounts_created": ["Tinkoff Black", "All Airlines"],
+  "categories_created": ["Healthcare", "Food > Home"],
+  "currencies_created": ["AMD"],
+  "failed_rows": [
+    {
+      "row_number": 42,
+      "data": {"date": "invalid", "account": "Test", "category": "", "total": "abc", "currency": "RUB", "description": "", "transfer": ""},
+      "error": "invalid date format"
+    }
+  ]
+}
+```
+
+Processing: Creates missing currencies → resolves currency strings → parses rows → validates account-currency consistency → creates missing accounts (type=bank) → creates missing categories (type from amount sign) → pairs transfers (by date + complementary accounts, computes exchange rate for cross-currency) → batch inserts (1000/batch). Failed rows are skipped and reported.

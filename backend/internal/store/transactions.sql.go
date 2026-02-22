@@ -92,6 +92,18 @@ type BulkCreateTransactionsParams struct {
 	Date        pgtype.Date    `json:"date"`
 }
 
+type BulkCreateTransactionsFullParams struct {
+	UserID       uuid.UUID      `json:"user_id"`
+	AccountID    uuid.UUID      `json:"account_id"`
+	CategoryID   pgtype.UUID    `json:"category_id"`
+	Type         string         `json:"type"`
+	Amount       pgtype.Numeric `json:"amount"`
+	Description  string         `json:"description"`
+	Date         pgtype.Date    `json:"date"`
+	TransferID   pgtype.UUID    `json:"transfer_id"`
+	ExchangeRate pgtype.Numeric `json:"exchange_rate"`
+}
+
 const countTransactions = `-- name: CountTransactions :one
 SELECT COUNT(*) FROM transactions
 WHERE user_id = $1

@@ -87,6 +87,31 @@ func (q *Queries) GetAccount(ctx context.Context, arg GetAccountParams) (Account
 	return i, err
 }
 
+const getAccountByName = `-- name: GetAccountByName :one
+SELECT id, user_id, name, type, currency, initial_balance, created_at, updated_at FROM accounts WHERE user_id = $1 AND name = $2
+`
+
+type GetAccountByNameParams struct {
+	UserID uuid.UUID `json:"user_id"`
+	Name   string    `json:"name"`
+}
+
+func (q *Queries) GetAccountByName(ctx context.Context, arg GetAccountByNameParams) (Account, error) {
+	row := q.db.QueryRow(ctx, getAccountByName, arg.UserID, arg.Name)
+	var i Account
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.Name,
+		&i.Type,
+		&i.Currency,
+		&i.InitialBalance,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const getAccountTransactionSums = `-- name: GetAccountTransactionSums :one
 SELECT
     COALESCE(SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END), 0)::DECIMAL(15,2) AS total_income,
