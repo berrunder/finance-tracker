@@ -66,4 +66,5 @@ Tests live in `__tests__/` subdirectories next to the source they test, with fil
 - **Accounts** — manage accounts and currencies
 - **Reports** — spending breakdowns
 - **Import** — CSV transaction import
+- **Full Import** — multi-step CSV import with accounts, categories, currencies, and transfers
 - **Settings** — categories, preferences

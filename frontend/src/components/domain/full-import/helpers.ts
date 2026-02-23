@@ -197,7 +197,7 @@ export function parsePreviewAmount(
 
   if (decimalSep === ',') {
     cleaned = cleaned.replace(/\./g, '') // remove thousands dots
-    cleaned = cleaned.replace(',', '.') // comma -> dot for parseFloat
+    cleaned = cleaned.replace(/,/g, '.') // comma -> dot for parseFloat
   } else {
     cleaned = cleaned.replace(/,/g, '') // remove thousands commas
   }

@@ -222,14 +222,12 @@ func (s *ImportFull) Import(ctx context.Context, userID uuid.UUID, req dto.FullI
 		if _, ok := categoryCache[cacheKey]; ok {
 			continue
 		}
-		catID, catCreated, catErr := s.resolveCategory(ctx, q, userID, row.category, row.txnType)
+		catID, createdNames, catErr := s.resolveCategory(ctx, q, userID, row.category, row.txnType)
 		if catErr != nil {
 			return nil, fmt.Errorf("failed to resolve category %q: %w", row.category, catErr)
 		}
 		categoryCache[cacheKey] = catID
-		if catCreated != "" {
-			resp.CategoriesCreated = append(resp.CategoriesCreated, catCreated)
-		}
+		resp.CategoriesCreated = append(resp.CategoriesCreated, createdNames...)
 	}
 
 	// Step 6: Build transaction params with original row context
@@ -485,7 +483,7 @@ func (s *ImportFull) resolveCategory(
 	userID uuid.UUID,
 	categoryStr string,
 	txnType string,
-) (uuid.UUID, string, error) {
+) (uuid.UUID, []string, error) {
 	parts := strings.SplitN(categoryStr, "\\", 2)
 	parentName := strings.TrimSpace(parts[0])
 
@@ -495,10 +493,10 @@ func (s *ImportFull) resolveCategory(
 		Name:   parentName,
 		Type:   txnType,
 	})
-	var createdName string
+	parentCreated := false
 	if err != nil {
 		if !errors.Is(err, pgx.ErrNoRows) {
-			return uuid.Nil, "", fmt.Errorf("failed to lookup category %q: %w", parentName, err)
+			return uuid.Nil, nil, fmt.Errorf("failed to lookup category %q: %w", parentName, err)
 		}
 		// Create parent
 		parent, err = q.CreateCategory(ctx, store.CreateCategoryParams{
@@ -508,19 +506,27 @@ func (s *ImportFull) resolveCategory(
 			Type:     txnType,
 		})
 		if err != nil {
-			return uuid.Nil, "", fmt.Errorf("failed to create category %q: %w", parentName, err)
+			return uuid.Nil, nil, fmt.Errorf("failed to create category %q: %w", parentName, err)
 		}
-		createdName = parentName
+		parentCreated = true
 	}
 
 	if len(parts) == 1 {
-		return parent.ID, createdName, nil
+		var created []string
+		if parentCreated {
+			created = []string{parentName}
+		}
+		return parent.ID, created, nil
 	}
 
 	// Handle subcategory
 	childName := strings.TrimSpace(parts[1])
 	if childName == "" {
-		return parent.ID, createdName, nil
+		var created []string
+		if parentCreated {
+			created = []string{parentName}
+		}
+		return parent.ID, created, nil
 	}
 
 	child, err := q.GetSubcategoryByNameAndType(ctx, store.GetSubcategoryByNameAndTypeParams{
@@ -531,7 +537,7 @@ func (s *ImportFull) resolveCategory(
 	})
 	if err != nil {
 		if !errors.Is(err, pgx.ErrNoRows) {
-			return uuid.Nil, "", fmt.Errorf("failed to lookup subcategory %q: %w", childName, err)
+			return uuid.Nil, nil, fmt.Errorf("failed to lookup subcategory %q: %w", childName, err)
 		}
 		// Create child
 		child, err = q.CreateCategory(ctx, store.CreateCategoryParams{
@@ -541,16 +547,22 @@ func (s *ImportFull) resolveCategory(
 			Type:     txnType,
 		})
 		if err != nil {
-			return uuid.Nil, "", fmt.Errorf("failed to create subcategory %q: %w", childName, err)
+			return uuid.Nil, nil, fmt.Errorf("failed to create subcategory %q: %w", childName, err)
 		}
-		if createdName != "" {
-			createdName = parentName + " > " + childName
-		} else {
-			createdName = parentName + " > " + childName
+		var created []string
+		if parentCreated {
+			created = append(created, parentName)
 		}
+		created = append(created, parentName+" > "+childName)
+		return child.ID, created, nil
 	}
 
-	return child.ID, createdName, nil
+	// Child already existed
+	var created []string
+	if parentCreated {
+		created = []string{parentName}
+	}
+	return child.ID, created, nil
 }
 
 func pairTransfers(candidates []parsedRow) ([]transferPair, []dto.FailedRow) {

@@ -7,7 +7,6 @@ import type { ParsedRow, DateFormatValue } from './helpers'
 
 export interface UploadResult {
   fileName: string
-  rawText: string
   delimiter: string
   decimalSeparator: ',' | '.'
   dateFormat: DateFormatValue

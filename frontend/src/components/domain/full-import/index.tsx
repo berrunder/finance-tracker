@@ -53,6 +53,12 @@ export function FullImportWizard() {
 
   const handleFileSelect = useCallback(
     (selected: File) => {
+      const MAX_FILE_SIZE = 50 * 1024 * 1024 // 50 MB
+      if (selected.size > MAX_FILE_SIZE) {
+        toast.error('File is too large. Maximum size is 50 MB.')
+        return
+      }
+
       setFile(selected)
       setImportError(null)
 
@@ -120,7 +126,6 @@ export function FullImportWizard() {
 
         setUploadResult({
           fileName: selected.name,
-          rawText,
           delimiter,
           decimalSeparator,
           dateFormat,
@@ -153,25 +158,19 @@ export function FullImportWizard() {
     if (!uploadResult) return
     setImportError(null)
 
-    // Merge auto-resolved + user-mapped currencies
+    // Send original currency strings in rows; backend resolves via currency_mapping
     const fullMapping = {
       ...uploadResult.currencyResolutions,
       ...currencyMapping,
     }
 
-    // Apply currency mapping to rows — replace currency strings with codes
-    const mappedRows = uploadResult.rows.map((r) => ({
-      ...r,
-      currency: fullMapping[r.currency] || r.currency,
-    }))
-
     importMutation.mutate(
       {
         date_format: uploadResult.dateFormat,
         decimal_separator: uploadResult.decimalSeparator,
-        currency_mapping: currencyMapping,
+        currency_mapping: fullMapping,
         new_currencies: newCurrencies,
-        rows: mappedRows,
+        rows: uploadResult.rows,
       },
       {
         onSuccess: (result) => {
