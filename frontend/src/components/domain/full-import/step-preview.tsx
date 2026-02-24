@@ -10,8 +10,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import type { FullImportRow } from '@/types/api'
 import { cn } from '@/lib/utils'
-import type { ParsedRow } from './helpers'
 import { parsePreviewAmount } from './helpers'
 
 const PAGE_SIZE = 50
@@ -27,7 +27,7 @@ interface PreviewStats {
 }
 
 interface StepPreviewProps {
-  rows: ParsedRow[]
+  rows: FullImportRow[]
   decimalSeparator: ',' | '.'
   existingAccounts: string[]
   existingCategories: string[]
@@ -37,8 +37,17 @@ interface StepPreviewProps {
   onImport: () => void
 }
 
+function getRowType(
+  isTransfer: boolean,
+  amount: number | null,
+): 'transfer' | 'income' | 'expense' {
+  if (isTransfer) return 'transfer'
+  if (amount !== null && amount >= 0) return 'income'
+  return 'expense'
+}
+
 function getRowError(
-  row: ParsedRow,
+  row: FullImportRow,
   decimalSeparator: ',' | '.',
 ): string | null {
   if (!row.date) return 'missing date'
@@ -186,12 +195,7 @@ export function StepPreview({
               const amount = parsePreviewAmount(row.total, decimalSeparator)
               const errorReason = getRowError(row, decimalSeparator)
               const isError = errorReason !== null
-              const isTransfer = !!row.transfer
-              const type = isTransfer
-                ? 'transfer'
-                : amount !== null && amount >= 0
-                  ? 'income'
-                  : 'expense'
+              const type = getRowType(!!row.transfer, amount)
 
               return (
                 <TableRow

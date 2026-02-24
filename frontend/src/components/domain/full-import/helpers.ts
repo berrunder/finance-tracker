@@ -15,16 +15,6 @@ export const DATE_FORMATS = [
 
 export type DateFormatValue = (typeof DATE_FORMATS)[number]
 
-export interface ParsedRow {
-  date: string
-  account: string
-  category: string
-  total: string
-  currency: string
-  description: string
-  transfer: string
-}
-
 /**
  * Detect the delimiter used in a CSV file by testing candidates
  * against the first few lines and picking the one that consistently
@@ -130,31 +120,47 @@ function isValidDate(value: string, format: DateFormatValue): boolean {
   return true
 }
 
+const DATE_PATTERNS: Record<
+  DateFormatValue,
+  {
+    regex: RegExp
+    groups: [
+      'year' | 'month' | 'day',
+      'year' | 'month' | 'day',
+      'year' | 'month' | 'day',
+    ]
+  }
+> = {
+  'yyyy-MM-dd': {
+    regex: /^(\d{4})-(\d{2})-(\d{2})$/,
+    groups: ['year', 'month', 'day'],
+  },
+  'dd.MM.yyyy': {
+    regex: /^(\d{2})\.(\d{2})\.(\d{4})$/,
+    groups: ['day', 'month', 'year'],
+  },
+  'dd/MM/yyyy': {
+    regex: /^(\d{2})\/(\d{2})\/(\d{4})$/,
+    groups: ['day', 'month', 'year'],
+  },
+  'MM/dd/yyyy': {
+    regex: /^(\d{2})\/(\d{2})\/(\d{4})$/,
+    groups: ['month', 'day', 'year'],
+  },
+}
+
 function splitDate(
   value: string,
   format: DateFormatValue,
 ): { year: number; month: number; day: number } | null {
-  if (format === 'yyyy-MM-dd') {
-    const m = value.match(/^(\d{4})-(\d{2})-(\d{2})$/)
-    if (!m) return null
-    return { year: +m[1], month: +m[2], day: +m[3] }
-  }
-  if (format === 'dd.MM.yyyy') {
-    const m = value.match(/^(\d{2})\.(\d{2})\.(\d{4})$/)
-    if (!m) return null
-    return { year: +m[3], month: +m[2], day: +m[1] }
-  }
-  if (format === 'dd/MM/yyyy') {
-    const m = value.match(/^(\d{2})\/(\d{2})\/(\d{4})$/)
-    if (!m) return null
-    return { year: +m[3], month: +m[2], day: +m[1] }
-  }
-  if (format === 'MM/dd/yyyy') {
-    const m = value.match(/^(\d{2})\/(\d{2})\/(\d{4})$/)
-    if (!m) return null
-    return { year: +m[3], month: +m[1], day: +m[2] }
-  }
-  return null
+  const pattern = DATE_PATTERNS[format]
+  const m = value.match(pattern.regex)
+  if (!m) return null
+  return {
+    [pattern.groups[0]]: +m[1],
+    [pattern.groups[1]]: +m[2],
+    [pattern.groups[2]]: +m[3],
+  } as { year: number; month: number; day: number }
 }
 
 /**
@@ -204,14 +210,4 @@ export function parsePreviewAmount(
 
   const num = parseFloat(cleaned)
   return isNaN(num) ? null : num
-}
-
-/**
- * Determine transaction type from a parsed amount.
- */
-export function getTransactionType(
-  amount: number,
-): 'income' | 'expense' | 'transfer' {
-  // Transfer detection is done at a higher level (by checking transfer field)
-  return amount >= 0 ? 'income' : 'expense'
 }

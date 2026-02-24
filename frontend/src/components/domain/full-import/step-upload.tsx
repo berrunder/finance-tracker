@@ -2,15 +2,16 @@ import { useRef } from 'react'
 import { Upload } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
+import type { FullImportRow } from '@/types/api'
 import { cn } from '@/lib/utils'
-import type { ParsedRow, DateFormatValue } from './helpers'
+import type { DateFormatValue } from './helpers'
 
 export interface UploadResult {
   fileName: string
   delimiter: string
   decimalSeparator: ',' | '.'
   dateFormat: DateFormatValue
-  rows: ParsedRow[]
+  rows: FullImportRow[]
   unresolvedCurrencies: string[]
   currencyResolutions: Record<string, string>
 }

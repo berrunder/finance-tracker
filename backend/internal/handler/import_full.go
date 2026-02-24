@@ -1,6 +1,8 @@
 package handler
 
 import (
+	"encoding/json"
+	"log/slog"
 	"net/http"
 
 	"github.com/sanches/finance-tracker-cc/backend/internal/dto"
@@ -18,13 +20,12 @@ func NewImportFull(svc *service.ImportFull) *ImportFull {
 }
 
 func (h *ImportFull) Execute(w http.ResponseWriter, r *http.Request) {
-	// Limit request body to 50 MB
-	r.Body = http.MaxBytesReader(w, r.Body, 50<<20)
-
 	userID := middleware.UserID(r.Context())
 
+	// Use a 50 MB limit directly (decodeJSON defaults to 1 MB which is too small for large imports)
+	r.Body = http.MaxBytesReader(w, r.Body, 50<<20)
 	var req dto.FullImportRequest
-	if err := decodeJSON(w, r, &req); err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		respond.Error(w, http.StatusBadRequest, "INVALID_BODY", "invalid request body")
 		return
 	}
@@ -35,7 +36,8 @@ func (h *ImportFull) Execute(w http.ResponseWriter, r *http.Request) {
 
 	result, err := h.svc.Import(r.Context(), userID, req)
 	if err != nil {
-		respond.Error(w, http.StatusInternalServerError, "IMPORT_ERROR", err.Error())
+		slog.Error("full import failed", "error", err, "user_id", userID)
+		respond.Error(w, http.StatusInternalServerError, "IMPORT_ERROR", "failed to import data")
 		return
 	}
 

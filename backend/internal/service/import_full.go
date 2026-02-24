@@ -22,8 +22,6 @@ type importFullStore interface {
 	GetAccountByName(ctx context.Context, arg store.GetAccountByNameParams) (store.Account, error)
 	CreateAccount(ctx context.Context, arg store.CreateAccountParams) (store.Account, error)
 	ListCurrencies(ctx context.Context) ([]store.Currency, error)
-	GetCurrency(ctx context.Context, code string) (store.Currency, error)
-	GetCurrencyBySymbol(ctx context.Context, symbol string) (store.Currency, error)
 	CreateCurrency(ctx context.Context, arg store.CreateCurrencyParams) (store.Currency, error)
 	GetCategoryByNameAndType(ctx context.Context, arg store.GetCategoryByNameAndTypeParams) (store.Category, error)
 	GetSubcategoryByNameAndType(ctx context.Context, arg store.GetSubcategoryByNameAndTypeParams) (store.Category, error)
@@ -118,30 +116,30 @@ func (s *ImportFull) Import(ctx context.Context, userID uuid.UUID, req dto.FullI
 		validRows = append(validRows, *parsed)
 	}
 
-	// Step 3: Pair transfers early so unpaired transfer rows do not cause side effects
-	var preRegularRows []parsedRow
-	var preTransferCandidates []parsedRow
+	// Step 3: Separate regular rows from transfer candidates, pair transfers
+	var regularRows []parsedRow
+	var transferCandidates []parsedRow
 	for _, row := range validRows {
 		if row.transfer != "" {
-			preTransferCandidates = append(preTransferCandidates, row)
+			transferCandidates = append(transferCandidates, row)
 		} else {
-			preRegularRows = append(preRegularRows, row)
+			regularRows = append(regularRows, row)
 		}
 	}
 
-	prePairs, unpairedErrors := pairTransfers(preTransferCandidates)
+	pairs, unpairedErrors := pairTransfers(transferCandidates)
 	resp.FailedRows = append(resp.FailedRows, unpairedErrors...)
 
-	rowsForImport := make([]parsedRow, 0, len(preRegularRows)+(len(prePairs)*2))
-	rowsForImport = append(rowsForImport, preRegularRows...)
-	for _, pair := range prePairs {
-		rowsForImport = append(rowsForImport, *pair.source, *pair.dest)
+	// Collect all rows that will be imported (regular + paired transfers) for account resolution
+	allParsedRows := make([]parsedRow, 0, len(regularRows)+(len(pairs)*2))
+	allParsedRows = append(allParsedRows, regularRows...)
+	for _, pair := range pairs {
+		allParsedRows = append(allParsedRows, *pair.source, *pair.dest)
 	}
 
-	// Step 4: Validate account-currency consistency and create missing accounts
-	accountCache := make(map[string]store.Account) // name -> account
-	for i := range rowsForImport {
-		row := &rowsForImport[i]
+	// Step 4: Resolve accounts (lookup existing or create new)
+	accountCache := make(map[string]store.Account)
+	for _, row := range allParsedRows {
 		acctNames := []string{row.account}
 		if row.transfer != "" {
 			acctNames = append(acctNames, row.transfer)
@@ -156,60 +154,53 @@ func (s *ImportFull) Import(ctx context.Context, userID uuid.UUID, req dto.FullI
 			})
 			if lookupErr == nil {
 				accountCache[name] = acct
-			} else {
-				if !errors.Is(lookupErr, pgx.ErrNoRows) {
-					return nil, fmt.Errorf("failed to lookup account %s: %w", name, lookupErr)
-				}
-				// Find currency for this account from the first row referencing it
-				currency := s.findCurrencyForAccount(name, rowsForImport)
-				if currency == "" {
-					currency = row.currency
-				}
-				newAcct, createErr := q.CreateAccount(ctx, store.CreateAccountParams{
-					UserID:         userID,
-					Name:           name,
-					Type:           "bank",
-					Currency:       currency,
-					InitialBalance: numericFromString("0"),
-				})
-				if createErr != nil {
-					return nil, fmt.Errorf("failed to create account %s: %w", name, createErr)
-				}
-				accountCache[name] = newAcct
-				resp.AccountsCreated = append(resp.AccountsCreated, name)
+				continue
 			}
+			if !errors.Is(lookupErr, pgx.ErrNoRows) {
+				return nil, fmt.Errorf("failed to lookup account %s: %w", name, lookupErr)
+			}
+			currency := findCurrencyForAccount(name, allParsedRows)
+			newAcct, createErr := q.CreateAccount(ctx, store.CreateAccountParams{
+				UserID:         userID,
+				Name:           name,
+				Type:           "bank",
+				Currency:       currency,
+				InitialBalance: numericFromString("0"),
+			})
+			if createErr != nil {
+				return nil, fmt.Errorf("failed to create account %s: %w", name, createErr)
+			}
+			accountCache[name] = newAcct
+			resp.AccountsCreated = append(resp.AccountsCreated, name)
 		}
 	}
 
-	// Validate account-currency consistency for existing accounts
-	var currencyValidRows []parsedRow
-	for _, row := range rowsForImport {
-		acct := accountCache[row.account]
-		if acct.Currency != row.currency {
+	// Validate account-currency consistency, filtering out mismatched rows
+	regularRows = filterByCurrency(regularRows, accountCache, resp)
+	// For transfers, validate both legs; fail the entire pair if either leg mismatches
+	var validPairs []transferPair
+	for _, pair := range pairs {
+		sourceAcct := accountCache[pair.source.account]
+		destAcct := accountCache[pair.dest.account]
+		if sourceAcct.Currency != pair.source.currency {
 			resp.FailedRows = append(resp.FailedRows, dto.FailedRow{
-				RowNumber: row.rowNumber,
-				Data:      s.rowToDTO(row),
-				Error:     fmt.Sprintf("currency mismatch: account %q has currency %s but row has %s", row.account, acct.Currency, row.currency),
+				RowNumber: pair.source.rowNumber,
+				Data:      parsedRowToDTO(pair.source),
+				Error:     fmt.Sprintf("currency mismatch: account %q has currency %s but row has %s", pair.source.account, sourceAcct.Currency, pair.source.currency),
 			})
 			continue
 		}
-		currencyValidRows = append(currencyValidRows, row)
-	}
-	validRows = currencyValidRows
-
-	// Re-pair transfers after currency validation
-	var regularRows []parsedRow
-	var transferCandidates []parsedRow
-	for _, row := range validRows {
-		if row.transfer != "" {
-			transferCandidates = append(transferCandidates, row)
-		} else {
-			regularRows = append(regularRows, row)
+		if destAcct.Currency != pair.dest.currency {
+			resp.FailedRows = append(resp.FailedRows, dto.FailedRow{
+				RowNumber: pair.dest.rowNumber,
+				Data:      parsedRowToDTO(pair.dest),
+				Error:     fmt.Sprintf("currency mismatch: account %q has currency %s but row has %s", pair.dest.account, destAcct.Currency, pair.dest.currency),
+			})
+			continue
 		}
+		validPairs = append(validPairs, pair)
 	}
-
-	pairs, postValidationUnpairedErrors := pairTransfers(transferCandidates)
-	resp.FailedRows = append(resp.FailedRows, postValidationUnpairedErrors...)
+	pairs = validPairs
 
 	// Step 5: Resolve categories
 	categoryCache := make(map[string]uuid.UUID) // "category_string|type" -> ID
@@ -311,19 +302,17 @@ func (s *ImportFull) Import(ctx context.Context, userID uuid.UUID, req dto.FullI
 	// Step 7: Batch insert
 	const batchSize = 1000
 	for i := 0; i < len(allRows); i += batchSize {
-		end := min(i+batchSize, len(allRows))
-		batchRows := allRows[i:end]
-		batch := make([]store.BulkCreateTransactionsFullParams, 0, len(batchRows))
-		for _, row := range batchRows {
-			batch = append(batch, row.param)
+		batchRows := allRows[i:min(i+batchSize, len(allRows))]
+		params := make([]store.BulkCreateTransactionsFullParams, len(batchRows))
+		for j, row := range batchRows {
+			params[j] = row.param
 		}
-		count, batchErr := q.BulkCreateTransactionsFull(ctx, batch)
+		count, batchErr := q.BulkCreateTransactionsFull(ctx, params)
 		if batchErr != nil {
-			// If a batch fails, report all rows in it as failed
-			for _, batchRow := range batchRows {
+			for _, row := range batchRows {
 				resp.FailedRows = append(resp.FailedRows, dto.FailedRow{
-					RowNumber: batchRow.rowNumber,
-					Data:      batchRow.data,
+					RowNumber: row.rowNumber,
+					Data:      row.data,
 					Error:     fmt.Sprintf("batch insert failed: %v", batchErr),
 				})
 			}
@@ -486,6 +475,7 @@ func (s *ImportFull) resolveCategory(
 ) (uuid.UUID, []string, error) {
 	parts := strings.SplitN(categoryStr, "\\", 2)
 	parentName := strings.TrimSpace(parts[0])
+	var created []string
 
 	// Look up or create parent
 	parent, err := q.GetCategoryByNameAndType(ctx, store.GetCategoryByNameAndTypeParams{
@@ -493,12 +483,7 @@ func (s *ImportFull) resolveCategory(
 		Name:   parentName,
 		Type:   txnType,
 	})
-	parentCreated := false
-	if err != nil {
-		if !errors.Is(err, pgx.ErrNoRows) {
-			return uuid.Nil, nil, fmt.Errorf("failed to lookup category %q: %w", parentName, err)
-		}
-		// Create parent
+	if errors.Is(err, pgx.ErrNoRows) {
 		parent, err = q.CreateCategory(ctx, store.CreateCategoryParams{
 			UserID:   userID,
 			ParentID: pgtype.UUID{Valid: false},
@@ -508,60 +493,43 @@ func (s *ImportFull) resolveCategory(
 		if err != nil {
 			return uuid.Nil, nil, fmt.Errorf("failed to create category %q: %w", parentName, err)
 		}
-		parentCreated = true
+		created = append(created, parentName)
+	} else if err != nil {
+		return uuid.Nil, nil, fmt.Errorf("failed to lookup category %q: %w", parentName, err)
 	}
 
-	if len(parts) == 1 {
-		var created []string
-		if parentCreated {
-			created = []string{parentName}
-		}
-		return parent.ID, created, nil
+	// If no subcategory part, return parent
+	childName := ""
+	if len(parts) == 2 {
+		childName = strings.TrimSpace(parts[1])
 	}
-
-	// Handle subcategory
-	childName := strings.TrimSpace(parts[1])
 	if childName == "" {
-		var created []string
-		if parentCreated {
-			created = []string{parentName}
-		}
 		return parent.ID, created, nil
 	}
 
+	// Look up or create subcategory
+	parentPGID := pgtype.UUID{Bytes: parent.ID, Valid: true}
 	child, err := q.GetSubcategoryByNameAndType(ctx, store.GetSubcategoryByNameAndTypeParams{
 		UserID:   userID,
 		Name:     childName,
 		Type:     txnType,
-		ParentID: pgtype.UUID{Bytes: parent.ID, Valid: true},
+		ParentID: parentPGID,
 	})
-	if err != nil {
-		if !errors.Is(err, pgx.ErrNoRows) {
-			return uuid.Nil, nil, fmt.Errorf("failed to lookup subcategory %q: %w", childName, err)
-		}
-		// Create child
+	if errors.Is(err, pgx.ErrNoRows) {
 		child, err = q.CreateCategory(ctx, store.CreateCategoryParams{
 			UserID:   userID,
-			ParentID: pgtype.UUID{Bytes: parent.ID, Valid: true},
+			ParentID: parentPGID,
 			Name:     childName,
 			Type:     txnType,
 		})
 		if err != nil {
 			return uuid.Nil, nil, fmt.Errorf("failed to create subcategory %q: %w", childName, err)
 		}
-		var created []string
-		if parentCreated {
-			created = append(created, parentName)
-		}
 		created = append(created, parentName+" > "+childName)
-		return child.ID, created, nil
+	} else if err != nil {
+		return uuid.Nil, nil, fmt.Errorf("failed to lookup subcategory %q: %w", childName, err)
 	}
 
-	// Child already existed
-	var created []string
-	if parentCreated {
-		created = []string{parentName}
-	}
 	return child.ID, created, nil
 }
 
@@ -581,51 +549,43 @@ func pairTransfers(candidates []parsedRow) ([]transferPair, []dto.FailedRow) {
 				continue
 			}
 			b := &candidates[j]
-			if a.date.Time.Equal(b.date.Time) && a.account == b.transfer && a.transfer == b.account {
-				// Validate signs: one negative, one positive
-				if (a.amount < 0) == (b.amount < 0) {
-					failures = append(failures, dto.FailedRow{
-						RowNumber: a.rowNumber,
-						Data:      parsedRowToDTO(a),
-						Error:     "transfer pair has same sign amounts",
-					})
-					failures = append(failures, dto.FailedRow{
-						RowNumber: b.rowNumber,
-						Data:      parsedRowToDTO(b),
-						Error:     "transfer pair has same sign amounts",
-					})
-					matched[i] = true
-					matched[j] = true
-					found = true
-					break
-				}
+			if !a.date.Time.Equal(b.date.Time) || a.account != b.transfer || a.transfer != b.account {
+				continue
+			}
+			matched[i] = true
+			matched[j] = true
+			found = true
 
-				// Determine source (negative) and dest (positive)
-				source, dest := a, b
-				if b.amount < 0 {
-					source, dest = b, a
-				}
-				pairs = append(pairs, transferPair{source: source, dest: dest})
-				matched[i] = true
-				matched[j] = true
-				found = true
+			// Both amounts must have opposite signs
+			if (a.amount < 0) == (b.amount < 0) {
+				failures = append(failures,
+					dto.FailedRow{RowNumber: a.rowNumber, Data: parsedRowToDTO(a), Error: "transfer pair has same sign amounts"},
+					dto.FailedRow{RowNumber: b.rowNumber, Data: parsedRowToDTO(b), Error: "transfer pair has same sign amounts"},
+				)
 				break
 			}
+
+			// Source is the negative (expense) side, dest is the positive (income) side
+			source, dest := a, b
+			if b.amount < 0 {
+				source, dest = b, a
+			}
+			pairs = append(pairs, transferPair{source: source, dest: dest})
+			break
 		}
-		if !found && !matched[i] {
+		if !found {
 			failures = append(failures, dto.FailedRow{
 				RowNumber: a.rowNumber,
 				Data:      parsedRowToDTO(a),
 				Error:     "transfer pair not found",
 			})
-			matched[i] = true
 		}
 	}
 
 	return pairs, failures
 }
 
-func (s *ImportFull) findCurrencyForAccount(accountName string, rows []parsedRow) string {
+func findCurrencyForAccount(accountName string, rows []parsedRow) string {
 	for _, row := range rows {
 		if row.account == accountName {
 			return row.currency
@@ -634,8 +594,21 @@ func (s *ImportFull) findCurrencyForAccount(accountName string, rows []parsedRow
 	return ""
 }
 
-func (s *ImportFull) rowToDTO(row parsedRow) dto.FullImportRow {
-	return parsedRowToDTO(&row)
+func filterByCurrency(rows []parsedRow, accountCache map[string]store.Account, resp *dto.FullImportResponse) []parsedRow {
+	valid := make([]parsedRow, 0, len(rows))
+	for _, row := range rows {
+		acct := accountCache[row.account]
+		if acct.Currency != row.currency {
+			resp.FailedRows = append(resp.FailedRows, dto.FailedRow{
+				RowNumber: row.rowNumber,
+				Data:      parsedRowToDTO(&row),
+				Error:     fmt.Sprintf("currency mismatch: account %q has currency %s but row has %s", row.account, acct.Currency, row.currency),
+			})
+			continue
+		}
+		valid = append(valid, row)
+	}
+	return valid
 }
 
 func parsedRowToDTO(row *parsedRow) dto.FullImportRow {

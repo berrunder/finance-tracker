@@ -2,6 +2,12 @@ import { Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { Step } from './helpers'
 
+function stepStyle(current: Step, n: Step): string {
+  if (current === n) return 'bg-primary text-primary-foreground'
+  if (current > n) return 'bg-primary/20 text-primary'
+  return 'bg-muted text-muted-foreground'
+}
+
 const STEPS = [
   { n: 1 as const, label: 'Upload' },
   { n: 2 as const, label: 'Resolve' },
@@ -17,11 +23,7 @@ export function StepIndicator({ current }: { current: Step }) {
           <div
             className={cn(
               'flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold transition-colors',
-              current === n
-                ? 'bg-primary text-primary-foreground'
-                : current > n
-                  ? 'bg-primary/20 text-primary'
-                  : 'bg-muted text-muted-foreground',
+              stepStyle(current, n),
             )}
           >
             {current > n ? <Check className="size-3.5" /> : n}

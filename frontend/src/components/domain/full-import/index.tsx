@@ -5,9 +5,13 @@ import { useAccounts } from '@/hooks/use-accounts'
 import { useCurrencies } from '@/hooks/use-currencies'
 import { useCategories } from '@/hooks/use-categories'
 import { useImportFull } from '@/hooks/use-import'
-import type { FullImportResponse, NewCurrency } from '@/types/api'
+import type {
+  FullImportResponse,
+  FullImportRow,
+  NewCurrency,
+} from '@/types/api'
 import { handleMutationError } from '@/lib/form-helpers'
-import type { ParsedRow, Step } from './helpers'
+import type { Step } from './helpers'
 import {
   detectDecimalSeparator,
   detectDelimiter,
@@ -88,9 +92,9 @@ export function FullImportWizard() {
           return
         }
 
-        // Skip header row, build ParsedRow objects
+        // Skip header row, build row objects
         const dataRows = (parsed.data as string[][]).slice(1)
-        const rows: ParsedRow[] = dataRows
+        const rows: FullImportRow[] = dataRows
           .filter((r) => r.some((cell) => cell.trim()))
           .map((r) => ({
             date: (r[0] || '').trim(),
