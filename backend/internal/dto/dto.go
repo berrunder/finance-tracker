@@ -260,7 +260,7 @@ type NewCurrency struct {
 
 type FullImportRequest struct {
 	DateFormat       string            `json:"date_format" validate:"required"`
-	DecimalSeparator string            `json:"decimal_separator" validate:"required,oneof=. ,"`
+	DecimalSeparator string            `json:"decimal_separator" validate:"required,oneof=. 0x2C"`
 	CurrencyMapping  map[string]string `json:"currency_mapping"`
 	NewCurrencies    []NewCurrency     `json:"new_currencies"`
 	Rows             []FullImportRow   `json:"rows" validate:"required,min=1"`
