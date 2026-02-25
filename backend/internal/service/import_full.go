@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"math"
 	"strconv"
 	"strings"
@@ -300,6 +301,7 @@ func (s *ImportFull) Import(ctx context.Context, userID uuid.UUID, req dto.FullI
 	}
 
 	// Step 7: Batch insert
+	slog.Info("import: starting batch insert", "total_rows", len(allRows), "regular", len(regularRows), "transfer_pairs", len(pairs))
 	const batchSize = 1000
 	for i := 0; i < len(allRows); i += batchSize {
 		batchRows := allRows[i:min(i+batchSize, len(allRows))]
@@ -309,14 +311,28 @@ func (s *ImportFull) Import(ctx context.Context, userID uuid.UUID, req dto.FullI
 		}
 		count, batchErr := q.BulkCreateTransactionsFull(ctx, params)
 		if batchErr != nil {
-			for _, row := range batchRows {
-				resp.FailedRows = append(resp.FailedRows, dto.FailedRow{
-					RowNumber: row.rowNumber,
-					Data:      row.data,
-					Error:     fmt.Sprintf("batch insert failed: %v", batchErr),
-				})
+			slog.Error("import: batch insert failed",
+				"error", batchErr,
+				"batch_offset", i,
+				"batch_size", len(batchRows),
+			)
+			// Log first few rows from the failed batch for debugging
+			for j, row := range batchRows {
+				if j >= 3 {
+					break
+				}
+				slog.Error("import: sample failed row",
+					"row_number", row.rowNumber,
+					"account_id", row.param.AccountID,
+					"category_id", row.param.CategoryID,
+					"type", row.param.Type,
+					"amount", row.param.Amount,
+					"date", row.param.Date,
+					"transfer_id", row.param.TransferID,
+					"exchange_rate", row.param.ExchangeRate,
+				)
 			}
-			continue
+			return nil, fmt.Errorf("batch insert failed at offset %d: %w", i, batchErr)
 		}
 		resp.Imported += int(count)
 	}
