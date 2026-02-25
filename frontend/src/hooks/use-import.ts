@@ -35,6 +35,10 @@ export function useImportFull() {
       invalidateImportRelated(queryClient)
       queryClient.invalidateQueries({ queryKey: queryKeys.categories.all })
       queryClient.invalidateQueries({ queryKey: queryKeys.currencies })
+      queryClient.invalidateQueries({ queryKey: queryKeys.accounts.all })
+      queryClient.invalidateQueries({ queryKey: queryKeys.transactions.all })
+      queryClient.invalidateQueries({ queryKey: queryKeys.reports.all })
+      queryClient.invalidateQueries({ queryKey: queryKeys.exchangeRates })
     },
   })
 }
