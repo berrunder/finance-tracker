@@ -1,7 +1,8 @@
-import { useMemo, useState } from 'react'
-import { ArrowDownUp } from 'lucide-react'
+import { useMemo, useState, useRef } from 'react'
+import { ArrowDownUp, ChevronsLeft, ChevronsRight } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import {
   Table,
   TableBody,
@@ -247,27 +248,11 @@ export function StepPreview({
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setPage((p) => Math.max(0, p - 1))}
-            disabled={page === 0}
-          >
-            Previous
-          </Button>
-          <span className="text-sm text-muted-foreground">
-            Page {page + 1} of {totalPages}
-          </span>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
-            disabled={page >= totalPages - 1}
-          >
-            Next
-          </Button>
-        </div>
+        <PaginationControls
+          page={page}
+          totalPages={totalPages}
+          onPageChange={setPage}
+        />
       )}
 
       {error && (
@@ -301,6 +286,81 @@ function SummaryCard({
     <div className="rounded-lg border p-3 text-center">
       <div className="text-xs text-muted-foreground">{label}</div>
       <div className={cn('text-2xl font-bold', className)}>{value}</div>
+    </div>
+  )
+}
+
+function PaginationControls({
+  page,
+  totalPages,
+  onPageChange,
+}: {
+  page: number
+  totalPages: number
+  onPageChange: (page: number) => void
+}) {
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  function handleGoToPage() {
+    const val = Number(inputRef.current?.value)
+    if (!Number.isInteger(val) || val < 1 || val > totalPages) return
+    onPageChange(val - 1)
+    if (inputRef.current) inputRef.current.value = ''
+  }
+
+  return (
+    <div className="flex items-center justify-center gap-2">
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => onPageChange(0)}
+        disabled={page === 0}
+        title="First page"
+      >
+        <ChevronsLeft className="size-4" />
+      </Button>
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => onPageChange(Math.max(0, page - 1))}
+        disabled={page === 0}
+      >
+        Previous
+      </Button>
+      <span className="text-sm text-muted-foreground">
+        Page {page + 1} of {totalPages}
+      </span>
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => onPageChange(Math.min(totalPages - 1, page + 1))}
+        disabled={page >= totalPages - 1}
+      >
+        Next
+      </Button>
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => onPageChange(totalPages - 1)}
+        disabled={page >= totalPages - 1}
+        title="Last page"
+      >
+        <ChevronsRight className="size-4" />
+      </Button>
+      <div className="flex items-center gap-1">
+        <Input
+          ref={inputRef}
+          type="number"
+          min={1}
+          max={totalPages}
+          placeholder="Go to"
+          className="h-8 w-20 text-sm"
+          onKeyDown={(e) => e.key === 'Enter' && handleGoToPage()}
+        />
+        <Button variant="outline" size="sm" onClick={handleGoToPage}>
+          Go
+        </Button>
+      </div>
     </div>
   )
 }
