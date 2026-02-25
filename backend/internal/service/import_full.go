@@ -378,6 +378,9 @@ func (s *ImportFull) parseRow(
 	if err != nil {
 		return nil, fmt.Errorf("invalid amount %q: %w", row.Total, err)
 	}
+	if amount == 0 {
+		return nil, fmt.Errorf("zero amount not allowed")
+	}
 
 	// Resolve currency
 	currCode, err := resolveCurrency(strings.TrimSpace(row.Currency), currencyMapping, currencies)
