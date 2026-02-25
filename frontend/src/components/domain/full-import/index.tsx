@@ -81,6 +81,7 @@ export function FullImportWizard() {
         const parsed = Papa.parse(rawText, {
           delimiter,
           skipEmptyLines: true,
+          quoteChar: '\0',
         })
 
         if (
