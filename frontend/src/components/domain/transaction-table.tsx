@@ -32,11 +32,13 @@ interface TransactionTableProps {
   onDelete: (transaction: Transaction) => void
 }
 
+const EM_DASH = '\u2014'
+
 function getCategoryLabel(
   categoryId: string | null,
   categories: Category[],
 ): string {
-  if (!categoryId) return '\u2014'
+  if (!categoryId) return EM_DASH
   for (const cat of categories) {
     if (cat.id === categoryId) return cat.name
     if (cat.children) {
@@ -45,11 +47,11 @@ function getCategoryLabel(
       }
     }
   }
-  return '\u2014'
+  return EM_DASH
 }
 
 function getAccountName(accountId: string, accounts: Account[]): string {
-  return accounts.find((a) => a.id === accountId)?.name ?? '\u2014'
+  return accounts.find((a) => a.id === accountId)?.name ?? EM_DASH
 }
 
 function getTransferDescription(
@@ -57,13 +59,13 @@ function getTransferDescription(
   transactions: Transaction[],
   accounts: Account[],
 ): string {
-  if (!tx.transfer_id) return tx.description || '\u2014'
+  if (!tx.transfer_id) return tx.description || EM_DASH
 
   const linked = transactions.find((item) => item.id === tx.transfer_id)
   const currentAccount = getAccountName(tx.account_id, accounts)
   const linkedAccount = linked
     ? getAccountName(linked.account_id, accounts)
-    : '\u2014'
+    : EM_DASH
 
   if (tx.type === 'expense') {
     return `Transfer: ${currentAccount} \u2192 ${linkedAccount}`

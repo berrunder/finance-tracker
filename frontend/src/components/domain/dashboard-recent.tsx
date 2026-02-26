@@ -13,8 +13,10 @@ interface DashboardRecentProps {
   onRetry?: () => void
 }
 
+const EM_DASH = '\u2014'
+
 function getAccountName(accountId: string, accounts: Account[]): string {
-  return accounts.find((a) => a.id === accountId)?.name ?? '\u2014'
+  return accounts.find((a) => a.id === accountId)?.name ?? EM_DASH
 }
 
 function getCategoryName(
@@ -22,7 +24,7 @@ function getCategoryName(
   categories: Category[],
 ): string {
   if (!categoryId) return 'Transfer'
-  return categories.find((c) => c.id === categoryId)?.name ?? '\u2014'
+  return categories.find((c) => c.id === categoryId)?.name ?? EM_DASH
 }
 
 export function DashboardRecent({
