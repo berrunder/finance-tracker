@@ -9,14 +9,8 @@ import { getSubmitLabel } from '@/lib/form-helpers'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { FormError } from '@/components/ui/form-error'
+import { AccountCombobox } from '@/components/domain/account-combobox'
 import { DatePicker } from '@/components/domain/date-picker'
 import { TransferCurrencyFields } from '@/components/domain/transfer-currency-fields'
 import type { Account } from '@/types/api'
@@ -57,51 +51,25 @@ export function TransferForm({
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
           <Label>From Account</Label>
-          <Select
+          <AccountCombobox
             value={fromAccountId}
             onValueChange={(v) =>
-              form.setValue('from_account_id', v, {
-                shouldValidate: true,
-              })
+              form.setValue('from_account_id', v, { shouldValidate: true })
             }
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Select account" />
-            </SelectTrigger>
-            <SelectContent>
-              {accounts.map((a) => (
-                <SelectItem key={a.id} value={a.id}>
-                  {a.name} ({a.currency})
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            accounts={accounts}
+          />
           <FormError message={form.formState.errors.from_account_id?.message} />
         </div>
 
         <div className="space-y-2">
           <Label>To Account</Label>
-          <Select
+          <AccountCombobox
             value={toAccountId}
             onValueChange={(v) =>
-              form.setValue('to_account_id', v, {
-                shouldValidate: true,
-              })
+              form.setValue('to_account_id', v, { shouldValidate: true })
             }
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Select account" />
-            </SelectTrigger>
-            <SelectContent>
-              {accounts
-                .filter((a) => a.id !== fromAccountId)
-                .map((a) => (
-                  <SelectItem key={a.id} value={a.id}>
-                    {a.name} ({a.currency})
-                  </SelectItem>
-                ))}
-            </SelectContent>
-          </Select>
+            accounts={accounts.filter((a) => a.id !== fromAccountId)}
+          />
           <FormError message={form.formState.errors.to_account_id?.message} />
         </div>
       </div>
