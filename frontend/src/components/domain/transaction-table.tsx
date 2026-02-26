@@ -136,7 +136,7 @@ export function TransactionTable({
               <TableHead>Category</TableHead>
               <TableHead className="text-right">Amount</TableHead>
               <TableHead>Account</TableHead>
-              <TableHead className="w-12" />
+              <TableHead className="w-20" />
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -167,10 +167,24 @@ export function TransactionTable({
                 </TableCell>
                 <TableCell>{getAccountName(tx.account_id, accounts)}</TableCell>
                 <TableCell>
-                  <TransactionActions
-                    onEdit={() => onEdit(tx)}
-                    onDelete={() => onDelete(tx)}
-                  />
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => onEdit(tx)}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="text-destructive hover:text-destructive h-8 w-8"
+                      onClick={() => onDelete(tx)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </TableCell>
               </TableRow>
             ))}
