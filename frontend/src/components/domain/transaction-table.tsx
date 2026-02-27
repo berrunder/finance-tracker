@@ -134,10 +134,10 @@ export function TransactionTable({
           <TableHeader>
             <TableRow>
               <TableHead>Date</TableHead>
-              <TableHead>Description</TableHead>
+              <TableHead>Account</TableHead>
               <TableHead>Category</TableHead>
               <TableHead className="text-right">Amount</TableHead>
-              <TableHead>Account</TableHead>
+              <TableHead>Description</TableHead>
               <TableHead className="w-20" />
             </TableRow>
           </TableHeader>
@@ -145,16 +145,7 @@ export function TransactionTable({
             {transactions.map((tx) => (
               <TableRow key={tx.id}>
                 <TableCell>{formatDate(tx.date)}</TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    {getTransferDescription(tx, transactions, accounts)}
-                    {tx.transfer_id && (
-                      <Badge variant="outline" className="text-xs">
-                        Transfer
-                      </Badge>
-                    )}
-                  </div>
-                </TableCell>
+                <TableCell>{getAccountName(tx.account_id, accounts)}</TableCell>
                 <TableCell className="text-muted-foreground">
                   {getCategoryLabel(tx.category_id, categories)}
                 </TableCell>
@@ -167,7 +158,16 @@ export function TransactionTable({
                   {tx.type === 'expense' ? '\u2212' : '+'}
                   {formatMoney(tx.amount, tx.currency)}
                 </TableCell>
-                <TableCell>{getAccountName(tx.account_id, accounts)}</TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-2">
+                    {getTransferDescription(tx, transactions, accounts)}
+                    {tx.transfer_id && (
+                      <Badge variant="outline" className="text-xs">
+                        Transfer
+                      </Badge>
+                    )}
+                  </div>
+                </TableCell>
                 <TableCell>
                   <div className="flex items-center gap-1">
                     <Button
