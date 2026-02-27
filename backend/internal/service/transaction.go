@@ -145,13 +145,13 @@ func (s *Transaction) List(ctx context.Context, userID uuid.UUID, params ListTra
 
 	offset := int32((params.Page - 1) * params.PerPage)
 
-	var accountID pgtype.UUID
-	if params.AccountID != nil {
-		accountID = pgtype.UUID{Bytes: *params.AccountID, Valid: true}
+	accountIDs := params.AccountIDs
+	if accountIDs == nil {
+		accountIDs = []uuid.UUID{}
 	}
-	var categoryID pgtype.UUID
-	if params.CategoryID != nil {
-		categoryID = pgtype.UUID{Bytes: *params.CategoryID, Valid: true}
+	categoryIDs := params.CategoryIDs
+	if categoryIDs == nil {
+		categoryIDs = []uuid.UUID{}
 	}
 	var txnType pgtype.Text
 	if params.Type != "" {
@@ -177,14 +177,14 @@ func (s *Transaction) List(ctx context.Context, userID uuid.UUID, params ListTra
 	}
 
 	storeParams := store.ListTransactionsParams{
-		UserID:     userID,
-		AccountID:  accountID,
-		CategoryID: categoryID,
-		Type:       txnType,
-		DateFrom:   dateFrom,
-		DateTo:     dateTo,
-		Off:        offset,
-		Lim:        int32(params.PerPage),
+		UserID:      userID,
+		AccountIds:  accountIDs,
+		CategoryIds: categoryIDs,
+		Type:        txnType,
+		DateFrom:    dateFrom,
+		DateTo:      dateTo,
+		Off:         offset,
+		Lim:         int32(params.PerPage),
 	}
 
 	txns, err := s.queries.ListTransactions(ctx, storeParams)
@@ -193,12 +193,12 @@ func (s *Transaction) List(ctx context.Context, userID uuid.UUID, params ListTra
 	}
 
 	total, err := s.queries.CountTransactions(ctx, store.CountTransactionsParams{
-		UserID:     userID,
-		AccountID:  accountID,
-		CategoryID: categoryID,
-		Type:       txnType,
-		DateFrom:   dateFrom,
-		DateTo:     dateTo,
+		UserID:      userID,
+		AccountIds:  accountIDs,
+		CategoryIds: categoryIDs,
+		Type:        txnType,
+		DateFrom:    dateFrom,
+		DateTo:      dateTo,
 	})
 	if err != nil {
 		return nil, err
@@ -430,11 +430,11 @@ func currentMonthBounds() (pgtype.Date, pgtype.Date) {
 }
 
 type ListTransactionsParams struct {
-	AccountID  *uuid.UUID
-	CategoryID *uuid.UUID
-	Type       string
-	DateFrom   string
-	DateTo     string
-	Page       int
-	PerPage    int
+	AccountIDs  []uuid.UUID
+	CategoryIDs []uuid.UUID
+	Type        string
+	DateFrom    string
+	DateTo      string
+	Page        int
+	PerPage     int
 }

@@ -239,8 +239,8 @@ Query parameters (all optional):
 
 | Param | Type | Default | Description |
 |-------|------|---------|-------------|
-| `account_id` | uuid | — | Filter by account |
-| `category_id` | uuid | — | Filter by category |
+| `account_id` | uuid | — | Filter by account(s). Repeat for multiple: `?account_id=x&account_id=y` |
+| `category_id` | uuid | — | Filter by category(ies). Repeat for multiple: `?category_id=x&category_id=y` |
 | `type` | string | — | `income` or `expense` |
 | `date_from` | string | — | Start date `YYYY-MM-DD` |
 | `date_to` | string | — | End date `YYYY-MM-DD` |

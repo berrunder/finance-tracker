@@ -34,16 +34,16 @@ func (h *Transaction) List(w http.ResponseWriter, r *http.Request) {
 		PerPage:  20,
 	}
 
-	if v := q.Get("account_id"); v != "" {
+	for _, v := range q["account_id"] {
 		id, err := uuid.Parse(v)
 		if err == nil {
-			params.AccountID = &id
+			params.AccountIDs = append(params.AccountIDs, id)
 		}
 	}
-	if v := q.Get("category_id"); v != "" {
+	for _, v := range q["category_id"] {
 		id, err := uuid.Parse(v)
 		if err == nil {
-			params.CategoryID = &id
+			params.CategoryIDs = append(params.CategoryIDs, id)
 		}
 	}
 	if v := q.Get("page"); v != "" {
