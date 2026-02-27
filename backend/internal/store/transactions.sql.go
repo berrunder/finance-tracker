@@ -107,27 +107,27 @@ type BulkCreateTransactionsFullParams struct {
 const countTransactions = `-- name: CountTransactions :one
 SELECT COUNT(*) FROM transactions
 WHERE user_id = $1
-    AND ($2::UUID IS NULL OR account_id = $2)
-    AND ($3::UUID IS NULL OR category_id = $3)
+    AND (cardinality($2::UUID[]) = 0 OR account_id = ANY($2))
+    AND (cardinality($3::UUID[]) = 0 OR category_id = ANY($3))
     AND ($4::VARCHAR IS NULL OR type = $4)
     AND ($5::DATE IS NULL OR date >= $5)
     AND ($6::DATE IS NULL OR date <= $6)
 `
 
 type CountTransactionsParams struct {
-	UserID     uuid.UUID   `json:"user_id"`
-	AccountID  pgtype.UUID `json:"account_id"`
-	CategoryID pgtype.UUID `json:"category_id"`
-	Type       pgtype.Text `json:"type"`
-	DateFrom   pgtype.Date `json:"date_from"`
-	DateTo     pgtype.Date `json:"date_to"`
+	UserID      uuid.UUID   `json:"user_id"`
+	AccountIds  []uuid.UUID `json:"account_ids"`
+	CategoryIds []uuid.UUID `json:"category_ids"`
+	Type        pgtype.Text `json:"type"`
+	DateFrom    pgtype.Date `json:"date_from"`
+	DateTo      pgtype.Date `json:"date_to"`
 }
 
 func (q *Queries) CountTransactions(ctx context.Context, arg CountTransactionsParams) (int64, error) {
 	row := q.db.QueryRow(ctx, countTransactions,
 		arg.UserID,
-		arg.AccountID,
-		arg.CategoryID,
+		arg.AccountIds,
+		arg.CategoryIds,
 		arg.Type,
 		arg.DateFrom,
 		arg.DateTo,
@@ -315,8 +315,8 @@ func (q *Queries) GetTransactionsByTransferID(ctx context.Context, arg GetTransa
 const listTransactions = `-- name: ListTransactions :many
 SELECT id, user_id, account_id, category_id, type, amount, description, date, transfer_id, exchange_rate, created_at, updated_at FROM transactions
 WHERE user_id = $1
-    AND ($2::UUID IS NULL OR account_id = $2)
-    AND ($3::UUID IS NULL OR category_id = $3)
+    AND (cardinality($2::UUID[]) = 0 OR account_id = ANY($2))
+    AND (cardinality($3::UUID[]) = 0 OR category_id = ANY($3))
     AND ($4::VARCHAR IS NULL OR type = $4)
     AND ($5::DATE IS NULL OR date >= $5)
     AND ($6::DATE IS NULL OR date <= $6)
@@ -325,21 +325,21 @@ LIMIT $8 OFFSET $7
 `
 
 type ListTransactionsParams struct {
-	UserID     uuid.UUID   `json:"user_id"`
-	AccountID  pgtype.UUID `json:"account_id"`
-	CategoryID pgtype.UUID `json:"category_id"`
-	Type       pgtype.Text `json:"type"`
-	DateFrom   pgtype.Date `json:"date_from"`
-	DateTo     pgtype.Date `json:"date_to"`
-	Off        int32       `json:"off"`
-	Lim        int32       `json:"lim"`
+	UserID      uuid.UUID   `json:"user_id"`
+	AccountIds  []uuid.UUID `json:"account_ids"`
+	CategoryIds []uuid.UUID `json:"category_ids"`
+	Type        pgtype.Text `json:"type"`
+	DateFrom    pgtype.Date `json:"date_from"`
+	DateTo      pgtype.Date `json:"date_to"`
+	Off         int32       `json:"off"`
+	Lim         int32       `json:"lim"`
 }
 
 func (q *Queries) ListTransactions(ctx context.Context, arg ListTransactionsParams) ([]Transaction, error) {
 	rows, err := q.db.Query(ctx, listTransactions,
 		arg.UserID,
-		arg.AccountID,
-		arg.CategoryID,
+		arg.AccountIds,
+		arg.CategoryIds,
 		arg.Type,
 		arg.DateFrom,
 		arg.DateTo,

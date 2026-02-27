@@ -9,8 +9,8 @@ SELECT * FROM transactions WHERE id = $1 AND user_id = $2;
 -- name: ListTransactions :many
 SELECT * FROM transactions
 WHERE user_id = @user_id
-    AND (sqlc.narg('account_id')::UUID IS NULL OR account_id = sqlc.narg('account_id'))
-    AND (sqlc.narg('category_id')::UUID IS NULL OR category_id = sqlc.narg('category_id'))
+    AND (cardinality(@account_ids::UUID[]) = 0 OR account_id = ANY(@account_ids))
+    AND (cardinality(@category_ids::UUID[]) = 0 OR category_id = ANY(@category_ids))
     AND (sqlc.narg('type')::VARCHAR IS NULL OR type = sqlc.narg('type'))
     AND (sqlc.narg('date_from')::DATE IS NULL OR date >= sqlc.narg('date_from'))
     AND (sqlc.narg('date_to')::DATE IS NULL OR date <= sqlc.narg('date_to'))
@@ -20,8 +20,8 @@ LIMIT @lim OFFSET @off;
 -- name: CountTransactions :one
 SELECT COUNT(*) FROM transactions
 WHERE user_id = @user_id
-    AND (sqlc.narg('account_id')::UUID IS NULL OR account_id = sqlc.narg('account_id'))
-    AND (sqlc.narg('category_id')::UUID IS NULL OR category_id = sqlc.narg('category_id'))
+    AND (cardinality(@account_ids::UUID[]) = 0 OR account_id = ANY(@account_ids))
+    AND (cardinality(@category_ids::UUID[]) = 0 OR category_id = ANY(@category_ids))
     AND (sqlc.narg('type')::VARCHAR IS NULL OR type = sqlc.narg('type'))
     AND (sqlc.narg('date_from')::DATE IS NULL OR date >= sqlc.narg('date_from'))
     AND (sqlc.narg('date_to')::DATE IS NULL OR date <= sqlc.narg('date_to'));
