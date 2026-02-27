@@ -1,4 +1,4 @@
-export function buildQueryString<T extends object>(args: T): string {
+export function buildSearchParams<T extends object>(args: T): URLSearchParams {
   const params = new URLSearchParams()
   for (const [key, value] of Object.entries(args)) {
     if (value === undefined || value === '') continue
@@ -12,6 +12,10 @@ export function buildQueryString<T extends object>(args: T): string {
       params.set(key, String(value))
     }
   }
-  const qs = params.toString()
+  return params
+}
+
+export function buildQueryString<T extends object>(args: T): string {
+  const qs = buildSearchParams(args).toString()
   return qs ? `?${qs}` : ''
 }
