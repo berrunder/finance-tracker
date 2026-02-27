@@ -1,6 +1,5 @@
 import { useEffect, useRef } from 'react'
 import { X } from 'lucide-react'
-import { useAccounts } from '@/hooks/use-accounts'
 import { Button } from '@/components/ui/button'
 import {
   Select,
@@ -9,7 +8,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { CategoryCombobox } from '@/components/domain/category-combobox'
+import { AccountMultiCombobox } from '@/components/domain/account-multi-combobox'
+import { CategoryMultiCombobox } from '@/components/domain/category-multi-combobox'
 import { DatePicker } from '@/components/domain/date-picker'
 import type { TransactionFilters as Filters } from '@/api/transactions'
 
@@ -24,7 +24,6 @@ export function TransactionFilters({
   filters,
   onFiltersChange,
 }: TransactionFiltersProps) {
-  const { data: accounts = [] } = useAccounts()
   const dateTimers = useRef<Record<string, number>>({})
 
   const categoryFilterType =
@@ -33,8 +32,8 @@ export function TransactionFilters({
       : undefined
 
   const hasFilters =
-    filters.account_id ||
-    filters.category_id ||
+    (filters.account_id && filters.account_id.length > 0) ||
+    (filters.category_id && filters.category_id.length > 0) ||
     filters.type ||
     filters.date_from ||
     filters.date_to
@@ -67,33 +66,21 @@ export function TransactionFilters({
   return (
     <div className="flex flex-wrap items-end gap-3">
       <div className="w-full md:w-44">
-        <Select
-          value={filters.account_id ?? 'all'}
-          onValueChange={(v) =>
-            update({ account_id: v === 'all' ? undefined : v })
+        <AccountMultiCombobox
+          selected={filters.account_id ?? []}
+          onSelectedChange={(v) =>
+            update({ account_id: v.length > 0 ? v : undefined })
           }
-        >
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder="All accounts" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All accounts</SelectItem>
-            {accounts.map((a) => (
-              <SelectItem key={a.id} value={a.id}>
-                {a.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        />
       </div>
 
       <div className="w-full md:w-52">
-        <CategoryCombobox
-          value={filters.category_id ?? null}
-          onValueChange={(v) => update({ category_id: v || undefined })}
+        <CategoryMultiCombobox
+          selected={filters.category_id ?? []}
+          onSelectedChange={(v) =>
+            update({ category_id: v.length > 0 ? v : undefined })
+          }
           type={categoryFilterType}
-          allowClear
-          placeholder="All categories"
         />
       </div>
 

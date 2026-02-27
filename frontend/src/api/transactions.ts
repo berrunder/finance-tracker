@@ -10,8 +10,8 @@ import type {
 } from '@/types/api'
 
 export interface TransactionFilters {
-  account_id?: string
-  category_id?: string
+  account_id?: string[]
+  category_id?: string[]
   type?: string
   date_from?: string
   date_to?: string

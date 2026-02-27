@@ -51,8 +51,12 @@ export default function TransactionsPage() {
   // Sync filters with URL
   const filters: Filters = useMemo(
     () => ({
-      account_id: searchParams.get('account_id') ?? undefined,
-      category_id: searchParams.get('category_id') ?? undefined,
+      account_id: searchParams.getAll('account_id').length > 0
+        ? searchParams.getAll('account_id')
+        : undefined,
+      category_id: searchParams.getAll('category_id').length > 0
+        ? searchParams.getAll('category_id')
+        : undefined,
       type: searchParams.get('type') ?? undefined,
       date_from: searchParams.get('date_from') ?? defaultDateFrom,
       date_to: searchParams.get('date_to') ?? defaultDateTo,
@@ -64,7 +68,14 @@ export default function TransactionsPage() {
     (newFilters: Filters) => {
       const params = new URLSearchParams()
       for (const [key, value] of Object.entries(newFilters)) {
-        if (value) params.set(key, value as string)
+        if (value === undefined || value === '') continue
+        if (Array.isArray(value)) {
+          for (const item of value) {
+            params.append(key, item)
+          }
+        } else {
+          params.set(key, value as string)
+        }
       }
       setSearchParams(params, { replace: true })
     },
