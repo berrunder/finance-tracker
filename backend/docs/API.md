@@ -548,3 +548,32 @@ Full-featured import supporting multiple accounts, currencies, categories with s
 ```
 
 Processing: Creates missing currencies → resolves currency strings → parses rows → validates account-currency consistency → creates missing accounts (type=bank) → creates missing categories (type from amount sign) → pairs transfers (by date + complementary accounts, computes exchange rate for cross-currency) → batch inserts (1000/batch). Failed rows are skipped and reported.
+
+## CSV Export (protected)
+
+### `GET /export/csv`
+
+Export transactions as a CSV file for a date range. The CSV format matches the full import format.
+
+**Query parameters:**
+
+| Param | Type | Required | Description |
+|-------|------|----------|-------------|
+| `date_from` | string | yes | Start date (`yyyy-MM-dd`) |
+| `date_to` | string | yes | End date (`yyyy-MM-dd`) |
+
+**Success:** `200 OK` with `Content-Type: text/csv` and `Content-Disposition: attachment; filename="export.csv"`
+
+CSV columns: `date,account,category,total,currency,description,transfer`
+
+| Column | Format |
+|--------|--------|
+| `date` | `dd.MM.yyyy` |
+| `account` | Account name |
+| `category` | `Parent\Child` or `Parent` or empty |
+| `total` | Signed decimal (negative = expense, positive = income) |
+| `currency` | Currency code |
+| `description` | Transaction description |
+| `transfer` | Target account name for transfers, empty otherwise |
+
+**Errors:** `400` missing date_from or date_to · `401` unauthorized
