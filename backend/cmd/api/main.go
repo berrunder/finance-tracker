@@ -55,6 +55,7 @@ func main() {
 	importFullSvc := service.NewImportFull(queries, pool)
 	exchangeRateSvc := service.NewExchangeRate(queries)
 	currencySvc := service.NewCurrency(queries)
+	exportSvc := service.NewExport(queries)
 	userSvc := service.NewUser(queries)
 
 	// Middleware
@@ -70,10 +71,11 @@ func main() {
 	importFullH := handler.NewImportFull(importFullSvc)
 	exchangeRateH := handler.NewExchangeRate(exchangeRateSvc)
 	currencyH := handler.NewCurrency(currencySvc)
+	exportH := handler.NewExport(exportSvc)
 	userH := handler.NewUser(userSvc)
 
 	// Router
-	router := server.NewRouter(authMw, authH, accountH, categoryH, transactionH, reportH, importH, importFullH, exchangeRateH, currencyH, userH)
+	router := server.NewRouter(authMw, authH, accountH, categoryH, transactionH, reportH, importH, importFullH, exchangeRateH, currencyH, exportH, userH)
 
 	// Server
 	srv := server.New(":"+cfg.Port, router)

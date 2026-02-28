@@ -21,6 +21,7 @@ func NewRouter(
 	importFullH *handler.ImportFull,
 	exchangeRateH *handler.ExchangeRate,
 	currencyH *handler.Currency,
+	exportH *handler.Export,
 	userH *handler.User,
 ) http.Handler {
 	r := chi.NewRouter()
@@ -85,6 +86,10 @@ func NewRouter(
 			r.Route("/exchange-rates", func(r chi.Router) {
 				r.Get("/", exchangeRateH.List)
 				r.Post("/", exchangeRateH.Create)
+			})
+
+			r.Route("/export", func(r chi.Router) {
+				r.Get("/csv", exportH.CSV)
 			})
 
 		})
