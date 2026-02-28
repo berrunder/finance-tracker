@@ -7,24 +7,38 @@ RETURNING *;
 SELECT * FROM transactions WHERE id = $1 AND user_id = $2;
 
 -- name: ListTransactions :many
-SELECT * FROM transactions
-WHERE user_id = @user_id
-    AND (cardinality(@account_ids::UUID[]) = 0 OR account_id = ANY(@account_ids))
-    AND (cardinality(@category_ids::UUID[]) = 0 OR category_id = ANY(@category_ids))
-    AND (sqlc.narg('type')::VARCHAR IS NULL OR type = sqlc.narg('type'))
-    AND (sqlc.narg('date_from')::DATE IS NULL OR date >= sqlc.narg('date_from'))
-    AND (sqlc.narg('date_to')::DATE IS NULL OR date <= sqlc.narg('date_to'))
-ORDER BY date DESC, created_at DESC
+WITH RECURSIVE expanded_categories AS (
+    SELECT id FROM categories
+    WHERE id = ANY(@category_ids::UUID[])
+    UNION
+    SELECT c.id FROM categories c
+    INNER JOIN expanded_categories ec ON c.parent_id = ec.id
+)
+SELECT t.id, t.user_id, t.account_id, t.category_id, t.type, t.amount, t.description, t.date, t.transfer_id, t.exchange_rate, t.created_at, t.updated_at FROM transactions t
+WHERE t.user_id = @user_id
+    AND (cardinality(@account_ids::UUID[]) = 0 OR t.account_id = ANY(@account_ids))
+    AND (cardinality(@category_ids::UUID[]) = 0 OR t.category_id IN (SELECT id FROM expanded_categories))
+    AND (sqlc.narg('type')::VARCHAR IS NULL OR t.type = sqlc.narg('type'))
+    AND (sqlc.narg('date_from')::DATE IS NULL OR t.date >= sqlc.narg('date_from'))
+    AND (sqlc.narg('date_to')::DATE IS NULL OR t.date <= sqlc.narg('date_to'))
+ORDER BY t.date DESC, t.created_at DESC
 LIMIT @lim OFFSET @off;
 
 -- name: CountTransactions :one
-SELECT COUNT(*) FROM transactions
-WHERE user_id = @user_id
-    AND (cardinality(@account_ids::UUID[]) = 0 OR account_id = ANY(@account_ids))
-    AND (cardinality(@category_ids::UUID[]) = 0 OR category_id = ANY(@category_ids))
-    AND (sqlc.narg('type')::VARCHAR IS NULL OR type = sqlc.narg('type'))
-    AND (sqlc.narg('date_from')::DATE IS NULL OR date >= sqlc.narg('date_from'))
-    AND (sqlc.narg('date_to')::DATE IS NULL OR date <= sqlc.narg('date_to'));
+WITH RECURSIVE expanded_categories AS (
+    SELECT id FROM categories
+    WHERE id = ANY(@category_ids::UUID[])
+    UNION
+    SELECT c.id FROM categories c
+    INNER JOIN expanded_categories ec ON c.parent_id = ec.id
+)
+SELECT COUNT(*) FROM transactions t
+WHERE t.user_id = @user_id
+    AND (cardinality(@account_ids::UUID[]) = 0 OR t.account_id = ANY(@account_ids))
+    AND (cardinality(@category_ids::UUID[]) = 0 OR t.category_id IN (SELECT id FROM expanded_categories))
+    AND (sqlc.narg('type')::VARCHAR IS NULL OR t.type = sqlc.narg('type'))
+    AND (sqlc.narg('date_from')::DATE IS NULL OR t.date >= sqlc.narg('date_from'))
+    AND (sqlc.narg('date_to')::DATE IS NULL OR t.date <= sqlc.narg('date_to'));
 
 -- name: UpdateTransaction :one
 UPDATE transactions

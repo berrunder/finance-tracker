@@ -105,13 +105,20 @@ type BulkCreateTransactionsFullParams struct {
 }
 
 const countTransactions = `-- name: CountTransactions :one
-SELECT COUNT(*) FROM transactions
-WHERE user_id = $1
-    AND (cardinality($2::UUID[]) = 0 OR account_id = ANY($2))
-    AND (cardinality($3::UUID[]) = 0 OR category_id = ANY($3))
-    AND ($4::VARCHAR IS NULL OR type = $4)
-    AND ($5::DATE IS NULL OR date >= $5)
-    AND ($6::DATE IS NULL OR date <= $6)
+WITH RECURSIVE expanded_categories AS (
+    SELECT id FROM categories
+    WHERE id = ANY($3::UUID[])
+    UNION
+    SELECT c.id FROM categories c
+    INNER JOIN expanded_categories ec ON c.parent_id = ec.id
+)
+SELECT COUNT(*) FROM transactions t
+WHERE t.user_id = $1
+    AND (cardinality($2::UUID[]) = 0 OR t.account_id = ANY($2))
+    AND (cardinality($3::UUID[]) = 0 OR t.category_id IN (SELECT id FROM expanded_categories))
+    AND ($4::VARCHAR IS NULL OR t.type = $4)
+    AND ($5::DATE IS NULL OR t.date >= $5)
+    AND ($6::DATE IS NULL OR t.date <= $6)
 `
 
 type CountTransactionsParams struct {
@@ -313,14 +320,21 @@ func (q *Queries) GetTransactionsByTransferID(ctx context.Context, arg GetTransa
 }
 
 const listTransactions = `-- name: ListTransactions :many
-SELECT id, user_id, account_id, category_id, type, amount, description, date, transfer_id, exchange_rate, created_at, updated_at FROM transactions
-WHERE user_id = $1
-    AND (cardinality($2::UUID[]) = 0 OR account_id = ANY($2))
-    AND (cardinality($3::UUID[]) = 0 OR category_id = ANY($3))
-    AND ($4::VARCHAR IS NULL OR type = $4)
-    AND ($5::DATE IS NULL OR date >= $5)
-    AND ($6::DATE IS NULL OR date <= $6)
-ORDER BY date DESC, created_at DESC
+WITH RECURSIVE expanded_categories AS (
+    SELECT id FROM categories
+    WHERE id = ANY($3::UUID[])
+    UNION
+    SELECT c.id FROM categories c
+    INNER JOIN expanded_categories ec ON c.parent_id = ec.id
+)
+SELECT t.id, t.user_id, t.account_id, t.category_id, t.type, t.amount, t.description, t.date, t.transfer_id, t.exchange_rate, t.created_at, t.updated_at FROM transactions t
+WHERE t.user_id = $1
+    AND (cardinality($2::UUID[]) = 0 OR t.account_id = ANY($2))
+    AND (cardinality($3::UUID[]) = 0 OR t.category_id IN (SELECT id FROM expanded_categories))
+    AND ($4::VARCHAR IS NULL OR t.type = $4)
+    AND ($5::DATE IS NULL OR t.date >= $5)
+    AND ($6::DATE IS NULL OR t.date <= $6)
+ORDER BY t.date DESC, t.created_at DESC
 LIMIT $8 OFFSET $7
 `
 
