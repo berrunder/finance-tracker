@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/csv"
 	"fmt"
+	"strings"
 
 	"github.com/google/uuid"
 
@@ -44,6 +45,7 @@ func (s *Export) ExportCSV(ctx context.Context, userID uuid.UUID, dateFrom, date
 
 	var buf bytes.Buffer
 	w := csv.NewWriter(&buf)
+	w.Comma = ';'
 
 	// Header matching FullImportRow fields
 	if err := w.Write([]string{"date", "account", "category", "total", "currency", "description", "transfer"}); err != nil {
@@ -70,13 +72,16 @@ func (s *Export) ExportCSV(ctx context.Context, userID uuid.UUID, dateFrom, date
 		// Date in dd.MM.yyyy format
 		date := row.Date.Time.Format("02.01.2006")
 
+		// Replace semicolons in description field to avoid breaking the delimiter (dirty hack to be compactible with homemoney incorrect CSV export format)
+		description := strings.ReplaceAll(row.Description, ";", ".(semi)")
+
 		if err := w.Write([]string{
 			date,
 			row.AccountName,
 			category,
 			amount,
 			row.Currency,
-			row.Description,
+			description,
 			row.TransferAccountName,
 		}); err != nil {
 			return nil, fmt.Errorf("failed to write CSV row: %w", err)
