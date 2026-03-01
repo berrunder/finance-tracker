@@ -33,17 +33,9 @@ SELECT * FROM categories WHERE user_id = $1 AND name = $2 AND type = $3 AND pare
 -- name: CreateDefaultCategories :exec
 INSERT INTO categories (user_id, name, type) VALUES
     (@user_id, 'Salary', 'income'),
-    (@user_id, 'Freelance', 'income'),
-    (@user_id, 'Investments', 'income'),
     (@user_id, 'Other Income', 'income'),
     (@user_id, 'Food', 'expense'),
     (@user_id, 'Transport', 'expense'),
-    (@user_id, 'Housing', 'expense'),
-    (@user_id, 'Utilities', 'expense'),
-    (@user_id, 'Healthcare', 'expense'),
-    (@user_id, 'Entertainment', 'expense'),
-    (@user_id, 'Shopping', 'expense'),
-    (@user_id, 'Education', 'expense'),
     (@user_id, 'Other Expense', 'expense');
 
 -- name: DeleteAllUserCategories :exec
