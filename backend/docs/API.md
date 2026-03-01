@@ -111,6 +111,14 @@ Update the authenticated user's profile.
 }
 ```
 
+### `POST /user/reset`
+
+Permanently deletes all user transactions, accounts, and categories, then re-seeds default categories (same as on registration). No request body.
+
+```
+// Response 204 (no body)
+```
+
 ---
 
 ## Accounts (protected)
