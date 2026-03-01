@@ -11,6 +11,7 @@ import { ConfirmDialog } from '@/components/domain/confirm-dialog'
 import { ProfileForm } from '@/components/domain/profile-form'
 import { AppearanceSettings } from '@/components/domain/appearance-settings'
 import { ExportTab } from '@/components/domain/export-tab'
+import { DataTab } from '@/components/domain/data-tab'
 import type { Category } from '@/types/api'
 
 export default function SettingsPage() {
@@ -66,6 +67,7 @@ export default function SettingsPage() {
           <TabsTrigger value="profile">Profile</TabsTrigger>
           <TabsTrigger value="appearance">Appearance</TabsTrigger>
           <TabsTrigger value="export">Export</TabsTrigger>
+          <TabsTrigger value="data">Data</TabsTrigger>
         </TabsList>
 
         <TabsContent value="categories" className="mt-4">
@@ -108,6 +110,10 @@ export default function SettingsPage() {
 
         <TabsContent value="export" className="mt-4">
           <ExportTab />
+        </TabsContent>
+
+        <TabsContent value="data" className="mt-4">
+          <DataTab />
         </TabsContent>
       </Tabs>
 

@@ -7,3 +7,7 @@ export function updateUser(data: UpdateUserRequest): Promise<User> {
     body: JSON.stringify(data),
   })
 }
+
+export function resetUserData(): Promise<void> {
+  return apiClient<void>('/user/reset', { method: 'POST' })
+}
