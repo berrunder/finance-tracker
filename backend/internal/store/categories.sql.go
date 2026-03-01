@@ -47,11 +47,17 @@ func (q *Queries) CreateCategory(ctx context.Context, arg CreateCategoryParams) 
 const createDefaultCategories = `-- name: CreateDefaultCategories :exec
 INSERT INTO categories (user_id, name, type) VALUES
     ($1, 'Salary', 'income'),
+    ($1, 'Freelance', 'income'),
     ($1, 'Investments', 'income'),
     ($1, 'Other Income', 'income'),
     ($1, 'Food', 'expense'),
     ($1, 'Transport', 'expense'),
     ($1, 'Housing', 'expense'),
+    ($1, 'Utilities', 'expense'),
+    ($1, 'Healthcare', 'expense'),
+    ($1, 'Entertainment', 'expense'),
+    ($1, 'Shopping', 'expense'),
+    ($1, 'Education', 'expense'),
     ($1, 'Other Expense', 'expense')
 `
 
@@ -66,15 +72,6 @@ DELETE FROM categories WHERE user_id = $1
 
 func (q *Queries) DeleteAllUserCategories(ctx context.Context, userID uuid.UUID) error {
 	_, err := q.db.Exec(ctx, deleteAllUserCategories, userID)
-	return err
-}
-
-const deleteAllUserSubcategories = `-- name: DeleteAllUserSubcategories :exec
-DELETE FROM categories WHERE user_id = $1 AND parent_id IS NOT NULL
-`
-
-func (q *Queries) DeleteAllUserSubcategories(ctx context.Context, userID uuid.UUID) error {
-	_, err := q.db.Exec(ctx, deleteAllUserSubcategories, userID)
 	return err
 }
 

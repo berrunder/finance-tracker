@@ -49,5 +49,3 @@ INSERT INTO categories (user_id, name, type) VALUES
 -- name: DeleteAllUserCategories :exec
 DELETE FROM categories WHERE user_id = $1;
 
--- name: DeleteAllUserSubcategories :exec
-DELETE FROM categories WHERE user_id = $1 AND parent_id IS NOT NULL;

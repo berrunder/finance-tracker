@@ -17,7 +17,6 @@ type userStore interface {
 	GetUserByID(ctx context.Context, id uuid.UUID) (store.User, error)
 	DeleteAllUserTransactions(ctx context.Context, userID uuid.UUID) error
 	DeleteAllUserAccounts(ctx context.Context, userID uuid.UUID) error
-	DeleteAllUserSubcategories(ctx context.Context, userID uuid.UUID) error
 	DeleteAllUserCategories(ctx context.Context, userID uuid.UUID) error
 	CreateDefaultCategories(ctx context.Context, userID uuid.UUID) error
 	WithTx(tx pgx.Tx) *store.Queries
@@ -67,9 +66,6 @@ func (s *User) Reset(ctx context.Context, userID uuid.UUID) error {
 		return err
 	}
 	if err := q.DeleteAllUserAccounts(ctx, userID); err != nil {
-		return err
-	}
-	if err := q.DeleteAllUserSubcategories(ctx, userID); err != nil {
 		return err
 	}
 	if err := q.DeleteAllUserCategories(ctx, userID); err != nil {
