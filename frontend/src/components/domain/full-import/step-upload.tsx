@@ -2,6 +2,7 @@ import { useRef } from 'react'
 import { Upload } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import type { FullImportRow } from '@/types/api'
 import { cn } from '@/lib/utils'
 import type { DateFormatValue } from './helpers'
@@ -20,9 +21,11 @@ interface StepUploadProps {
   file: File | null
   isDragOver: boolean
   uploadResult: UploadResult | null
+  nonStandardCsv: boolean
   onFileSelect: (file: File) => void
   onDragOver: () => void
   onDragLeave: () => void
+  onToggleNonStandard: (v: boolean) => void
   onNext: () => void
 }
 
@@ -30,9 +33,11 @@ export function StepUpload({
   file,
   isDragOver,
   uploadResult,
+  nonStandardCsv,
   onFileSelect,
   onDragOver,
   onDragLeave,
+  onToggleNonStandard,
   onNext,
 }: StepUploadProps) {
   const inputRef = useRef<HTMLInputElement>(null)
@@ -85,6 +90,20 @@ export function StepUpload({
           className="hidden"
           onChange={handleInputChange}
         />
+      </div>
+
+      <div className="flex items-center gap-2">
+        <Checkbox
+          id="non-standard-csv"
+          checked={nonStandardCsv}
+          onCheckedChange={(checked) => onToggleNonStandard(checked === true)}
+        />
+        <label
+          htmlFor="non-standard-csv"
+          className="text-sm text-muted-foreground cursor-pointer select-none"
+        >
+          Non-standard CSV (disable quote character handling)
+        </label>
       </div>
 
       {uploadResult && (
