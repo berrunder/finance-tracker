@@ -44,6 +44,7 @@ func NewRouter(
 			r.Use(authMw.Authenticate)
 
 			r.Put("/user", userH.Update)
+			r.Post("/user/reset", userH.Reset)
 
 			r.Route("/accounts", func(r chi.Router) {
 				r.Get("/", accountH.List)

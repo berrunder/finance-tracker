@@ -45,3 +45,15 @@ func (h *User) Update(w http.ResponseWriter, r *http.Request) {
 
 	respond.JSON(w, http.StatusOK, res)
 }
+
+func (h *User) Reset(w http.ResponseWriter, r *http.Request) {
+	userID := middleware.UserID(r.Context())
+
+	if err := h.svc.Reset(r.Context(), userID); err != nil {
+		slog.Error("failed to reset user data", "error", err, "user_id", userID)
+		respond.Error(w, http.StatusInternalServerError, "INTERNAL_ERROR", "failed to reset data")
+		return
+	}
+
+	respond.NoContent(w)
+}
