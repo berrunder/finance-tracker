@@ -137,3 +137,6 @@ VALUES ($1, $2, $3, $4, $5, $6, $7);
 -- name: BulkCreateTransactionsFull :copyfrom
 INSERT INTO transactions (user_id, account_id, category_id, type, amount, description, date, transfer_id, exchange_rate)
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9);
+
+-- name: DeleteAllUserTransactions :exec
+DELETE FROM transactions WHERE user_id = $1;

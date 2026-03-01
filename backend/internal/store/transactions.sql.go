@@ -220,6 +220,15 @@ func (q *Queries) DashboardSummary(ctx context.Context, arg DashboardSummaryPara
 	return i, err
 }
 
+const deleteAllUserTransactions = `-- name: DeleteAllUserTransactions :exec
+DELETE FROM transactions WHERE user_id = $1
+`
+
+func (q *Queries) DeleteAllUserTransactions(ctx context.Context, userID uuid.UUID) error {
+	_, err := q.db.Exec(ctx, deleteAllUserTransactions, userID)
+	return err
+}
+
 const deleteTransaction = `-- name: DeleteTransaction :exec
 DELETE FROM transactions WHERE id = $1 AND user_id = $2
 `

@@ -66,6 +66,24 @@ func (q *Queries) CreateDefaultCategories(ctx context.Context, userID uuid.UUID)
 	return err
 }
 
+const deleteAllUserCategories = `-- name: DeleteAllUserCategories :exec
+DELETE FROM categories WHERE user_id = $1
+`
+
+func (q *Queries) DeleteAllUserCategories(ctx context.Context, userID uuid.UUID) error {
+	_, err := q.db.Exec(ctx, deleteAllUserCategories, userID)
+	return err
+}
+
+const deleteAllUserSubcategories = `-- name: DeleteAllUserSubcategories :exec
+DELETE FROM categories WHERE user_id = $1 AND parent_id IS NOT NULL
+`
+
+func (q *Queries) DeleteAllUserSubcategories(ctx context.Context, userID uuid.UUID) error {
+	_, err := q.db.Exec(ctx, deleteAllUserSubcategories, userID)
+	return err
+}
+
 const deleteCategory = `-- name: DeleteCategory :exec
 DELETE FROM categories WHERE id = $1 AND user_id = $2
 `

@@ -27,3 +27,6 @@ SELECT
     COALESCE(SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END), 0)::DECIMAL(15,2) AS total_expense
 FROM transactions
 WHERE account_id = $1;
+
+-- name: DeleteAllUserAccounts :exec
+DELETE FROM accounts WHERE user_id = $1;

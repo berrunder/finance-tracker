@@ -45,3 +45,9 @@ INSERT INTO categories (user_id, name, type) VALUES
     (@user_id, 'Shopping', 'expense'),
     (@user_id, 'Education', 'expense'),
     (@user_id, 'Other Expense', 'expense');
+
+-- name: DeleteAllUserCategories :exec
+DELETE FROM categories WHERE user_id = $1;
+
+-- name: DeleteAllUserSubcategories :exec
+DELETE FROM categories WHERE user_id = $1 AND parent_id IS NOT NULL;
