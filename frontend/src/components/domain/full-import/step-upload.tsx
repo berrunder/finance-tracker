@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import { Upload } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -19,32 +19,27 @@ export interface UploadResult {
 
 interface StepUploadProps {
   file: File | null
-  isDragOver: boolean
   uploadResult: UploadResult | null
   nonStandardCsv: boolean
   onFileSelect: (file: File) => void
-  onDragOver: () => void
-  onDragLeave: () => void
   onToggleNonStandard: (v: boolean) => void
   onNext: () => void
 }
 
 export function StepUpload({
   file,
-  isDragOver,
   uploadResult,
   nonStandardCsv,
   onFileSelect,
-  onDragOver,
-  onDragLeave,
   onToggleNonStandard,
   onNext,
 }: StepUploadProps) {
   const inputRef = useRef<HTMLInputElement>(null)
+  const [isDragOver, setIsDragOver] = useState(false)
 
   function handleDrop(e: React.DragEvent) {
     e.preventDefault()
-    onDragLeave()
+    setIsDragOver(false)
     const dropped = e.dataTransfer.files[0]
     if (!dropped?.name.endsWith('.csv')) {
       toast.error('Please upload a .csv file')
@@ -71,9 +66,9 @@ export function StepUpload({
         onClick={() => inputRef.current?.click()}
         onDragOver={(e) => {
           e.preventDefault()
-          onDragOver()
+          setIsDragOver(true)
         }}
-        onDragLeave={onDragLeave}
+        onDragLeave={() => setIsDragOver(false)}
         onDrop={handleDrop}
       >
         <Upload className="mb-3 size-8 text-muted-foreground" />

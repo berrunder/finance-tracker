@@ -365,7 +365,13 @@ function PaginationControls({
   )
 }
 
-function TypeBadge({ type, transfer }: { type: string; transfer: string }) {
+function TypeBadge({
+  type,
+  transfer,
+}: {
+  type: 'transfer' | 'income' | 'expense'
+  transfer: string
+}) {
   if (type === 'transfer') {
     return (
       <Badge variant="outline" className="gap-1 text-xs">

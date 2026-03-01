@@ -1,7 +1,10 @@
 import { REFRESH_TOKEN_KEY } from '@/lib/constants'
 import { getAccessToken, setAccessToken } from './client'
 
-async function fetchExport(dateFrom: string, dateTo: string): Promise<Response> {
+async function fetchExport(
+  dateFrom: string,
+  dateTo: string,
+): Promise<Response> {
   const params = new URLSearchParams({ date_from: dateFrom, date_to: dateTo })
   return fetch(`/api/v1/export/csv?${params}`, {
     headers: {

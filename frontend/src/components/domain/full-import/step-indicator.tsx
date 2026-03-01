@@ -9,11 +9,11 @@ function stepStyle(current: Step, n: Step): string {
 }
 
 const STEPS = [
-  { n: 1 as const, label: 'Upload' },
-  { n: 2 as const, label: 'Resolve' },
-  { n: 3 as const, label: 'Preview' },
-  { n: 4 as const, label: 'Results' },
-]
+  { n: 1, label: 'Upload' },
+  { n: 2, label: 'Resolve' },
+  { n: 3, label: 'Preview' },
+  { n: 4, label: 'Results' },
+] as const
 
 export function StepIndicator({ current }: { current: Step }) {
   return (

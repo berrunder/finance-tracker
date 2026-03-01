@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useState } from 'react'
 import Papa from 'papaparse'
 import { toast } from 'sonner'
 import { useAccounts } from '@/hooks/use-accounts'
@@ -27,7 +27,6 @@ import { StepResults } from './step-results'
 export function FullImportWizard() {
   const [step, setStep] = useState<Step>(1)
   const [file, setFile] = useState<File | null>(null)
-  const [isDragOver, setIsDragOver] = useState(false)
   const [uploadResult, setUploadResult] = useState<UploadResult | null>(null)
   const [currencyMapping, setCurrencyMapping] = useState<
     Record<string, string>
@@ -56,108 +55,102 @@ export function FullImportWizard() {
     return names
   })
 
-  const handleFileSelect = useCallback(
-    (selected: File, explicitNonStandardCsv?: boolean) => {
-      const MAX_FILE_SIZE = 50 * 1024 * 1024 // 50 MB
-      if (selected.size > MAX_FILE_SIZE) {
-        toast.error('File is too large. Maximum size is 50 MB.')
+  function handleFileSelect(selected: File, explicitNonStandardCsv?: boolean) {
+    const MAX_FILE_SIZE = 50 * 1024 * 1024 // 50 MB
+    if (selected.size > MAX_FILE_SIZE) {
+      toast.error('File is too large. Maximum size is 50 MB.')
+      return
+    }
+
+    setFile(selected)
+    setImportError(null)
+
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      const rawText = e.target?.result as string
+      if (!rawText) {
+        toast.error('Failed to read file')
         return
       }
 
-      setFile(selected)
-      setImportError(null)
+      // Detect delimiter
+      const delimiter = detectDelimiter(rawText)
 
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        const rawText = e.target?.result as string
-        if (!rawText) {
-          toast.error('Failed to read file')
-          return
-        }
+      const useNonStandard = explicitNonStandardCsv ?? nonStandardCsv
 
-        // Detect delimiter
-        const delimiter = detectDelimiter(rawText)
+      // Parse with PapaParse
+      const parsed = Papa.parse(rawText, {
+        delimiter,
+        skipEmptyLines: true,
+        ...(useNonStandard ? { quoteChar: '\0' } : {}),
+      })
 
-        const useNonStandard = explicitNonStandardCsv ?? nonStandardCsv
-
-        // Parse with PapaParse
-        const parsed = Papa.parse(rawText, {
-          delimiter,
-          skipEmptyLines: true,
-          ...(useNonStandard ? { quoteChar: '\0' } : {}),
-        })
-
-        if (
-          !parsed.data ||
-          parsed.data.length < 2 ||
-          !Array.isArray(parsed.data[0])
-        ) {
-          toast.error('Failed to parse CSV file')
-          return
-        }
-
-        // Skip header row, build row objects
-        const dataRows = (parsed.data as string[][]).slice(1)
-        const rows: FullImportRow[] = dataRows
-          .filter((r) => r.some((cell) => cell.trim()))
-          .map((r) => ({
-            date: (r[0] || '').trim(),
-            account: (r[1] || '').trim(),
-            category: (r[2] || '').trim(),
-            total: (r[3] || '').trim(),
-            currency: (r[4] || '').trim(),
-            description: (r[5] || '').trim(),
-            transfer: (r[6] || '').trim(),
-          }))
-
-        // Detect decimal separator and date format
-        const amounts = rows.map((r) => r.total).filter(Boolean)
-        const decimalSeparator = detectDecimalSeparator(amounts)
-        const dates = rows.map((r) => r.date).filter(Boolean)
-        const dateFormat = detectDateFormat(dates)
-
-        // Resolve currencies
-        const uniqueCurrencies = [
-          ...new Set(rows.map((r) => r.currency)),
-        ].filter(Boolean)
-        const resolved: Record<string, string> = {}
-        const unresolved: string[] = []
-
-        for (const cs of uniqueCurrencies) {
-          const code = resolveCurrencyString(cs, currencies)
-          if (code) {
-            resolved[cs] = code
-          } else {
-            unresolved.push(cs)
-          }
-        }
-
-        setUploadResult({
-          fileName: selected.name,
-          delimiter,
-          decimalSeparator,
-          dateFormat,
-          rows,
-          unresolvedCurrencies: unresolved,
-          currencyResolutions: resolved,
-        })
-        setCurrencyMapping({})
-        setNewCurrencies([])
+      if (
+        !parsed.data ||
+        parsed.data.length < 2 ||
+        !Array.isArray(parsed.data[0])
+      ) {
+        toast.error('Failed to parse CSV file')
+        return
       }
-      reader.readAsText(selected, 'utf-8')
-    },
-    [currencies, nonStandardCsv],
-  )
 
-  const handleToggleNonStandard = useCallback(
-    (v: boolean) => {
-      setNonStandardCsv(v)
-      if (file) {
-        handleFileSelect(file, v)
+      // Skip header row, build row objects
+      const dataRows = (parsed.data as string[][]).slice(1)
+      const rows: FullImportRow[] = dataRows
+        .filter((r) => r.some((cell) => cell.trim()))
+        .map((r) => ({
+          date: (r[0] || '').trim(),
+          account: (r[1] || '').trim(),
+          category: (r[2] || '').trim(),
+          total: (r[3] || '').trim(),
+          currency: (r[4] || '').trim(),
+          description: (r[5] || '').trim(),
+          transfer: (r[6] || '').trim(),
+        }))
+
+      // Detect decimal separator and date format
+      const amounts = rows.map((r) => r.total).filter(Boolean)
+      const decimalSeparator = detectDecimalSeparator(amounts)
+      const dates = rows.map((r) => r.date).filter(Boolean)
+      const dateFormat = detectDateFormat(dates)
+
+      // Resolve currencies
+      const uniqueCurrencies = [...new Set(rows.map((r) => r.currency))].filter(
+        Boolean,
+      )
+      const resolved: Record<string, string> = {}
+      const unresolved: string[] = []
+
+      for (const cs of uniqueCurrencies) {
+        const code = resolveCurrencyString(cs, currencies)
+        if (code) {
+          resolved[cs] = code
+        } else {
+          unresolved.push(cs)
+        }
       }
-    },
-    [file, handleFileSelect],
-  )
+
+      setUploadResult({
+        fileName: selected.name,
+        delimiter,
+        decimalSeparator,
+        dateFormat,
+        rows,
+        unresolvedCurrencies: unresolved,
+        currencyResolutions: resolved,
+      })
+      setCurrencyMapping({})
+      setNewCurrencies([])
+    }
+    reader.readAsText(selected, 'utf-8')
+  }
+
+  function handleToggleNonStandard(v: boolean) {
+    setNonStandardCsv(v)
+    if (file) {
+      handleFileSelect(file, v)
+    }
+  }
 
   function handleUploadNext() {
     if (!uploadResult) return
@@ -166,10 +159,6 @@ export function FullImportWizard() {
     } else {
       setStep(3) // Skip to preview
     }
-  }
-
-  function handleResolveNext() {
-    setStep(3)
   }
 
   function handleImport() {
@@ -225,12 +214,9 @@ export function FullImportWizard() {
       {step === 1 && (
         <StepUpload
           file={file}
-          isDragOver={isDragOver}
           uploadResult={uploadResult}
           nonStandardCsv={nonStandardCsv}
           onFileSelect={handleFileSelect}
-          onDragOver={() => setIsDragOver(true)}
-          onDragLeave={() => setIsDragOver(false)}
           onToggleNonStandard={handleToggleNonStandard}
           onNext={handleUploadNext}
         />
@@ -247,7 +233,7 @@ export function FullImportWizard() {
             setNewCurrencies(nc)
           }}
           onBack={() => setStep(1)}
-          onNext={handleResolveNext}
+          onNext={() => setStep(3)}
         />
       )}
 
