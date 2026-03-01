@@ -88,6 +88,7 @@ type AccountResponse struct {
 	Currency       string    `json:"currency"`
 	InitialBalance string    `json:"initial_balance"`
 	Balance        string    `json:"balance"`
+	RecentTxCount  int       `json:"recent_tx_count"`
 	CreatedAt      time.Time `json:"created_at"`
 	UpdatedAt      time.Time `json:"updated_at"`
 }
@@ -105,12 +106,13 @@ type UpdateCategoryRequest struct {
 }
 
 type CategoryResponse struct {
-	ID        uuid.UUID          `json:"id"`
-	Name      string             `json:"name"`
-	Type      string             `json:"type"`
-	ParentID  *uuid.UUID         `json:"parent_id"`
-	Children  []CategoryResponse `json:"children,omitempty"`
-	CreatedAt time.Time          `json:"created_at"`
+	ID            uuid.UUID          `json:"id"`
+	Name          string             `json:"name"`
+	Type          string             `json:"type"`
+	ParentID      *uuid.UUID         `json:"parent_id"`
+	Children      []CategoryResponse `json:"children,omitempty"`
+	RecentTxCount int                `json:"recent_tx_count"`
+	CreatedAt     time.Time          `json:"created_at"`
 }
 
 // Transaction

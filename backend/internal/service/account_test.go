@@ -15,7 +15,7 @@ import (
 
 type mockAccountStore struct {
 	createAccountFn            func(ctx context.Context, arg store.CreateAccountParams) (store.Account, error)
-	listAccountsFn             func(ctx context.Context, userID uuid.UUID) ([]store.Account, error)
+	listAccountsFn             func(ctx context.Context, userID uuid.UUID) ([]store.ListAccountsRow, error)
 	getAccountFn               func(ctx context.Context, arg store.GetAccountParams) (store.Account, error)
 	updateAccountFn            func(ctx context.Context, arg store.UpdateAccountParams) (store.Account, error)
 	deleteAccountFn            func(ctx context.Context, arg store.DeleteAccountParams) error
@@ -25,7 +25,7 @@ type mockAccountStore struct {
 func (m *mockAccountStore) CreateAccount(ctx context.Context, arg store.CreateAccountParams) (store.Account, error) {
 	return m.createAccountFn(ctx, arg)
 }
-func (m *mockAccountStore) ListAccounts(ctx context.Context, userID uuid.UUID) ([]store.Account, error) {
+func (m *mockAccountStore) ListAccounts(ctx context.Context, userID uuid.UUID) ([]store.ListAccountsRow, error) {
 	return m.listAccountsFn(ctx, userID)
 }
 func (m *mockAccountStore) GetAccount(ctx context.Context, arg store.GetAccountParams) (store.Account, error) {
@@ -97,8 +97,8 @@ func TestAccountList_MultipleAccounts(t *testing.T) {
 	acct2 := uuid.New()
 
 	mock := &mockAccountStore{
-		listAccountsFn: func(ctx context.Context, uid uuid.UUID) ([]store.Account, error) {
-			return []store.Account{
+		listAccountsFn: func(ctx context.Context, uid uuid.UUID) ([]store.ListAccountsRow, error) {
+			return []store.ListAccountsRow{
 				{
 					ID: acct1, UserID: userID, Name: "Checking", Type: "bank", Currency: "USD",
 					InitialBalance: numericFromString("500.00"),

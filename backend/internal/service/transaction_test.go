@@ -25,7 +25,7 @@ type mockTransactionStore struct {
 	getTransactionsByTransferIDFn   func(ctx context.Context, arg store.GetTransactionsByTransferIDParams) ([]store.Transaction, error)
 	updateTransferTransactionFn     func(ctx context.Context, arg store.UpdateTransferTransactionParams) (store.Transaction, error)
 	getAccountFn                    func(ctx context.Context, arg store.GetAccountParams) (store.Account, error)
-	listAccountsFn                  func(ctx context.Context, userID uuid.UUID) ([]store.Account, error)
+	listAccountsFn                  func(ctx context.Context, userID uuid.UUID) ([]store.ListAccountsRow, error)
 	withTxFn                        func(tx pgx.Tx) *store.Queries
 }
 
@@ -53,7 +53,7 @@ func (m *mockTransactionStore) DeleteTransactionByTransferID(ctx context.Context
 func (m *mockTransactionStore) GetAccount(ctx context.Context, arg store.GetAccountParams) (store.Account, error) {
 	return m.getAccountFn(ctx, arg)
 }
-func (m *mockTransactionStore) ListAccounts(ctx context.Context, userID uuid.UUID) ([]store.Account, error) {
+func (m *mockTransactionStore) ListAccounts(ctx context.Context, userID uuid.UUID) ([]store.ListAccountsRow, error) {
 	return m.listAccountsFn(ctx, userID)
 }
 func (m *mockTransactionStore) GetTransactionsByTransferID(ctx context.Context, arg store.GetTransactionsByTransferIDParams) ([]store.Transaction, error) {
@@ -177,8 +177,8 @@ func TestTransactionList_PaginationDefaults(t *testing.T) {
 		countTransactionsFn: func(ctx context.Context, arg store.CountTransactionsParams) (int64, error) {
 			return 0, nil
 		},
-		listAccountsFn: func(ctx context.Context, userID uuid.UUID) ([]store.Account, error) {
-			return []store.Account{}, nil
+		listAccountsFn: func(ctx context.Context, userID uuid.UUID) ([]store.ListAccountsRow, error) {
+			return []store.ListAccountsRow{}, nil
 		},
 	}
 
@@ -218,8 +218,8 @@ func TestTransactionList_InvalidDateFilters_DefaultsToCurrentMonth(t *testing.T)
 		countTransactionsFn: func(ctx context.Context, arg store.CountTransactionsParams) (int64, error) {
 			return 0, nil
 		},
-		listAccountsFn: func(ctx context.Context, userID uuid.UUID) ([]store.Account, error) {
-			return []store.Account{}, nil
+		listAccountsFn: func(ctx context.Context, userID uuid.UUID) ([]store.ListAccountsRow, error) {
+			return []store.ListAccountsRow{}, nil
 		},
 	}
 
@@ -260,8 +260,8 @@ func TestTransactionList_InvalidDateFilter_PreservesValidCounterpart(t *testing.
 			countTransactionsFn: func(ctx context.Context, arg store.CountTransactionsParams) (int64, error) {
 				return 0, nil
 			},
-			listAccountsFn: func(ctx context.Context, userID uuid.UUID) ([]store.Account, error) {
-				return []store.Account{}, nil
+			listAccountsFn: func(ctx context.Context, userID uuid.UUID) ([]store.ListAccountsRow, error) {
+				return []store.ListAccountsRow{}, nil
 			},
 		}
 
@@ -291,8 +291,8 @@ func TestTransactionList_InvalidDateFilter_PreservesValidCounterpart(t *testing.
 			countTransactionsFn: func(ctx context.Context, arg store.CountTransactionsParams) (int64, error) {
 				return 0, nil
 			},
-			listAccountsFn: func(ctx context.Context, userID uuid.UUID) ([]store.Account, error) {
-				return []store.Account{}, nil
+			listAccountsFn: func(ctx context.Context, userID uuid.UUID) ([]store.ListAccountsRow, error) {
+				return []store.ListAccountsRow{}, nil
 			},
 		}
 
@@ -332,8 +332,8 @@ func TestTransactionList_UsesListAccountsForCurrency(t *testing.T) {
 		countTransactionsFn: func(ctx context.Context, arg store.CountTransactionsParams) (int64, error) {
 			return 1, nil
 		},
-		listAccountsFn: func(ctx context.Context, userID uuid.UUID) ([]store.Account, error) {
-			return []store.Account{{ID: accountID, UserID: userID, Currency: "USD"}}, nil
+		listAccountsFn: func(ctx context.Context, userID uuid.UUID) ([]store.ListAccountsRow, error) {
+			return []store.ListAccountsRow{{ID: accountID, UserID: userID, Currency: "USD"}}, nil
 		},
 		getAccountFn: func(ctx context.Context, arg store.GetAccountParams) (store.Account, error) {
 			getAccountCalled = true

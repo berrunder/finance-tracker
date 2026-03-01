@@ -13,7 +13,7 @@ import (
 
 type mockCategoryStore struct {
 	createCategoryFn         func(ctx context.Context, arg store.CreateCategoryParams) (store.Category, error)
-	listCategoriesFn         func(ctx context.Context, userID uuid.UUID) ([]store.Category, error)
+	listCategoriesFn         func(ctx context.Context, userID uuid.UUID) ([]store.ListCategoriesRow, error)
 	updateCategoryFn         func(ctx context.Context, arg store.UpdateCategoryParams) (store.Category, error)
 	deleteCategoryFn         func(ctx context.Context, arg store.DeleteCategoryParams) error
 	hasChildCategoriesFn     func(ctx context.Context, parentID pgtype.UUID) (bool, error)
@@ -23,7 +23,7 @@ type mockCategoryStore struct {
 func (m *mockCategoryStore) CreateCategory(ctx context.Context, arg store.CreateCategoryParams) (store.Category, error) {
 	return m.createCategoryFn(ctx, arg)
 }
-func (m *mockCategoryStore) ListCategories(ctx context.Context, userID uuid.UUID) ([]store.Category, error) {
+func (m *mockCategoryStore) ListCategories(ctx context.Context, userID uuid.UUID) ([]store.ListCategoriesRow, error) {
 	return m.listCategoriesFn(ctx, userID)
 }
 func (m *mockCategoryStore) UpdateCategory(ctx context.Context, arg store.UpdateCategoryParams) (store.Category, error) {
@@ -45,8 +45,8 @@ func TestCategoryList_Tree(t *testing.T) {
 	childID := uuid.New()
 
 	mock := &mockCategoryStore{
-		listCategoriesFn: func(ctx context.Context, uid uuid.UUID) ([]store.Category, error) {
-			return []store.Category{
+		listCategoriesFn: func(ctx context.Context, uid uuid.UUID) ([]store.ListCategoriesRow, error) {
+			return []store.ListCategoriesRow{
 				{ID: parentID, UserID: userID, Name: "Food", Type: "expense", ParentID: pgtype.UUID{Valid: false}, CreatedAt: makeTimestamp()},
 				{ID: childID, UserID: userID, Name: "Groceries", Type: "expense", ParentID: pgtype.UUID{Bytes: parentID, Valid: true}, CreatedAt: makeTimestamp()},
 			}, nil
@@ -65,8 +65,8 @@ func TestCategoryList_Tree(t *testing.T) {
 
 func TestCategoryList_Empty(t *testing.T) {
 	mock := &mockCategoryStore{
-		listCategoriesFn: func(ctx context.Context, uid uuid.UUID) ([]store.Category, error) {
-			return []store.Category{}, nil
+		listCategoriesFn: func(ctx context.Context, uid uuid.UUID) ([]store.ListCategoriesRow, error) {
+			return []store.ListCategoriesRow{}, nil
 		},
 	}
 
@@ -84,8 +84,8 @@ func TestCategoryList_OrphanChild(t *testing.T) {
 	childID := uuid.New()
 
 	mock := &mockCategoryStore{
-		listCategoriesFn: func(ctx context.Context, uid uuid.UUID) ([]store.Category, error) {
-			return []store.Category{
+		listCategoriesFn: func(ctx context.Context, uid uuid.UUID) ([]store.ListCategoriesRow, error) {
+			return []store.ListCategoriesRow{
 				{ID: childID, UserID: userID, Name: "Orphan", Type: "expense", ParentID: pgtype.UUID{Bytes: missingParentID, Valid: true}, CreatedAt: makeTimestamp()},
 			}, nil
 		},
@@ -108,24 +108,24 @@ func TestCategoryList_ManyParentsWithChildren(t *testing.T) {
 	const numParents = 20
 	type pair struct{ parentID, childID uuid.UUID }
 	pairs := make([]pair, numParents)
-	var rows []store.Category
+	var rows []store.ListCategoriesRow
 	for i := range numParents {
 		p := pair{parentID: uuid.New(), childID: uuid.New()}
 		pairs[i] = p
-		rows = append(rows, store.Category{
+		rows = append(rows, store.ListCategoriesRow{
 			ID: p.parentID, UserID: userID, Name: "Parent" + string(rune('A'+i)),
 			Type: "expense", ParentID: pgtype.UUID{Valid: false}, CreatedAt: makeTimestamp(),
 		})
 	}
 	for i, p := range pairs {
-		rows = append(rows, store.Category{
+		rows = append(rows, store.ListCategoriesRow{
 			ID: p.childID, UserID: userID, Name: "Child" + string(rune('A'+i)),
 			Type: "expense", ParentID: pgtype.UUID{Bytes: p.parentID, Valid: true}, CreatedAt: makeTimestamp(),
 		})
 	}
 
 	mock := &mockCategoryStore{
-		listCategoriesFn: func(ctx context.Context, uid uuid.UUID) ([]store.Category, error) {
+		listCategoriesFn: func(ctx context.Context, uid uuid.UUID) ([]store.ListCategoriesRow, error) {
 			return rows, nil
 		},
 	}

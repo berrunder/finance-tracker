@@ -22,6 +22,7 @@ interface AccountComboboxProps {
   onValueChange: (value: string) => void
   accounts: Account[]
   placeholder?: string
+  sortByFrequency?: boolean
 }
 
 export function AccountCombobox({
@@ -29,8 +30,12 @@ export function AccountCombobox({
   onValueChange,
   accounts,
   placeholder = 'Select account',
+  sortByFrequency = false,
 }: AccountComboboxProps) {
   const [open, setOpen] = useState(false)
+  const sortedAccounts = sortByFrequency
+    ? [...accounts].sort((a, b) => b.recent_tx_count - a.recent_tx_count)
+    : accounts
   const selected = accounts.find((a) => a.id === value)
 
   return (
@@ -55,7 +60,7 @@ export function AccountCombobox({
           <CommandList>
             <CommandEmpty>No accounts found.</CommandEmpty>
             <CommandGroup>
-              {accounts.map((a) => (
+              {sortedAccounts.map((a) => (
                 <CommandItem
                   key={a.id}
                   value={`${a.name} ${a.currency}`}

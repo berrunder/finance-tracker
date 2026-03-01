@@ -44,6 +44,7 @@ export function IncomeExpenseForm({
               form.setValue('account_id', v, { shouldValidate: true })
             }
             accounts={accounts}
+            sortByFrequency={form.watch('type') === 'expense'}
           />
           <FormError message={form.formState.errors.account_id?.message} />
         </div>

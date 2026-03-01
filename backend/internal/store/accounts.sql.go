@@ -142,18 +142,40 @@ func (q *Queries) GetAccountTransactionSums(ctx context.Context, accountID uuid.
 }
 
 const listAccounts = `-- name: ListAccounts :many
-SELECT id, user_id, name, type, currency, initial_balance, created_at, updated_at FROM accounts WHERE user_id = $1 ORDER BY name
+SELECT a.id, a.user_id, a.name, a.type, a.currency, a.initial_balance, a.created_at, a.updated_at,
+  COALESCE(COUNT(t.id), 0)::INTEGER AS recent_tx_count
+FROM accounts a
+LEFT JOIN transactions t
+  ON t.account_id = a.id
+  AND t.type = 'expense'
+  AND t.transfer_id IS NULL
+  AND t.date >= CURRENT_DATE - INTERVAL '30 days'
+WHERE a.user_id = $1
+GROUP BY a.id
+ORDER BY name
 `
 
-func (q *Queries) ListAccounts(ctx context.Context, userID uuid.UUID) ([]Account, error) {
+type ListAccountsRow struct {
+	ID             uuid.UUID          `json:"id"`
+	UserID         uuid.UUID          `json:"user_id"`
+	Name           string             `json:"name"`
+	Type           string             `json:"type"`
+	Currency       string             `json:"currency"`
+	InitialBalance pgtype.Numeric     `json:"initial_balance"`
+	CreatedAt      pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt      pgtype.Timestamptz `json:"updated_at"`
+	RecentTxCount  int32              `json:"recent_tx_count"`
+}
+
+func (q *Queries) ListAccounts(ctx context.Context, userID uuid.UUID) ([]ListAccountsRow, error) {
 	rows, err := q.db.Query(ctx, listAccounts, userID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []Account{}
+	items := []ListAccountsRow{}
 	for rows.Next() {
-		var i Account
+		var i ListAccountsRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.UserID,
@@ -163,6 +185,7 @@ func (q *Queries) ListAccounts(ctx context.Context, userID uuid.UUID) ([]Account
 			&i.InitialBalance,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.RecentTxCount,
 		); err != nil {
 			return nil, err
 		}

@@ -15,7 +15,7 @@ var ErrNotFound = errors.New("not found")
 
 type accountStore interface {
 	CreateAccount(ctx context.Context, arg store.CreateAccountParams) (store.Account, error)
-	ListAccounts(ctx context.Context, userID uuid.UUID) ([]store.Account, error)
+	ListAccounts(ctx context.Context, userID uuid.UUID) ([]store.ListAccountsRow, error)
 	GetAccount(ctx context.Context, arg store.GetAccountParams) (store.Account, error)
 	UpdateAccount(ctx context.Context, arg store.UpdateAccountParams) (store.Account, error)
 	DeleteAccount(ctx context.Context, arg store.DeleteAccountParams) error
@@ -69,11 +69,11 @@ func (s *Account) List(ctx context.Context, userID uuid.UUID) ([]dto.AccountResp
 
 	result := make([]dto.AccountResponse, 0, len(accounts))
 	for _, a := range accounts {
-		r, err := s.toResponse(ctx, a)
+		sums, err := s.queries.GetAccountTransactionSums(ctx, a.ID)
 		if err != nil {
 			return nil, err
 		}
-		result = append(result, *r)
+		result = append(result, listAccountToResponse(a, sums))
 	}
 	return result, nil
 }
@@ -110,6 +110,21 @@ func (s *Account) Update(ctx context.Context, userID, accountID uuid.UUID, req d
 
 func (s *Account) Delete(ctx context.Context, userID, accountID uuid.UUID) error {
 	return s.queries.DeleteAccount(ctx, store.DeleteAccountParams{ID: accountID, UserID: userID})
+}
+
+func listAccountToResponse(a store.ListAccountsRow, sums store.GetAccountTransactionSumsRow) dto.AccountResponse {
+	balance := numericAdd(a.InitialBalance, numericSub(sums.TotalIncome, sums.TotalExpense))
+	return dto.AccountResponse{
+		ID:             a.ID,
+		Name:           a.Name,
+		Type:           a.Type,
+		Currency:       a.Currency,
+		InitialBalance: numericToString(a.InitialBalance),
+		Balance:        numericToString(balance),
+		RecentTxCount:  int(a.RecentTxCount),
+		CreatedAt:      a.CreatedAt.Time,
+		UpdatedAt:      a.UpdatedAt.Time,
+	}
 }
 
 func (s *Account) toResponse(ctx context.Context, a store.Account) (*dto.AccountResponse, error) {

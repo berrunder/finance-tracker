@@ -181,18 +181,38 @@ func (q *Queries) HasChildCategories(ctx context.Context, parentID pgtype.UUID) 
 }
 
 const listCategories = `-- name: ListCategories :many
-SELECT id, user_id, parent_id, name, type, created_at FROM categories WHERE user_id = $1 ORDER BY type, name
+SELECT c.id, c.user_id, c.parent_id, c.name, c.type, c.created_at,
+  COALESCE(COUNT(t.id), 0)::INTEGER AS recent_tx_count
+FROM categories c
+LEFT JOIN transactions t
+  ON t.category_id = c.id
+  AND t.type = 'expense'
+  AND t.transfer_id IS NULL
+  AND t.date >= CURRENT_DATE - INTERVAL '30 days'
+WHERE c.user_id = $1
+GROUP BY c.id
+ORDER BY c.type, c.name
 `
 
-func (q *Queries) ListCategories(ctx context.Context, userID uuid.UUID) ([]Category, error) {
+type ListCategoriesRow struct {
+	ID            uuid.UUID          `json:"id"`
+	UserID        uuid.UUID          `json:"user_id"`
+	ParentID      pgtype.UUID        `json:"parent_id"`
+	Name          string             `json:"name"`
+	Type          string             `json:"type"`
+	CreatedAt     pgtype.Timestamptz `json:"created_at"`
+	RecentTxCount int32              `json:"recent_tx_count"`
+}
+
+func (q *Queries) ListCategories(ctx context.Context, userID uuid.UUID) ([]ListCategoriesRow, error) {
 	rows, err := q.db.Query(ctx, listCategories, userID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []Category{}
+	items := []ListCategoriesRow{}
 	for rows.Next() {
-		var i Category
+		var i ListCategoriesRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.UserID,
@@ -200,6 +220,7 @@ func (q *Queries) ListCategories(ctx context.Context, userID uuid.UUID) ([]Categ
 			&i.Name,
 			&i.Type,
 			&i.CreatedAt,
+			&i.RecentTxCount,
 		); err != nil {
 			return nil, err
 		}

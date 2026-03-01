@@ -19,7 +19,7 @@ var (
 
 type categoryStore interface {
 	CreateCategory(ctx context.Context, arg store.CreateCategoryParams) (store.Category, error)
-	ListCategories(ctx context.Context, userID uuid.UUID) ([]store.Category, error)
+	ListCategories(ctx context.Context, userID uuid.UUID) ([]store.ListCategoriesRow, error)
 	UpdateCategory(ctx context.Context, arg store.UpdateCategoryParams) (store.Category, error)
 	DeleteCategory(ctx context.Context, arg store.DeleteCategoryParams) error
 	HasChildCategories(ctx context.Context, parentID pgtype.UUID) (bool, error)
@@ -59,7 +59,7 @@ func (s *Category) List(ctx context.Context, userID uuid.UUID) ([]dto.CategoryRe
 
 	// First pass: collect parents
 	for _, c := range cats {
-		r := catToResponse(c)
+		r := listCatToResponse(c)
 		if r.ParentID == nil {
 			parentMap[r.ID] = r
 			rootOrder = append(rootOrder, r.ID)
@@ -69,7 +69,7 @@ func (s *Category) List(ctx context.Context, userID uuid.UUID) ([]dto.CategoryRe
 	// Second pass: attach children
 	var orphans []dto.CategoryResponse
 	for _, c := range cats {
-		r := catToResponse(c)
+		r := listCatToResponse(c)
 		if r.ParentID != nil {
 			if parent, ok := parentMap[*r.ParentID]; ok {
 				parent.Children = append(parent.Children, *r)
@@ -124,6 +124,17 @@ func (s *Category) Delete(ctx context.Context, userID, categoryID uuid.UUID) err
 	}
 
 	return s.queries.DeleteCategory(ctx, store.DeleteCategoryParams{ID: categoryID, UserID: userID})
+}
+
+func listCatToResponse(c store.ListCategoriesRow) *dto.CategoryResponse {
+	return &dto.CategoryResponse{
+		ID:            c.ID,
+		Name:          c.Name,
+		Type:          c.Type,
+		ParentID:      nullableToUUID(c.ParentID),
+		RecentTxCount: int(c.RecentTxCount),
+		CreatedAt:     c.CreatedAt.Time,
+	}
 }
 
 func catToResponse(c store.Category) *dto.CategoryResponse {

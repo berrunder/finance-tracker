@@ -30,18 +30,25 @@ interface FlatCategory {
   id: string
   label: string
   type: string
+  recent_tx_count: number
 }
 
 function flattenCategories(categories: Category[]): FlatCategory[] {
   const flat: FlatCategory[] = []
   for (const cat of categories) {
-    flat.push({ id: cat.id, label: cat.name, type: cat.type })
+    flat.push({
+      id: cat.id,
+      label: cat.name,
+      type: cat.type,
+      recent_tx_count: cat.recent_tx_count,
+    })
     if (cat.children) {
       for (const child of cat.children) {
         flat.push({
           id: child.id,
           label: `${cat.name} > ${child.name}`,
           type: child.type,
+          recent_tx_count: child.recent_tx_count,
         })
       }
     }
@@ -61,6 +68,10 @@ export function CategoryCombobox({
 
   const flat = flattenCategories(categories)
   const filtered = type ? flat.filter((c) => c.type === type) : flat
+  const sorted =
+    type === 'expense'
+      ? [...filtered].sort((a, b) => b.recent_tx_count - a.recent_tx_count)
+      : filtered
   const selected = flat.find((c) => c.id === value)
 
   return (
@@ -86,7 +97,7 @@ export function CategoryCombobox({
             <CommandList>
               <CommandEmpty>No categories found.</CommandEmpty>
               <CommandGroup>
-                {filtered.map((cat) => (
+                {sorted.map((cat) => (
                   <CommandItem
                     key={cat.id}
                     value={cat.label}

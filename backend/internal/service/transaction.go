@@ -25,7 +25,7 @@ type transactionStore interface {
 	GetTransactionsByTransferID(ctx context.Context, arg store.GetTransactionsByTransferIDParams) ([]store.Transaction, error)
 	UpdateTransferTransaction(ctx context.Context, arg store.UpdateTransferTransactionParams) (store.Transaction, error)
 	GetAccount(ctx context.Context, arg store.GetAccountParams) (store.Account, error)
-	ListAccounts(ctx context.Context, userID uuid.UUID) ([]store.Account, error)
+	ListAccounts(ctx context.Context, userID uuid.UUID) ([]store.ListAccountsRow, error)
 	WithTx(tx pgx.Tx) *store.Queries
 }
 

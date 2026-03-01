@@ -4,7 +4,17 @@ VALUES ($1, $2, $3, $4)
 RETURNING *;
 
 -- name: ListCategories :many
-SELECT * FROM categories WHERE user_id = $1 ORDER BY type, name;
+SELECT c.*,
+  COALESCE(COUNT(t.id), 0)::INTEGER AS recent_tx_count
+FROM categories c
+LEFT JOIN transactions t
+  ON t.category_id = c.id
+  AND t.type = 'expense'
+  AND t.transfer_id IS NULL
+  AND t.date >= CURRENT_DATE - INTERVAL '30 days'
+WHERE c.user_id = $1
+GROUP BY c.id
+ORDER BY c.type, c.name;
 
 -- name: GetCategory :one
 SELECT * FROM categories WHERE id = $1 AND user_id = $2;

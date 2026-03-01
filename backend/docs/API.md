@@ -137,6 +137,7 @@ All monetary amounts are **decimal strings** (e.g. `"1500.50"`), never floats.
     "currency": "USD",
     "initial_balance": "0",
     "balance": "1500.50",      // computed: initial_balance + income - expenses
+    "recent_tx_count": 12,     // count of expense transactions in the last 30 days
     "created_at": "2024-01-01T00:00:00Z",
     "updated_at": "2024-01-01T00:00:00Z"
   }]
@@ -196,11 +197,13 @@ Returns the full tree. Root categories include a `children` array.
     "name": "Food",
     "type": "expense",
     "parent_id": null,
+    "recent_tx_count": 8,      // count of expense transactions in the last 30 days
     "children": [{
       "id": "uuid",
       "name": "Groceries",
       "type": "expense",
       "parent_id": "uuid",
+      "recent_tx_count": 5,    // count of expense transactions in the last 30 days
       "created_at": "2024-01-01T00:00:00Z"
     }],
     "created_at": "2024-01-01T00:00:00Z"

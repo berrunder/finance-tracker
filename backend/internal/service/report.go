@@ -15,7 +15,7 @@ type reportStore interface {
 	MonthlyIncomeExpense(ctx context.Context, arg store.MonthlyIncomeExpenseParams) ([]store.MonthlyIncomeExpenseRow, error)
 	BalanceHistory(ctx context.Context, arg store.BalanceHistoryParams) ([]store.BalanceHistoryRow, error)
 	DashboardSummary(ctx context.Context, arg store.DashboardSummaryParams) (store.DashboardSummaryRow, error)
-	ListAccounts(ctx context.Context, userID uuid.UUID) ([]store.Account, error)
+	ListAccounts(ctx context.Context, userID uuid.UUID) ([]store.ListAccountsRow, error)
 	GetAccountTransactionSums(ctx context.Context, accountID uuid.UUID) (store.GetAccountTransactionSumsRow, error)
 }
 
@@ -144,7 +144,7 @@ func (s *Report) Summary(ctx context.Context, userID uuid.UUID, dateFrom, dateTo
 		if err != nil {
 			continue
 		}
-		acctResponses = append(acctResponses, accountToResponse(a, sums))
+		acctResponses = append(acctResponses, listAccountToResponse(a, sums))
 	}
 
 	netIncome := numericSub(summary.TotalIncome, summary.TotalExpense)

@@ -7,7 +7,17 @@ RETURNING *;
 SELECT * FROM accounts WHERE id = $1 AND user_id = $2;
 
 -- name: ListAccounts :many
-SELECT * FROM accounts WHERE user_id = $1 ORDER BY name;
+SELECT a.*,
+  COALESCE(COUNT(t.id), 0)::INTEGER AS recent_tx_count
+FROM accounts a
+LEFT JOIN transactions t
+  ON t.account_id = a.id
+  AND t.type = 'expense'
+  AND t.transfer_id IS NULL
+  AND t.date >= CURRENT_DATE - INTERVAL '30 days'
+WHERE a.user_id = $1
+GROUP BY a.id
+ORDER BY name;
 
 -- name: UpdateAccount :one
 UPDATE accounts

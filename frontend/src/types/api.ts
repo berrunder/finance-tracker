@@ -62,6 +62,7 @@ export interface Account {
   currency: string
   initial_balance: string
   balance: string
+  recent_tx_count: number
   created_at: string
   updated_at: string
 }
@@ -86,6 +87,7 @@ export interface Category {
   type: string
   parent_id: string | null
   children?: Category[]
+  recent_tx_count: number
   created_at: string
 }
 
