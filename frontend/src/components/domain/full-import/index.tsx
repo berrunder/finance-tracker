@@ -57,7 +57,7 @@ export function FullImportWizard() {
   })
 
   const handleFileSelect = useCallback(
-    (selected: File) => {
+    (selected: File, explicitNonStandardCsv?: boolean) => {
       const MAX_FILE_SIZE = 50 * 1024 * 1024 // 50 MB
       if (selected.size > MAX_FILE_SIZE) {
         toast.error('File is too large. Maximum size is 50 MB.')
@@ -78,11 +78,13 @@ export function FullImportWizard() {
         // Detect delimiter
         const delimiter = detectDelimiter(rawText)
 
+        const useNonStandard = explicitNonStandardCsv ?? nonStandardCsv
+
         // Parse with PapaParse
         const parsed = Papa.parse(rawText, {
           delimiter,
           skipEmptyLines: true,
-          ...(nonStandardCsv ? { quoteChar: '\0' } : {}),
+          ...(useNonStandard ? { quoteChar: '\0' } : {}),
         })
 
         if (
@@ -151,7 +153,7 @@ export function FullImportWizard() {
     (v: boolean) => {
       setNonStandardCsv(v)
       if (file) {
-        handleFileSelect(file)
+        handleFileSelect(file, v)
       }
     },
     [file, handleFileSelect],
@@ -209,6 +211,7 @@ export function FullImportWizard() {
     setNewCurrencies([])
     setImportResult(null)
     setImportError(null)
+    setNonStandardCsv(false)
     importMutation.reset()
   }
 
