@@ -56,7 +56,7 @@ func main() {
 	exchangeRateSvc := service.NewExchangeRate(queries)
 	currencySvc := service.NewCurrency(queries)
 	exportSvc := service.NewExport(queries)
-	userSvc := service.NewUser(queries)
+	userSvc := service.NewUser(queries, pool)
 
 	// Middleware
 	authMw := middleware.NewAuth(cfg.JWTSecret)
