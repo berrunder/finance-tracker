@@ -37,6 +37,7 @@ export function FullImportWizard() {
     null,
   )
   const [importError, setImportError] = useState<string | null>(null)
+  const [nonStandardCsv, setNonStandardCsv] = useState(false)
 
   const { data: currencies = [] } = useCurrencies()
   const { data: accounts = [] } = useAccounts()
@@ -81,7 +82,7 @@ export function FullImportWizard() {
         const parsed = Papa.parse(rawText, {
           delimiter,
           skipEmptyLines: true,
-          quoteChar: '\0',
+          ...(nonStandardCsv ? { quoteChar: '\0' } : {}),
         })
 
         if (
@@ -143,7 +144,17 @@ export function FullImportWizard() {
       }
       reader.readAsText(selected, 'utf-8')
     },
-    [currencies],
+    [currencies, nonStandardCsv],
+  )
+
+  const handleToggleNonStandard = useCallback(
+    (v: boolean) => {
+      setNonStandardCsv(v)
+      if (file) {
+        handleFileSelect(file)
+      }
+    },
+    [file, handleFileSelect],
   )
 
   function handleUploadNext() {
@@ -213,9 +224,11 @@ export function FullImportWizard() {
           file={file}
           isDragOver={isDragOver}
           uploadResult={uploadResult}
+          nonStandardCsv={nonStandardCsv}
           onFileSelect={handleFileSelect}
           onDragOver={() => setIsDragOver(true)}
           onDragLeave={() => setIsDragOver(false)}
+          onToggleNonStandard={handleToggleNonStandard}
           onNext={handleUploadNext}
         />
       )}
