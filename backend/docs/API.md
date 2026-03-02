@@ -119,6 +119,22 @@ Permanently deletes all user transactions, accounts, and categories, then re-see
 // Response 204 (no body)
 ```
 
+### `POST /user/password`
+
+Change the authenticated user's password.
+
+```json
+// Request
+{
+  "current_password": "string",  // required, must match the current password
+  "new_password": "string"       // required, 8-128 chars
+}
+
+// Response 204 (no body)
+```
+
+Errors: `INVALID_CREDENTIALS` (400) if `current_password` is incorrect · `VALIDATION_ERROR` (400) if validation fails.
+
 ---
 
 ## Accounts (protected)
