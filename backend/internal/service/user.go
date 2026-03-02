@@ -7,6 +7,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"golang.org/x/crypto/bcrypt"
 
 	"github.com/sanches/finance-tracker-cc/backend/internal/dto"
 	"github.com/sanches/finance-tracker-cc/backend/internal/store"
@@ -14,6 +15,7 @@ import (
 
 type userStore interface {
 	UpdateUser(ctx context.Context, arg store.UpdateUserParams) (store.User, error)
+	UpdateUserPassword(ctx context.Context, arg store.UpdateUserPasswordParams) error
 	GetUserByID(ctx context.Context, id uuid.UUID) (store.User, error)
 	DeleteAllUserTransactions(ctx context.Context, userID uuid.UUID) error
 	DeleteAllUserAccounts(ctx context.Context, userID uuid.UUID) error
@@ -29,6 +31,10 @@ type User struct {
 
 func NewUser(queries *store.Queries, pool *pgxpool.Pool) *User {
 	return &User{queries: queries, pool: pool}
+}
+
+func NewUserWithStore(queries userStore) *User {
+	return &User{queries: queries}
 }
 
 func (s *User) Update(ctx context.Context, userID uuid.UUID, req dto.UpdateUserRequest) (*dto.UserResponse, error) {
@@ -51,6 +57,30 @@ func (s *User) Update(ctx context.Context, userID uuid.UUID, req dto.UpdateUserR
 		BaseCurrency: user.BaseCurrency,
 		CreatedAt:    user.CreatedAt.Time,
 	}, nil
+}
+
+func (s *User) ChangePassword(ctx context.Context, userID uuid.UUID, req dto.ChangePasswordRequest) error {
+	user, err := s.queries.GetUserByID(ctx, userID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return ErrNotFound
+		}
+		return err
+	}
+
+	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.CurrentPassword)); err != nil {
+		return ErrInvalidCredentials
+	}
+
+	hash, err := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+
+	return s.queries.UpdateUserPassword(ctx, store.UpdateUserPasswordParams{
+		ID:           userID,
+		PasswordHash: string(hash),
+	})
 }
 
 func (s *User) Reset(ctx context.Context, userID uuid.UUID) error {
