@@ -99,6 +99,22 @@ export const profileSchema = z.object({
   base_currency: z.string().length(3, 'Please select a currency'),
 })
 
+export const changePasswordSchema = z
+  .object({
+    current_password: z.string().min(1, 'Current password is required'),
+    new_password: z
+      .string()
+      .min(8, 'Password must be at least 8 characters')
+      .max(128, 'Password must be at most 128 characters'),
+    confirm_new_password: z.string(),
+  })
+  .refine((d) => d.new_password === d.confirm_new_password, {
+    message: 'Passwords do not match',
+    path: ['confirm_new_password'],
+  })
+
+export type ChangePasswordFormData = z.infer<typeof changePasswordSchema>
+
 export type LoginFormData = z.infer<typeof loginSchema>
 export type RegisterFormData = z.infer<typeof registerSchema>
 export type AccountFormData = z.infer<typeof accountSchema>
