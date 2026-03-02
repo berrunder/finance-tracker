@@ -57,3 +57,29 @@ func (h *User) Reset(w http.ResponseWriter, r *http.Request) {
 
 	respond.NoContent(w)
 }
+
+func (h *User) ChangePassword(w http.ResponseWriter, r *http.Request) {
+	userID := middleware.UserID(r.Context())
+
+	var req dto.ChangePasswordRequest
+	if err := decodeJSON(w, r, &req); err != nil {
+		respond.Error(w, http.StatusBadRequest, "INVALID_BODY", "invalid request body")
+		return
+	}
+	if err := validate.Struct(req); err != nil {
+		respond.Error(w, http.StatusBadRequest, "VALIDATION_ERROR", err.Error())
+		return
+	}
+
+	if err := h.svc.ChangePassword(r.Context(), userID, req); err != nil {
+		if errors.Is(err, service.ErrInvalidCredentials) {
+			respond.Error(w, http.StatusBadRequest, "INVALID_CREDENTIALS", "current password is incorrect")
+			return
+		}
+		slog.Error("failed to change password", "error", err, "user_id", userID)
+		respond.Error(w, http.StatusInternalServerError, "INTERNAL_ERROR", "failed to change password")
+		return
+	}
+
+	respond.NoContent(w)
+}
