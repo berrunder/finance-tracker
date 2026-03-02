@@ -67,6 +67,11 @@ type UpdateUserRequest struct {
 	BaseCurrency string `json:"base_currency" validate:"required,len=3"`
 }
 
+type ChangePasswordRequest struct {
+	CurrentPassword string `json:"current_password" validate:"required"`
+	NewPassword     string `json:"new_password" validate:"required,min=8,max=128"`
+}
+
 // Account
 type CreateAccountRequest struct {
 	Name           string `json:"name" validate:"required,max=100"`
