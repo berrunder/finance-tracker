@@ -1,4 +1,9 @@
-import { formatDate, formatDateShort, toISODate } from '../dates'
+import {
+  formatDate,
+  formatDateShort,
+  toISODate,
+  formatDateMask,
+} from '../dates'
 
 describe('formatDate', () => {
   it('formats an ISO date string to locale-aware format', () => {
@@ -30,5 +35,15 @@ describe('toISODate', () => {
   it('pads month and day with zeros', () => {
     const date = new Date(2024, 2, 5) // Mar 5, 2024
     expect(toISODate(date)).toBe('2024-03-05')
+  })
+})
+
+describe('formatDateMask', () => {
+  it('formats ISO date to DD.MM.YYYY', () => {
+    expect(formatDateMask('2026-03-02')).toBe('02.03.2026')
+  })
+
+  it('pads single-digit day and month', () => {
+    expect(formatDateMask('2024-01-05')).toBe('05.01.2024')
   })
 })

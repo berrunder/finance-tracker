@@ -11,3 +11,7 @@ export function formatDateShort(dateStr: string): string {
 export function toISODate(date: Date): string {
   return format(date, 'yyyy-MM-dd')
 }
+
+export function formatDateMask(dateStr: string): string {
+  return format(parseISO(dateStr), 'dd.MM.yyyy')
+}
