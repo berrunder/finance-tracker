@@ -11,3 +11,13 @@ export function updateUser(data: UpdateUserRequest): Promise<User> {
 export function resetUserData(): Promise<void> {
   return apiClient<void>('/user/reset', { method: 'POST' })
 }
+
+export function changePassword(data: {
+  current_password: string
+  new_password: string
+}): Promise<void> {
+  return apiClient<void>('/user/password', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+}
