@@ -16,6 +16,7 @@ import {
 import { AccountTable } from '@/components/domain/account-table'
 import { AccountForm } from '@/components/domain/account-form'
 import { ConfirmDialog } from '@/components/domain/confirm-dialog'
+import { CorrectionDialog } from '@/components/domain/correction-dialog'
 import type { Account } from '@/types/api'
 
 export default function AccountsPage() {
@@ -25,6 +26,7 @@ export default function AccountsPage() {
   const [formOpen, setFormOpen] = useState(false)
   const [editAccount, setEditAccount] = useState<Account | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Account | null>(null)
+  const [correctTarget, setCorrectTarget] = useState<Account | null>(null)
 
   function handleEdit(account: Account) {
     setEditAccount(account)
@@ -116,6 +118,7 @@ export default function AccountsPage() {
           accounts={accounts}
           onEdit={handleEdit}
           onDelete={setDeleteTarget}
+          onCorrect={setCorrectTarget}
         />
       )}
 
@@ -136,6 +139,13 @@ export default function AccountsPage() {
         resourceName={deleteTarget?.name}
         onConfirm={handleDelete}
         loading={deleteAccount.isPending}
+      />
+
+      <CorrectionDialog
+        onOpenChange={(open) => {
+          if (!open) setCorrectTarget(null)
+        }}
+        account={correctTarget}
       />
     </div>
   )

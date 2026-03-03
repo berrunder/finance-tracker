@@ -64,8 +64,14 @@ export default function App() {
                 <Route index element={<Navigate to="/dashboard" replace />} />
                 <Route path="dashboard" element={<DashboardPage />} />
                 <Route path="transactions" element={<TransactionsPage />} />
-                <Route path="transactions/new" element={<TransactionFormPage />} />
-                <Route path="transactions/:id" element={<TransactionFormPage />} />
+                <Route
+                  path="transactions/new"
+                  element={<TransactionFormPage />}
+                />
+                <Route
+                  path="transactions/:id"
+                  element={<TransactionFormPage />}
+                />
                 <Route path="accounts" element={<AccountsPage />} />
                 <Route path="reports" element={<ReportsPage />} />
                 <Route path="import/account" element={<ImportPage />} />

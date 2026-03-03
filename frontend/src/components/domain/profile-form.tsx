@@ -76,7 +76,9 @@ export function ProfileForm() {
       setPasswordSectionOpen(false)
     } catch (error) {
       if (error instanceof ApiError && error.code === 'INVALID_CREDENTIALS') {
-        setPwError('current_password', { message: 'Current password is incorrect' })
+        setPwError('current_password', {
+          message: 'Current password is incorrect',
+        })
       } else {
         handleMutationError(error)
       }
@@ -141,7 +143,10 @@ export function ProfileForm() {
         </button>
 
         {passwordSectionOpen && (
-          <form onSubmit={handleSubmitPw(onSubmitPassword)} className="space-y-4">
+          <form
+            onSubmit={handleSubmitPw(onSubmitPassword)}
+            className="space-y-4"
+          >
             <div className="space-y-2">
               <Label htmlFor="current_password">Current Password</Label>
               <Input

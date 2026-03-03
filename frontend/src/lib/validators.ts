@@ -29,7 +29,7 @@ export const registerSchema = z
     path: ['confirm_password'],
   })
 
-const moneyRegex = /^\d+(\.\d{1,2})?$/
+export const moneyRegex = /^\d+(\.\d{1,2})?$/
 const rateRegex = /^\d+(\.\d{1,6})?$/
 
 export const accountSchema = z.object({
@@ -99,6 +99,14 @@ export const profileSchema = z.object({
   base_currency: z.string().length(3, 'Please select a currency'),
 })
 
+export const correctionSchema = z.object({
+  actual_balance: z
+    .string()
+    .min(1, 'Amount is required')
+    .regex(moneyRegex, 'Must be a valid amount (max 2 decimals)'),
+  category_id: z.string().min(1, 'Please select a category'),
+})
+
 export const changePasswordSchema = z
   .object({
     current_password: z.string().min(1, 'Current password is required'),
@@ -115,6 +123,7 @@ export const changePasswordSchema = z
 
 export type ChangePasswordFormData = z.infer<typeof changePasswordSchema>
 
+export type CorrectionFormData = z.infer<typeof correctionSchema>
 export type LoginFormData = z.infer<typeof loginSchema>
 export type RegisterFormData = z.infer<typeof registerSchema>
 export type AccountFormData = z.infer<typeof accountSchema>

@@ -1,4 +1,4 @@
-import { MoreHorizontal, Pencil, Trash2 } from 'lucide-react'
+import { MoreHorizontal, Pencil, Scale, Trash2 } from 'lucide-react'
 import { formatMoney } from '@/lib/money'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -22,16 +22,19 @@ interface AccountTableProps {
   accounts: Account[]
   onEdit: (account: Account) => void
   onDelete: (account: Account) => void
+  onCorrect: (account: Account) => void
 }
 
 function AccountActions({
   account,
   onEdit,
   onDelete,
+  onCorrect,
 }: {
   account: Account
   onEdit: (account: Account) => void
   onDelete: (account: Account) => void
+  onCorrect: (account: Account) => void
 }) {
   return (
     <DropdownMenu>
@@ -44,6 +47,10 @@ function AccountActions({
         <DropdownMenuItem onClick={() => onEdit(account)}>
           <Pencil className="mr-2 h-4 w-4" />
           Edit
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => onCorrect(account)}>
+          <Scale className="mr-2 h-4 w-4" />
+          Correct Balance
         </DropdownMenuItem>
         <DropdownMenuItem
           variant="destructive"
@@ -61,6 +68,7 @@ export function AccountTable({
   accounts,
   onEdit,
   onDelete,
+  onCorrect,
 }: AccountTableProps) {
   if (accounts.length === 0) {
     return (
@@ -102,6 +110,7 @@ export function AccountTable({
                     account={account}
                     onEdit={onEdit}
                     onDelete={onDelete}
+                    onCorrect={onCorrect}
                   />
                 </TableCell>
               </TableRow>
@@ -135,6 +144,7 @@ export function AccountTable({
               account={account}
               onEdit={onEdit}
               onDelete={onDelete}
+              onCorrect={onCorrect}
             />
           </div>
         ))}

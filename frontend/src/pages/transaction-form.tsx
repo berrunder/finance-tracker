@@ -19,9 +19,8 @@ export default function TransactionFormPage() {
   const isNew = !id
 
   const { data: transaction, isLoading: txLoading } = useTransaction(id ?? '')
-  const { data: linkedTransaction, isLoading: linkedTxLoading } = useTransaction(
-    transaction?.transfer_id ?? '',
-  )
+  const { data: linkedTransaction, isLoading: linkedTxLoading } =
+    useTransaction(transaction?.transfer_id ?? '')
 
   const {
     data: recentData,
@@ -49,7 +48,11 @@ export default function TransactionFormPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-2">
-        <Button variant="ghost" size="icon" onClick={() => navigate('/transactions')}>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => navigate('/transactions')}
+        >
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <h1 className="text-2xl font-bold">
