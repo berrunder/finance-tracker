@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate, useLocation } from 'react-router'
+import { useNavigate } from 'react-router'
 import { Sidebar } from './sidebar'
 import { OfflineBanner } from './offline-banner'
 import { useHotkey } from '@/hooks/use-keyboard-shortcuts'
@@ -15,16 +15,12 @@ import { Menu, Wallet } from 'lucide-react'
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate()
-  const location = useLocation()
   const [mobileOpen, setMobileOpen] = useState(false)
   const [tabletExpanded, setTabletExpanded] = useState(false)
 
-  // N: navigate to transactions page with intent to open form
-  // When already on /transactions, the page's own handler takes precedence
+  // N: navigate to new transaction form
   useHotkey('n', () => {
-    if (location.pathname !== '/transactions') {
-      navigate('/transactions', { state: { openNewForm: true } })
-    }
+    navigate('/transactions/new')
   })
 
   return (

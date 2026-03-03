@@ -9,6 +9,7 @@ import LoginPage from '@/pages/login'
 import RegisterPage from '@/pages/register'
 import DashboardPage from '@/pages/dashboard'
 import TransactionsPage from '@/pages/transactions'
+import TransactionFormPage from '@/pages/transaction-form'
 import AccountsPage from '@/pages/accounts'
 import ReportsPage from '@/pages/reports'
 import ImportPage from '@/pages/import'
@@ -63,6 +64,8 @@ export default function App() {
                 <Route index element={<Navigate to="/dashboard" replace />} />
                 <Route path="dashboard" element={<DashboardPage />} />
                 <Route path="transactions" element={<TransactionsPage />} />
+                <Route path="transactions/new" element={<TransactionFormPage />} />
+                <Route path="transactions/:id" element={<TransactionFormPage />} />
                 <Route path="accounts" element={<AccountsPage />} />
                 <Route path="reports" element={<ReportsPage />} />
                 <Route path="import/account" element={<ImportPage />} />

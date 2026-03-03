@@ -1,41 +1,27 @@
 import { useState, useMemo, useCallback, useEffect } from 'react'
-import { useSearchParams, useLocation } from 'react-router'
+import { useSearchParams, useNavigate } from 'react-router'
 import { startOfMonth, endOfMonth } from 'date-fns'
 import { Plus } from 'lucide-react'
-import { toast } from 'sonner'
 import { useAccounts } from '@/hooks/use-accounts'
 import { useCategories } from '@/hooks/use-categories'
-import { useTransactions, useDeleteTransaction } from '@/hooks/use-transactions'
-import { handleMutationError } from '@/lib/form-helpers'
+import { useTransactions } from '@/hooks/use-transactions'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { TransactionFilters } from '@/components/domain/transaction-filters'
 import { TransactionTable } from '@/components/domain/transaction-table'
-import { TransactionForm } from '@/components/domain/transaction-form'
-import { ConfirmDialog } from '@/components/domain/confirm-dialog'
+import { TransactionDeleteDialog } from '@/components/domain/transaction-delete-dialog'
 import type { TransactionFilters as Filters } from '@/api/transactions'
 import type { Transaction } from '@/types/api'
-import { useHotkey } from '@/hooks/use-keyboard-shortcuts'
 import { toISODate } from '@/lib/dates'
 import { buildSearchParams } from '@/lib/query-string'
 
 export default function TransactionsPage() {
   const [searchParams, setSearchParams] = useSearchParams()
-  const location = useLocation()
-  const [formOpen, setFormOpen] = useState(() => {
-    const state = location.state as { openNewForm?: boolean } | null
-    return !!state?.openNewForm
-  })
-  const [editTransaction, setEditTransaction] = useState<Transaction | null>(
-    null,
-  )
-  const [linkedTransferTransaction, setLinkedTransferTransaction] =
-    useState<Transaction | null>(null)
+  const navigate = useNavigate()
   const [deleteTarget, setDeleteTarget] = useState<Transaction | null>(null)
 
   const { data: accounts = [] } = useAccounts()
   const { data: categories = [] } = useCategories()
-  const deleteTransaction = useDeleteTransaction()
 
   const defaultDateFrom = useMemo(() => toISODate(startOfMonth(new Date())), [])
   const defaultDateTo = useMemo(() => toISODate(endOfMonth(new Date())), [])
@@ -83,68 +69,11 @@ export default function TransactionsPage() {
   )
   const total = data?.pages[0]?.pagination.total ?? 0
 
-  function handleEdit(transaction: Transaction) {
-    setEditTransaction(transaction)
-    if (transaction.transfer_id) {
-      setLinkedTransferTransaction(
-        transactions.find(
-          (tx) =>
-            tx.transfer_id === transaction.transfer_id &&
-            tx.id !== transaction.id,
-        ) ?? null,
-      )
-    } else {
-      setLinkedTransferTransaction(null)
-    }
-    setFormOpen(true)
-  }
-
-  function handleFormClose() {
-    setFormOpen(false)
-    setEditTransaction(null)
-    setLinkedTransferTransaction(null)
-  }
-
-  async function handleDelete() {
-    if (!deleteTarget) return
-    try {
-      await deleteTransaction.mutateAsync(deleteTarget.id)
-      toast.success('Transaction deleted')
-      setDeleteTarget(null)
-    } catch (error) {
-      handleMutationError(error)
-    }
-  }
-
-  // Clear navigation state after opening form via Ctrl+N from another page
-  useEffect(() => {
-    const state = location.state as { openNewForm?: boolean } | null
-    if (state?.openNewForm) {
-      window.history.replaceState({}, '')
-    }
-  }, [location.state])
-
-  // N: Open new transaction form
-  useHotkey('n', () => {
-    setEditTransaction(null)
-    setLinkedTransferTransaction(null)
-    setFormOpen(true)
-  })
-
-  // Escape: close form (enableOnInputs so it works from form fields)
-  useHotkey(
-    'escape',
-    () => {
-      if (formOpen) handleFormClose()
-    },
-    { enableOnInputs: true },
-  )
-
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Transactions</h1>
-        <Button onClick={() => setFormOpen(true)}>
+        <Button onClick={() => navigate('/transactions/new')}>
           <Plus className="mr-2 h-4 w-4" />
           New Transaction
         </Button>
@@ -154,14 +83,6 @@ export default function TransactionsPage() {
         filters={filters}
         onFiltersChange={handleFiltersChange}
       />
-
-      {formOpen && (
-        <TransactionForm
-          onClose={handleFormClose}
-          editTransaction={editTransaction}
-          linkedTransferTransaction={linkedTransferTransaction}
-        />
-      )}
 
       {isLoading ? (
         <div className="space-y-3">
@@ -190,25 +111,14 @@ export default function TransactionsPage() {
           hasNextPage={hasNextPage}
           onLoadMore={() => fetchNextPage()}
           isLoadingMore={isFetchingNextPage}
-          onEdit={handleEdit}
+          onEdit={(tx) => navigate(`/transactions/${tx.id}`)}
           onDelete={setDeleteTarget}
         />
       )}
 
-      <ConfirmDialog
-        open={!!deleteTarget}
-        onOpenChange={(open) => {
-          if (!open) setDeleteTarget(null)
-        }}
-        title="Delete Transaction"
-        description={
-          deleteTarget?.transfer_id
-            ? 'This is part of a transfer. Both linked transactions will be deleted.'
-            : 'This will permanently delete this transaction.'
-        }
-        variant="simple"
-        onConfirm={handleDelete}
-        loading={deleteTransaction.isPending}
+      <TransactionDeleteDialog
+        deleteTarget={deleteTarget}
+        onClose={() => setDeleteTarget(null)}
       />
     </div>
   )
