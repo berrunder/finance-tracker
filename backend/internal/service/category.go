@@ -13,6 +13,7 @@ import (
 )
 
 var (
+	ErrCategoryExists          = errors.New("category with this name already exists")
 	ErrCategoryHasChildren     = errors.New("category has child categories")
 	ErrCategoryHasTransactions = errors.New("category has transactions")
 )
@@ -42,6 +43,9 @@ func (s *Category) Create(ctx context.Context, userID uuid.UUID, req dto.CreateC
 		Type:     req.Type,
 	})
 	if err != nil {
+		if isDuplicateKey(err) {
+			return nil, ErrCategoryExists
+		}
 		return nil, err
 	}
 	return catToResponse(cat), nil
@@ -98,6 +102,9 @@ func (s *Category) Update(ctx context.Context, userID, categoryID uuid.UUID, req
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, ErrNotFound
+		}
+		if isDuplicateKey(err) {
+			return nil, ErrCategoryExists
 		}
 		return nil, err
 	}

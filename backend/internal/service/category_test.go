@@ -2,12 +2,15 @@ package service
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/stretchr/testify/require"
 
+	"github.com/sanches/finance-tracker-cc/backend/internal/dto"
 	"github.com/sanches/finance-tracker-cc/backend/internal/store"
 )
 
@@ -138,6 +141,78 @@ func TestCategoryList_ManyParentsWithChildren(t *testing.T) {
 	for i, root := range result {
 		require.Len(t, root.Children, 1, "parent %d (%s) should have 1 child", i, root.Name)
 	}
+}
+
+func TestCategoryCreate_DuplicateName(t *testing.T) {
+	mock := &mockCategoryStore{
+		createCategoryFn: func(ctx context.Context, arg store.CreateCategoryParams) (store.Category, error) {
+			return store.Category{}, errors.New("duplicate key value violates unique constraint (23505)")
+		},
+	}
+
+	svc := &Category{queries: mock}
+	_, err := svc.Create(context.Background(), uuid.New(), dto.CreateCategoryRequest{
+		Name: "Food",
+		Type: "expense",
+	})
+
+	require.ErrorIs(t, err, ErrCategoryExists)
+}
+
+func TestCategoryCreate_Success(t *testing.T) {
+	catID := uuid.New()
+	mock := &mockCategoryStore{
+		createCategoryFn: func(ctx context.Context, arg store.CreateCategoryParams) (store.Category, error) {
+			return store.Category{
+				ID:        catID,
+				UserID:    arg.UserID,
+				Name:      arg.Name,
+				Type:      arg.Type,
+				ParentID:  arg.ParentID,
+				CreatedAt: makeTimestamp(),
+			}, nil
+		},
+	}
+
+	svc := &Category{queries: mock}
+	result, err := svc.Create(context.Background(), uuid.New(), dto.CreateCategoryRequest{
+		Name: "Food",
+		Type: "expense",
+	})
+
+	require.NoError(t, err)
+	require.Equal(t, catID, result.ID)
+	require.Equal(t, "Food", result.Name)
+}
+
+func TestCategoryUpdate_DuplicateName(t *testing.T) {
+	mock := &mockCategoryStore{
+		updateCategoryFn: func(ctx context.Context, arg store.UpdateCategoryParams) (store.Category, error) {
+			return store.Category{}, errors.New("duplicate key value violates unique constraint (23505)")
+		},
+	}
+
+	svc := &Category{queries: mock}
+	_, err := svc.Update(context.Background(), uuid.New(), uuid.New(), dto.UpdateCategoryRequest{
+		Name: "Food",
+	})
+
+	require.ErrorIs(t, err, ErrCategoryExists)
+}
+
+func TestCategoryUpdate_NotFound(t *testing.T) {
+	mock := &mockCategoryStore{
+		updateCategoryFn: func(ctx context.Context, arg store.UpdateCategoryParams) (store.Category, error) {
+			return store.Category{}, pgx.ErrNoRows
+		},
+	}
+
+	svc := &Category{queries: mock}
+	_, err := svc.Update(context.Background(), uuid.New(), uuid.New(), dto.UpdateCategoryRequest{
+		Name: "Food",
+	})
+
+	require.ErrorIs(t, err, ErrNotFound)
 }
 
 func TestCategoryDelete_HasChildren(t *testing.T) {

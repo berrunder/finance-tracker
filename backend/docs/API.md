@@ -238,6 +238,7 @@ Returns the full tree. Root categories include a `children` array.
 }
 
 // Response 201 — single category object (no children array)
+// Error 409 CATEGORY_EXISTS — a category with this name and type already exists
 ```
 
 ### `PUT /categories/{id}`
@@ -250,6 +251,7 @@ Returns the full tree. Root categories include a `children` array.
 }
 
 // Response 200 — updated category object
+// Error 409 CATEGORY_EXISTS — a category with this name and type already exists
 ```
 
 ### `DELETE /categories/{id}`

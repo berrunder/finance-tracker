@@ -8,7 +8,7 @@ import {
   useCreateCategory,
   useUpdateCategory,
 } from '@/hooks/use-categories'
-import { handleMutationError, getSubmitLabel } from '@/lib/form-helpers'
+import { handleFormSubmitError, getSubmitLabel } from '@/lib/form-helpers'
 import {
   Dialog,
   DialogContent,
@@ -52,6 +52,7 @@ export function CategoryForm({
     register,
     handleSubmit,
     setValue,
+    setError,
     reset,
     watch,
     formState: { errors, isSubmitting },
@@ -112,7 +113,10 @@ export function CategoryForm({
       }
       onOpenChange(false)
     } catch (error) {
-      handleMutationError(error)
+      const serverError = handleFormSubmitError(error, setError)
+      if (serverError) {
+        toast.error(serverError)
+      }
     }
   }
 

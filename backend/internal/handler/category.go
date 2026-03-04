@@ -45,6 +45,10 @@ func (h *Category) Create(w http.ResponseWriter, r *http.Request) {
 
 	cat, err := h.svc.Create(r.Context(), userID, req)
 	if err != nil {
+		if errors.Is(err, service.ErrCategoryExists) {
+			respond.Error(w, http.StatusConflict, "CATEGORY_EXISTS", err.Error())
+			return
+		}
 		respond.Error(w, http.StatusInternalServerError, "INTERNAL_ERROR", "failed to create category")
 		return
 	}
@@ -73,6 +77,10 @@ func (h *Category) Update(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		if errors.Is(err, service.ErrNotFound) {
 			respond.Error(w, http.StatusNotFound, "NOT_FOUND", "category not found")
+			return
+		}
+		if errors.Is(err, service.ErrCategoryExists) {
+			respond.Error(w, http.StatusConflict, "CATEGORY_EXISTS", err.Error())
 			return
 		}
 		respond.Error(w, http.StatusInternalServerError, "INTERNAL_ERROR", "failed to update category")

@@ -15,6 +15,8 @@ export function mapApiErrorToFieldError(error: ApiError): FieldError | null {
       return { field: 'invite_code', message: 'Invalid invite code' }
     case 'ACCOUNT_EXISTS':
       return { field: 'name', message: 'An account with this name already exists' }
+    case 'CATEGORY_EXISTS':
+      return { field: 'name', message: 'A category with this name already exists' }
     case 'VALIDATION_ERROR':
       return { field: 'root', message: error.message }
     case 'HAS_CHILDREN':

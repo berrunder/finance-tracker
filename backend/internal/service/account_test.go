@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/google/uuid"
@@ -170,4 +171,37 @@ func TestAccountCreate_DefaultBalance(t *testing.T) {
 	require.Equal(t, "0.00", resp.Balance)
 	// The service should have defaulted to "0"
 	require.Equal(t, "0.00", numericToString(capturedParams.InitialBalance))
+}
+
+func TestAccountCreate_DuplicateName(t *testing.T) {
+	mock := &mockAccountStore{
+		createAccountFn: func(ctx context.Context, arg store.CreateAccountParams) (store.Account, error) {
+			return store.Account{}, errors.New("duplicate key value violates unique constraint (23505)")
+		},
+	}
+
+	svc := &Account{queries: mock}
+	_, err := svc.Create(context.Background(), uuid.New(), dto.CreateAccountRequest{
+		Name:     "Checking",
+		Type:     "bank",
+		Currency: "USD",
+	})
+
+	require.ErrorIs(t, err, ErrAccountExists)
+}
+
+func TestAccountUpdate_DuplicateName(t *testing.T) {
+	mock := &mockAccountStore{
+		updateAccountFn: func(ctx context.Context, arg store.UpdateAccountParams) (store.Account, error) {
+			return store.Account{}, errors.New("duplicate key value violates unique constraint (23505)")
+		},
+	}
+
+	svc := &Account{queries: mock}
+	_, err := svc.Update(context.Background(), uuid.New(), uuid.New(), dto.UpdateAccountRequest{
+		Name: "Checking",
+		Type: "bank",
+	})
+
+	require.ErrorIs(t, err, ErrAccountExists)
 }
