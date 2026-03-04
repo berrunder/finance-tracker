@@ -13,6 +13,8 @@ export function mapApiErrorToFieldError(error: ApiError): FieldError | null {
       return { field: 'root', message: 'Invalid username or password' }
     case 'INVALID_INVITE_CODE':
       return { field: 'invite_code', message: 'Invalid invite code' }
+    case 'ACCOUNT_EXISTS':
+      return { field: 'name', message: 'An account with this name already exists' }
     case 'VALIDATION_ERROR':
       return { field: 'root', message: error.message }
     case 'HAS_CHILDREN':

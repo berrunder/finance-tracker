@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"slices"
-	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -157,10 +156,3 @@ func (s *Auth) generateToken(userID uuid.UUID, tokenType string, expiry time.Dur
 	return token.SignedString(s.secret)
 }
 
-func isDuplicateKey(err error) bool {
-	if err == nil {
-		return false
-	}
-	msg := err.Error()
-	return strings.Contains(msg, "duplicate key") || strings.Contains(msg, "23505")
-}

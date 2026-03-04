@@ -6,7 +6,7 @@ import { accountSchema, type AccountFormData } from '@/lib/validators'
 import { ACCOUNT_TYPES } from '@/lib/constants'
 import { useCreateAccount, useUpdateAccount } from '@/hooks/use-accounts'
 import { useCurrencies } from '@/hooks/use-currencies'
-import { handleMutationError, getSubmitLabel } from '@/lib/form-helpers'
+import { handleFormSubmitError, getSubmitLabel } from '@/lib/form-helpers'
 import {
   Dialog,
   DialogContent,
@@ -43,6 +43,7 @@ export function AccountForm({ open, onOpenChange, account }: AccountFormProps) {
     register,
     handleSubmit,
     setValue,
+    setError,
     reset,
     watch,
     formState: { errors, isSubmitting },
@@ -95,7 +96,10 @@ export function AccountForm({ open, onOpenChange, account }: AccountFormProps) {
       }
       onOpenChange(false)
     } catch (error) {
-      handleMutationError(error)
+      const serverError = handleFormSubmitError(error, setError)
+      if (serverError) {
+        toast.error(serverError)
+      }
     }
   }
 

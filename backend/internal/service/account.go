@@ -11,7 +11,10 @@ import (
 	"github.com/sanches/finance-tracker-cc/backend/internal/store"
 )
 
-var ErrNotFound = errors.New("not found")
+var (
+	ErrNotFound      = errors.New("not found")
+	ErrAccountExists = errors.New("account with this name already exists")
+)
 
 type accountStore interface {
 	CreateAccount(ctx context.Context, arg store.CreateAccountParams) (store.Account, error)
@@ -55,6 +58,9 @@ func (s *Account) Create(ctx context.Context, userID uuid.UUID, req dto.CreateAc
 		InitialBalance: balance,
 	})
 	if err != nil {
+		if isDuplicateKey(err) {
+			return nil, ErrAccountExists
+		}
 		return nil, err
 	}
 
@@ -102,6 +108,9 @@ func (s *Account) Update(ctx context.Context, userID, accountID uuid.UUID, req d
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, ErrNotFound
+		}
+		if isDuplicateKey(err) {
+			return nil, ErrAccountExists
 		}
 		return nil, err
 	}

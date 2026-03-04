@@ -47,6 +47,10 @@ func (h *Account) Create(w http.ResponseWriter, r *http.Request) {
 
 	acct, err := h.svc.Create(r.Context(), userID, req)
 	if err != nil {
+		if errors.Is(err, service.ErrAccountExists) {
+			respond.Error(w, http.StatusConflict, "ACCOUNT_EXISTS", err.Error())
+			return
+		}
 		slog.Error("failed to create account", "error", err, "user_id", userID)
 		respond.Error(w, http.StatusInternalServerError, "INTERNAL_ERROR", "failed to create account")
 		return
@@ -97,6 +101,10 @@ func (h *Account) Update(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		if errors.Is(err, service.ErrNotFound) {
 			respond.Error(w, http.StatusNotFound, "NOT_FOUND", "account not found")
+			return
+		}
+		if errors.Is(err, service.ErrAccountExists) {
+			respond.Error(w, http.StatusConflict, "ACCOUNT_EXISTS", err.Error())
 			return
 		}
 		slog.Error("failed to update account", "error", err, "user_id", userID, "account_id", id)
