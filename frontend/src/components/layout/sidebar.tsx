@@ -1,7 +1,9 @@
 import { NavLink, useNavigate } from 'react-router'
 import { useAuth } from '@/hooks/use-auth.ts'
 import { useAccounts } from '@/hooks/use-accounts'
+import { useExchangeRates } from '@/hooks/use-exchange-rates'
 import { formatMoney } from '@/lib/money'
+import { groupAccountsByType } from '@/lib/account-groups'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import {
@@ -39,7 +41,12 @@ interface SidebarProps {
 export function Sidebar({ collapsed = false, onNavigate }: SidebarProps) {
   const { user, logout } = useAuth()
   const { data: accounts = [], isLoading: accountsLoading } = useAccounts()
+  const { data: rates = [] } = useExchangeRates()
   const navigate = useNavigate()
+
+  const groups = user
+    ? groupAccountsByType(accounts, user.base_currency, rates)
+    : []
 
   function navigateToAccount(accountId: string) {
     navigate(`/transactions?account_id=${accountId}`)
@@ -103,20 +110,34 @@ export function Sidebar({ collapsed = false, onNavigate }: SidebarProps) {
           ) : accounts.length === 0 ? (
             <p className="text-muted-foreground px-3 text-xs">No accounts</p>
           ) : (
-            <div className="space-y-0.5">
-              {accounts.map((account) => (
-                <button
-                  key={account.id}
-                  onClick={() => navigateToAccount(account.id)}
-                  className="hover:bg-accent flex w-full items-center justify-between rounded-md px-3 py-1.5 text-left transition-colors"
-                >
-                  <span className="truncate text-xs font-medium">
-                    {account.name}
-                  </span>
-                  <span className="text-muted-foreground shrink-0 text-xs">
-                    {formatMoney(account.balance, account.currency)}
-                  </span>
-                </button>
+            <div className="space-y-2">
+              {groups.map((group) => (
+                <div key={group.type}>
+                  <div className="flex items-center justify-between px-3 py-1">
+                    <span className="text-muted-foreground text-[10px] font-semibold uppercase tracking-wider">
+                      {group.label}
+                    </span>
+                    <span className="text-muted-foreground text-[10px] font-medium">
+                      {formatMoney(group.total, group.totalCurrency)}
+                    </span>
+                  </div>
+                  <div className="space-y-0.5">
+                    {group.accounts.map((account) => (
+                      <button
+                        key={account.id}
+                        onClick={() => navigateToAccount(account.id)}
+                        className="hover:bg-accent flex w-full items-center justify-between rounded-md px-3 py-1.5 text-left transition-colors"
+                      >
+                        <span className="truncate text-xs font-medium">
+                          {account.name}
+                        </span>
+                        <span className="text-muted-foreground shrink-0 text-xs">
+                          {formatMoney(account.balance, account.currency)}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
               ))}
             </div>
           )}
@@ -133,25 +154,32 @@ export function Sidebar({ collapsed = false, onNavigate }: SidebarProps) {
               ))}
             </div>
           ) : (
-            accounts.map((account) => (
-              <Tooltip key={account.id}>
-                <TooltipTrigger asChild>
-                  <button
-                    onClick={() => navigateToAccount(account.id)}
-                    className="hover:bg-accent flex w-full justify-center rounded-md px-2 py-1.5 transition-colors"
-                  >
-                    <span className="text-muted-foreground text-xs">
-                      {account.currency}
-                    </span>
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent side="right">
-                  <p>
-                    {account.name}:{' '}
-                    {formatMoney(account.balance, account.currency)}
-                  </p>
-                </TooltipContent>
-              </Tooltip>
+            groups.map((group, groupIndex) => (
+              <div key={group.type}>
+                {groupIndex > 0 && (
+                  <div className="border-t mx-2 my-1" />
+                )}
+                {group.accounts.map((account) => (
+                  <Tooltip key={account.id}>
+                    <TooltipTrigger asChild>
+                      <button
+                        onClick={() => navigateToAccount(account.id)}
+                        className="hover:bg-accent flex w-full justify-center rounded-md px-2 py-1.5 transition-colors"
+                      >
+                        <span className="text-muted-foreground text-xs">
+                          {account.currency}
+                        </span>
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="right">
+                      <p>
+                        {account.name}:{' '}
+                        {formatMoney(account.balance, account.currency)}
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                ))}
+              </div>
             ))
           )}
         </div>
