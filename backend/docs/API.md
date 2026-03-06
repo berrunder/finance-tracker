@@ -149,7 +149,7 @@ All monetary amounts are **decimal strings** (e.g. `"1500.50"`), never floats.
   "data": [{
     "id": "uuid",
     "name": "string",
-    "type": "bank",            // bank | cash | credit_card | savings
+    "type": "deposit",         // deposit | cash | credit_card | debit_card | other
     "currency": "USD",
     "initial_balance": "0",
     "balance": "1500.50",      // computed: initial_balance + income - expenses
@@ -166,7 +166,7 @@ All monetary amounts are **decimal strings** (e.g. `"1500.50"`), never floats.
 // Request
 {
   "name": "string",            // required, max 100
-  "type": "string",            // required, one of: bank, cash, credit_card, savings
+  "type": "string",            // required, one of: deposit, cash, credit_card, debit_card, other
   "currency": "string",        // required, exactly 3 chars
   "initial_balance": "string"  // optional, defaults to "0"
 }
@@ -184,7 +184,7 @@ Response 200 — single account object.
 // Request — currency cannot be changed
 {
   "name": "string",            // required, max 100
-  "type": "string",            // required, one of: bank, cash, credit_card, savings
+  "type": "string",            // required, one of: deposit, cash, credit_card, debit_card, other
   "initial_balance": "string"  // optional
 }
 
@@ -576,7 +576,7 @@ Full-featured import supporting multiple accounts, currencies, categories with s
 }
 ```
 
-Processing: Creates missing currencies → resolves currency strings → parses rows → validates account-currency consistency → creates missing accounts (type=bank) → creates missing categories (type from amount sign) → pairs transfers (by date + complementary accounts, computes exchange rate for cross-currency) → batch inserts (1000/batch). Failed rows are skipped and reported.
+Processing: Creates missing currencies → resolves currency strings → parses rows → validates account-currency consistency → creates missing accounts (type=deposit) → creates missing categories (type from amount sign) → pairs transfers (by date + complementary accounts, computes exchange rate for cross-currency) → batch inserts (1000/batch). Failed rows are skipped and reported.
 
 ## CSV Export (protected)
 

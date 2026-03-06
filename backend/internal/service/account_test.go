@@ -56,7 +56,7 @@ func TestAccountGet_Balance(t *testing.T) {
 				ID:             accountID,
 				UserID:         userID,
 				Name:           "Checking",
-				Type:           "bank",
+				Type:           "deposit",
 				Currency:       "USD",
 				InitialBalance: numericFromString("1000.00"),
 				CreatedAt:      makeTimestamp(),
@@ -101,13 +101,13 @@ func TestAccountList_MultipleAccounts(t *testing.T) {
 		listAccountsFn: func(ctx context.Context, uid uuid.UUID) ([]store.ListAccountsRow, error) {
 			return []store.ListAccountsRow{
 				{
-					ID: acct1, UserID: userID, Name: "Checking", Type: "bank", Currency: "USD",
+					ID: acct1, UserID: userID, Name: "Checking", Type: "deposit", Currency: "USD",
 					InitialBalance: numericFromString("500.00"),
 					CreatedAt:      makeTimestamp(),
 					UpdatedAt:      makeTimestamp(),
 				},
 				{
-					ID: acct2, UserID: userID, Name: "Savings", Type: "savings", Currency: "USD",
+					ID: acct2, UserID: userID, Name: "Savings", Type: "other", Currency: "USD",
 					InitialBalance: numericFromString("2000.00"),
 					CreatedAt:      makeTimestamp(),
 					UpdatedAt:      makeTimestamp(),
@@ -200,7 +200,7 @@ func TestAccountUpdate_DuplicateName(t *testing.T) {
 	svc := &Account{queries: mock}
 	_, err := svc.Update(context.Background(), uuid.New(), uuid.New(), dto.UpdateAccountRequest{
 		Name: "Checking",
-		Type: "bank",
+		Type: "deposit",
 	})
 
 	require.ErrorIs(t, err, ErrAccountExists)

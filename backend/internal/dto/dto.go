@@ -75,14 +75,14 @@ type ChangePasswordRequest struct {
 // Account
 type CreateAccountRequest struct {
 	Name           string `json:"name" validate:"required,max=100"`
-	Type           string `json:"type" validate:"required,oneof=bank cash credit_card savings"`
+	Type           string `json:"type" validate:"required,oneof=deposit cash credit_card debit_card other"`
 	Currency       string `json:"currency" validate:"required,len=3"`
 	InitialBalance string `json:"initial_balance"` // decimal string
 }
 
 type UpdateAccountRequest struct {
 	Name           string `json:"name" validate:"required,max=100"`
-	Type           string `json:"type" validate:"required,oneof=bank cash credit_card savings"`
+	Type           string `json:"type" validate:"required,oneof=deposit cash credit_card debit_card other"`
 	InitialBalance string `json:"initial_balance"`
 }
 

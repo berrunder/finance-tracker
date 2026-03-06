@@ -51,7 +51,7 @@ export function AccountForm({ open, onOpenChange, account }: AccountFormProps) {
     resolver: zodResolver(accountSchema),
     defaultValues: {
       name: '',
-      type: 'bank',
+      type: 'deposit',
       currency: 'USD',
       initial_balance: '0',
     },
@@ -70,7 +70,7 @@ export function AccountForm({ open, onOpenChange, account }: AccountFormProps) {
       } else {
         reset({
           name: '',
-          type: 'bank',
+          type: 'deposit',
           currency: 'USD',
           initial_balance: '0',
         })

@@ -66,7 +66,7 @@ func TestListTransactions_IncludesChildCategories(t *testing.T) {
 	account, err := queries.CreateAccount(ctx, store.CreateAccountParams{
 		UserID:         user.ID,
 		Name:           "Test Account",
-		Type:           "bank",
+		Type:           "deposit",
 		Currency:       "USD",
 		InitialBalance: numericFromInt(0),
 	})

@@ -116,7 +116,7 @@ Uses `go-playground/validator` struct tags on DTOs:
 
 ```go
 Username string `validate:"required,min=3,max=50"`
-Type     string `validate:"required,oneof=bank cash credit_card savings"`
+Type     string `validate:"required,oneof=deposit cash credit_card debit_card other"`
 Currency string `validate:"required,len=3"`
 ```
 

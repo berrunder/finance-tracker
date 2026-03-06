@@ -94,7 +94,7 @@ describe('registerSchema', () => {
 describe('accountSchema', () => {
   const validData = {
     name: 'Checking',
-    type: 'bank' as const,
+    type: 'deposit' as const,
     currency: 'USD',
     initial_balance: '1000.00',
   }

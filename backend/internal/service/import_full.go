@@ -164,7 +164,7 @@ func (s *ImportFull) Import(ctx context.Context, userID uuid.UUID, req dto.FullI
 			newAcct, createErr := q.CreateAccount(ctx, store.CreateAccountParams{
 				UserID:         userID,
 				Name:           name,
-				Type:           "bank",
+				Type:           "deposit",
 				Currency:       currency,
 				InitialBalance: numericFromString("0"),
 			})
