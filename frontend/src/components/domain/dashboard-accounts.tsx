@@ -1,5 +1,6 @@
+import Decimal from 'decimal.js'
 import { formatMoney } from '@/lib/money'
-import { groupAccountsByType } from '@/lib/account-groups'
+import { groupAccountsByType, convertToBase } from '@/lib/account-groups'
 import { useAuth } from '@/hooks/use-auth'
 import { useExchangeRates } from '@/hooks/use-exchange-rates'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -18,11 +19,25 @@ export function DashboardAccounts({ accounts }: DashboardAccountsProps) {
   }
 
   const groups = groupAccountsByType(accounts, user.base_currency, rates)
+  const netWorth = accounts
+    .reduce(
+      (sum, a) => sum.add(convertToBase(a.balance, a.currency, user.base_currency, rates)),
+      new Decimal(0),
+    )
+    .toFixed(2)
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Account Balances</CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle>Account Balances</CardTitle>
+          <div className="text-right">
+            <p className="text-sm text-muted-foreground">Net Worth</p>
+            <p className="text-lg font-bold">
+              {formatMoney(netWorth, user.base_currency)}
+            </p>
+          </div>
+        </div>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
