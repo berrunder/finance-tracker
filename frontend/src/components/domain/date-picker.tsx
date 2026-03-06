@@ -2,7 +2,7 @@ import * as React from 'react'
 import IMask from 'imask'
 import { IMaskInput } from 'react-imask'
 import { CalendarIcon } from 'lucide-react'
-import { parseISO } from 'date-fns'
+import { addYears, parseISO } from 'date-fns'
 import { formatDateMask, toISODate } from '@/lib/dates'
 import { Button } from '@/components/ui/button'
 import { Calendar } from '@/components/ui/calendar'
@@ -13,19 +13,26 @@ import {
 } from '@/components/ui/popover'
 import { cn } from '@/lib/utils'
 
-const CURRENT_YEAR = new Date().getFullYear()
+const DEFAULT_MIN = new Date(1900, 0, 1)
+const DEFAULT_MAX = addYears(new Date(), 1)
 
 interface DatePickerProps {
   value?: string
   onChange: (date: string | undefined) => void
   placeholder?: string
+  minDate?: string
+  maxDate?: string
 }
 
 export function DatePicker({
   value,
   onChange,
   placeholder = 'DD.MM.YYYY',
+  minDate,
+  maxDate,
 }: DatePickerProps) {
+  const min = minDate ? parseISO(minDate) : DEFAULT_MIN
+  const max = maxDate ? parseISO(maxDate) : DEFAULT_MAX
   const [open, setOpen] = React.useState(false)
   const [inputValue, setInputValue] = React.useState(
     value ? formatDateMask(value) : '',
@@ -48,8 +55,8 @@ export function DatePicker({
           m: { mask: IMask.MaskedRange, from: 1, to: 12, maxLength: 2 },
           Y: {
             mask: IMask.MaskedRange,
-            from: 1900,
-            to: CURRENT_YEAR + 1,
+            from: min.getFullYear(),
+            to: max.getFullYear(),
             maxLength: 4,
           },
         }}
@@ -60,8 +67,8 @@ export function DatePicker({
           const [day, month, year] = str.split('.').map(Number)
           return new Date(year, month - 1, day)
         }}
-        min={new Date(1900, 0, 1)}
-        max={new Date()}
+        min={min}
+        max={max}
         value={inputValue}
         onAccept={(val: string) => {
           setInputValue(val)
@@ -95,8 +102,9 @@ export function DatePicker({
             mode="single"
             selected={selected}
             captionLayout="dropdown"
-            startMonth={new Date(1900, 0)}
-            endMonth={new Date()}
+            startMonth={min}
+            endMonth={max}
+            disabled={{ before: min, after: max }}
             onSelect={(date) => {
               onChange(date ? toISODate(date) : undefined)
               setOpen(false)

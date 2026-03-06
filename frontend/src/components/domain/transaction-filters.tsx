@@ -105,6 +105,7 @@ export function TransactionFilters({
           value={filters.date_from}
           onChange={(v) => debouncedUpdate('date_from', v)}
           placeholder="From date"
+          maxDate={filters.date_to}
         />
       </div>
 
@@ -113,6 +114,7 @@ export function TransactionFilters({
           value={filters.date_to}
           onChange={(v) => debouncedUpdate('date_to', v)}
           placeholder="To date"
+          minDate={filters.date_from}
         />
       </div>
 

@@ -52,6 +52,7 @@ export function ExportTab() {
             value={dateFrom}
             onChange={(d) => setDateFrom(d ?? '')}
             placeholder="Select start date"
+            maxDate={dateTo}
           />
         </div>
 
@@ -61,6 +62,7 @@ export function ExportTab() {
             value={dateTo}
             onChange={(d) => setDateTo(d ?? '')}
             placeholder="Select end date"
+            minDate={dateFrom}
           />
         </div>
       </div>

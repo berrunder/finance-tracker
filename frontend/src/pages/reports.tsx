@@ -97,6 +97,7 @@ export default function ReportsPage() {
               setDateFrom(date ?? toISODate(startOfMonth(new Date())))
             }
             placeholder="Select start date"
+            maxDate={dateTo}
           />
         </div>
         <div className="space-y-2">
@@ -107,6 +108,7 @@ export default function ReportsPage() {
               setDateTo(date ?? toISODate(endOfMonth(new Date())))
             }
             placeholder="Select end date"
+            minDate={dateFrom}
           />
         </div>
       </div>
