@@ -5,13 +5,27 @@ import {
   getCategories,
   updateCategory,
 } from '@/api/categories'
+import { isNetworkError } from '@/api/client'
 import { queryKeys } from '@/lib/query-keys'
+import { putCategories, getAllOfflineCategories } from '@/lib/db'
 import type { UpdateCategoryRequest } from '@/types/api'
 
 export function useCategories() {
   return useQuery({
     queryKey: queryKeys.categories.all,
-    queryFn: getCategories,
+    queryFn: async () => {
+      try {
+        const data = await getCategories()
+        await putCategories(data.data)
+        return data
+      } catch (error) {
+        if (isNetworkError(error)) {
+          const cached = await getAllOfflineCategories()
+          return { data: cached }
+        }
+        throw error
+      }
+    },
     select: (data) => data.data,
   })
 }

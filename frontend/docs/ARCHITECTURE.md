@@ -66,6 +66,8 @@ Transactions use `useInfiniteQuery` for cursor-based pagination with a "Load mor
 - `use-theme.ts` — dark mode preference management
 - `use-online-status.ts` — offline/online detection via `useSyncExternalStore` + browser `online`/`offline` events
 - `use-keyboard-shortcuts.ts` — `useHotkey` hook for global keyboard shortcuts (mod+key format, auto-disabled on input focus)
+- `use-sync-status.ts` — sync state context (pending count, syncing flag, auto-sync on reconnect + Background Sync messages)
+- `use-install-prompt.ts` — captures `beforeinstallprompt` for PWA install button
 
 ### API Layer (`src/api/`)
 
@@ -97,6 +99,9 @@ Stateless utilities:
 | `dates.ts`         | Date formatting helpers via `date-fns`                  |
 | `query-keys.ts`    | Centralized TanStack Query key factory                  |
 | `utils.ts`         | `cn()` utility for Tailwind class merging               |
+| `db.ts`            | IndexedDB schema, CRUD helpers via `idb` library        |
+| `sync-queue.ts`    | Offline mutation queue operations (enqueue, dequeue)     |
+| `sync-engine.ts`   | Replays queued mutations against the API on reconnect   |
 
 ## Authentication
 
@@ -124,12 +129,13 @@ StrictMode
   QueryClientProvider     -- TanStack Query cache
     TooltipProvider       -- Radix tooltip context
       AuthProvider        -- Auth state + token management
-        BrowserRouter     -- React Router
-          Routes          -- Route definitions
-        Toaster           -- Sonner toast notifications
+        SyncStatusProvider  -- Offline sync state + auto-sync on reconnect
+          BrowserRouter     -- React Router
+            Routes          -- Route definitions
+          Toaster           -- Sonner toast notifications
 ```
 
-`AuthProvider` is placed inside `QueryClientProvider` so that auth API calls (login, refresh) can use the same fetch infrastructure, but auth state itself is managed via `useState` rather than query cache.
+`AuthProvider` is placed inside `QueryClientProvider` so that auth API calls (login, refresh) can use the same fetch infrastructure, but auth state itself is managed via `useState` rather than query cache. `SyncStatusProvider` sits inside `AuthProvider` (needs query client) and wraps the router so all pages can access sync state.
 
 ## Responsive Layout
 
@@ -153,9 +159,69 @@ Two strategies depending on context:
 1. **Form submissions** — `handleFormSubmitError` maps `ApiError.code` to specific form field errors (e.g., `USER_EXISTS` -> username field) or a root-level server error displayed above the form.
 2. **Non-form mutations** (delete, etc.) — `handleMutationError` shows a toast via Sonner with the error message.
 
-## Offline Detection
+## PWA and Offline Support
 
-`useOnlineStatus` uses `useSyncExternalStore` to subscribe to browser `online`/`offline` events. The `OfflineBanner` component (rendered inside `AppLayout`) shows a persistent warning when offline and mutation buttons across pages are disabled to prevent writes that would fail.
+The app is an installable PWA with offline transaction CRUD and automatic sync on reconnect.
+
+### Service Worker
+
+A custom service worker (`src/sw.ts`) is built via `vite-plugin-pwa` in `injectManifest` mode:
+
+- **Precache** — all static assets (JS, CSS, HTML, icons, fonts) are precached at install time
+- **Navigation** — NetworkFirst strategy with offline fallback to cached `index.html` for SPA routing
+- **API requests** — NetworkOnly (not cached by the SW; the app-level IndexedDB layer handles offline data)
+- **Background Sync** — listens for the `sync` event and posts a `SYNC_REQUESTED` message to open client tabs
+
+### Offline Data Layer (IndexedDB)
+
+`lib/db.ts` defines an IndexedDB database (`finance-tracker`) via the `idb` library with four object stores:
+
+| Store          | Purpose                               | Key            |
+|----------------|---------------------------------------|----------------|
+| `transactions` | Local mirror of server transactions   | `id`           |
+| `accounts`     | Local mirror of accounts (read-only)  | `id`           |
+| `categories`   | Local mirror of categories (read-only)| `id`           |
+| `sync-queue`   | Pending offline mutations             | auto-increment |
+
+**Read flow:** TanStack Query hooks fetch from the API when online and mirror successful responses to IndexedDB. When offline (`isNetworkError` detects a `TypeError` from `fetch`), hooks fall back to reading from IndexedDB.
+
+**Write flow:** Mutations attempt the API call first. On network error, the mutation is saved to the `sync-queue` store and the transaction is written to IndexedDB with a temporary ID (`temp_<uuid>`). The UI updates optimistically from the local data.
+
+### Sync Engine
+
+`lib/sync-engine.ts` replays queued mutations against the API. `lib/sync-queue.ts` manages queue entries (enqueue, dequeue, mark failed) and registers Background Sync with the service worker.
+
+**Trigger points:**
+1. `online` window event (via `useOnlineStatus` change in `SyncStatusProvider`)
+2. Background Sync API — the SW fires a `SYNC_REQUESTED` message to client tabs
+3. App startup (if online and queue is non-empty)
+
+**Sync process:**
+1. Read queue entries ordered by timestamp (FIFO)
+2. Replay each operation (create, update, delete, transfer variants)
+3. On success: remove from queue, replace temp IDs with server-assigned IDs in IndexedDB
+4. On network error: stop processing (still offline)
+5. On server error (400/404): mark as failed, show error toast, keep in queue
+6. After sync: invalidate TanStack Query caches, show success/failure toasts
+
+**Edge cases for temp transactions:**
+- Edit a temp transaction → merge payload into the existing create entry in the queue
+- Delete a temp transaction → remove the create entry from the queue (no server call needed)
+
+### Sync Status
+
+`SyncStatusProvider` (context in `use-sync-status.ts`) exposes `pendingCount`, `isSyncing`, and `refreshPendingCount` to the component tree. It auto-triggers sync when connectivity returns and listens for Background Sync messages from the service worker.
+
+### Offline UI
+
+- `OfflineBanner` shows three states: offline (yellow, with pending count), syncing (blue, spinner), and failed items when online (red)
+- Transaction rows with temp IDs show a cloud icon indicating pending sync
+- Transaction form shows an "offline save" toast when saving without connectivity
+- IndexedDB is cleared on logout to prevent data leaking between users
+
+### Install Prompt
+
+`use-install-prompt.ts` captures the `beforeinstallprompt` event. `InstallButton` in the sidebar footer shows an install button when the PWA is installable but not yet installed.
 
 ## Keyboard Shortcuts
 

@@ -24,6 +24,12 @@ import { TransferForm } from '@/components/domain/transfer-form'
 import { IncomeExpenseForm } from '@/components/domain/income-expense-form'
 import type { Transaction, UpdateTransferRequest } from '@/types/api'
 
+const OFFLINE_TOAST = 'Saved offline \u2014 will sync when connected'
+
+function successToast(onlineMessage: string): void {
+  toast.success(navigator.onLine ? onlineMessage : OFFLINE_TOAST)
+}
+
 type TxType = 'income' | 'expense' | 'transfer'
 type IncomeExpenseTxType = Exclude<TxType, 'transfer'>
 type TransferPair = {
@@ -186,13 +192,13 @@ function IncomeExpenseModeForm({
       if (isEdit) {
         if (!editTransaction) return
         await updateTransaction.mutateAsync({ id: editTransaction.id, data })
-        toast.success('Transaction updated')
+        successToast('Transaction updated')
         onClose()
         return
       }
 
       await createTransaction.mutateAsync(data)
-      toast.success('Transaction created')
+      successToast('Transaction created')
       txForm.reset(getTransactionResetValues(data))
     } catch (error) {
       handleMutationError(error)
@@ -253,13 +259,13 @@ function TransferModeForm({
           id: editTransaction.id,
           data: buildTransferRequest(data),
         })
-        toast.success('Transfer updated')
+        successToast('Transfer updated')
         onClose()
         return
       }
 
       await createTransfer.mutateAsync(buildTransferRequest(data))
-      toast.success('Transfer created')
+      successToast('Transfer created')
       trForm.reset(getTransferResetValues(data))
     } catch (error) {
       handleMutationError(error)

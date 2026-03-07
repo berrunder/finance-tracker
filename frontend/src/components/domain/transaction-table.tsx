@@ -1,4 +1,11 @@
-import { MoreHorizontal, Pencil, Trash2 } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import {
+  AlertCircle,
+  Cloud,
+  MoreHorizontal,
+  Pencil,
+  Trash2,
+} from 'lucide-react'
 import { formatMoney } from '@/lib/money'
 import { formatDate } from '@/lib/dates'
 import { Badge } from '@/components/ui/badge'
@@ -17,6 +24,13 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
+import { getFailedTransactionIds } from '@/lib/sync-queue'
+import { useSyncStatus } from '@/hooks/use-sync-status'
 import { cn } from '@/lib/utils'
 import type { Transaction, Account, Category } from '@/types/api'
 
@@ -73,6 +87,35 @@ function getTransferDescription(
   return `Transfer: ${linkedAccount} \u2192 ${currentAccount}`
 }
 
+function SyncIndicator({
+  tx,
+  hasFailedSync,
+}: {
+  tx: Transaction
+  hasFailedSync: boolean
+}) {
+  if (hasFailedSync) {
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <AlertCircle className="text-destructive h-3.5 w-3.5 shrink-0" />
+        </TooltipTrigger>
+        <TooltipContent>Sync failed</TooltipContent>
+      </Tooltip>
+    )
+  }
+
+  if (!tx.id.startsWith('temp_')) return null
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Cloud className="h-3.5 w-3.5 shrink-0 text-yellow-500" />
+      </TooltipTrigger>
+      <TooltipContent>Pending sync</TooltipContent>
+    </Tooltip>
+  )
+}
+
 function amountColorClass(type: string): string {
   if (type === 'income') return 'text-green-600 dark:text-green-400'
   if (type === 'expense') return 'text-red-600 dark:text-red-400'
@@ -118,6 +161,26 @@ export function TransactionTable({
   onEdit,
   onDelete,
 }: TransactionTableProps) {
+  const { pendingCount } = useSyncStatus()
+  const [failedIds, setFailedIds] = useState<Set<string>>(new Set())
+
+  useEffect(() => {
+    let active = true
+
+    async function loadFailedIds() {
+      const ids = await getFailedTransactionIds()
+      if (active) {
+        setFailedIds(new Set(ids))
+      }
+    }
+
+    loadFailedIds()
+
+    return () => {
+      active = false
+    }
+  }, [pendingCount, transactions])
+
   if (transactions.length === 0) {
     return (
       <p className="text-muted-foreground py-8 text-center">
@@ -160,6 +223,10 @@ export function TransactionTable({
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center gap-2">
+                    <SyncIndicator
+                      tx={tx}
+                      hasFailedSync={failedIds.has(tx.id)}
+                    />
                     {getTransferDescription(tx, transactions, accounts)}
                     {tx.transfer_id && (
                       <Badge variant="outline" className="text-xs">
@@ -203,6 +270,7 @@ export function TransactionTable({
           >
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
+                <SyncIndicator tx={tx} hasFailedSync={failedIds.has(tx.id)} />
                 <span className="truncate text-sm font-medium">
                   {getTransferDescription(tx, transactions, accounts)}
                 </span>

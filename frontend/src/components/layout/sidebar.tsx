@@ -11,6 +11,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
+import { InstallButton } from './install-button'
 import { cn } from '@/lib/utils'
 import {
   LayoutDashboard,
@@ -196,6 +197,7 @@ export function Sidebar({ collapsed = false, onNavigate }: SidebarProps) {
             {user?.display_name}
           </p>
         )}
+        <InstallButton collapsed={collapsed} />
         <Button
           variant="ghost"
           size={collapsed ? 'icon' : 'sm'}

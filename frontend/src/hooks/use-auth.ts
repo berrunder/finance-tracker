@@ -17,6 +17,7 @@ import {
 import { updateUser as apiUpdateUser } from '@/api/user'
 import { clearTokens, setAccessToken, setOnAuthFailure } from '@/api/client'
 import { REFRESH_TOKEN_KEY } from '@/lib/constants'
+import { clearAllOfflineData } from '@/lib/db'
 
 interface AuthContextValue {
   user: User | null
@@ -101,6 +102,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(() => {
     clearTokens()
+    clearAllOfflineData().catch(() => {})
     setUser(null)
   }, [])
 

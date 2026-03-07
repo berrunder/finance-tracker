@@ -47,8 +47,10 @@ export function TransactionFilters({
   }
 
   useEffect(() => {
+    const timers = dateTimers.current
+
     return () => {
-      for (const timer of Object.values(dateTimers.current)) {
+      for (const timer of Object.values(timers)) {
         window.clearTimeout(timer)
       }
     }

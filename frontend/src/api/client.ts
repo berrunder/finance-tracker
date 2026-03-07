@@ -157,3 +157,17 @@ export async function apiClient<T>(
 
   return response.json() as Promise<T>
 }
+
+/**
+ * Returns true if the error is a network failure (offline, DNS, timeout)
+ * as opposed to an HTTP error from the server.
+ */
+export function isNetworkError(error: unknown): boolean {
+  if (!(error instanceof TypeError)) return false
+  const msg = error.message.toLowerCase()
+  return (
+    msg === 'failed to fetch' || // Chrome/Edge
+    msg === 'load failed' || // Safari
+    msg.includes('networkerror') // Firefox
+  )
+}

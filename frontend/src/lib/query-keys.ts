@@ -1,3 +1,4 @@
+import type { QueryClient } from '@tanstack/react-query'
 import type { ReportFilters } from '@/api/reports'
 
 export const queryKeys = {
@@ -28,3 +29,9 @@ export const queryKeys = {
   exchangeRates: ['exchange-rates'] as const,
   currencies: ['currencies'] as const,
 } as const
+
+export function invalidateTransactionRelated(queryClient: QueryClient): void {
+  queryClient.invalidateQueries({ queryKey: queryKeys.transactions.all })
+  queryClient.invalidateQueries({ queryKey: queryKeys.accounts.all })
+  queryClient.invalidateQueries({ queryKey: queryKeys.reports.all })
+}
