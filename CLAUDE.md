@@ -45,6 +45,6 @@ Backend-specific guidance in `backend/CLAUDE.md`.
 ## Conventions
 
 - API changes must be reflected in [backend/docs/API.md](backend/docs/API.md)
-- Backend architecture changes must be reflected in [backend/docs/Architecture.md](backend/docs/Architecture.md)
+- Backend architecture changes must be reflected in [backend/docs/ARCHITECTURE.md](backend/docs/ARCHITECTURE.md)
 - Backend feature changes must be reflected in [backend/README.md](backend/README.md)
 - When the user asks for a code review or simplification suggestions, present findings first and wait for user approval before implementing changes. Do not continue fixing iteratively without checking in.

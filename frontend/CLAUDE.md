@@ -27,7 +27,7 @@ src/
     domain/     # App-specific components (forms, tables, filters)
     layout/     # Shell, nav, layout wrappers
   hooks/        # Custom hooks (use-accounts, use-auth, use-transactions, etc.)
-  lib/          # Utilities (constants, dates, money, validators, query-keys, db, sync-queue, sync-engine)
+  lib/          # Utilities (constants, dates, money, validators, query-keys, db, sync-queue, sync-engine, form-helpers, utils, query-string, account-groups, error-mapping)
   pages/        # Route-level page components
   types/        # Shared TypeScript types
   sw.ts         # Service worker (built by vite-plugin-pwa, excluded from tsconfig.app.json)
@@ -44,7 +44,7 @@ src/
 
 ## Verification
 
-- After making multi-file refactoring changes in TypeScript, always run `npm run check:types` to verify there are no type errors before reporting completion. After Go changes, always run `go build ./...` and `go test ./...`.
+- After making multi-file refactoring changes in TypeScript, always run `npm run check:types` to verify there are no type errors before reporting completion.
 
 ## Conventions
 

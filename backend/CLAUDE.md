@@ -2,6 +2,15 @@
 
 Go 1.24 API — chi router, PostgreSQL 16 (pgx + sqlc), JWT auth (HS256), golang-migrate.
 
+## Commands
+
+```sh
+go build ./...                    # Build all packages
+go test ./...                     # Run all tests
+go test ./internal/service/ -run TestName  # Single test
+make sqlc                         # Regenerate sqlc (run from repo root)
+```
+
 ## Layer Flow
 
 ```
