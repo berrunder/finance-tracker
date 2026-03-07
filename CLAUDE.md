@@ -13,6 +13,7 @@ Monorepo: Go API in `/backend`, React app in `/frontend`.
 docker compose up -d db          # Start PostgreSQL
 make up                          # Full stack (docker compose up -d --build)
 make down                        # docker compose down
+make migrate                     # Run DB migrations manually
 
 # Backend
 make dev-backend                 # Run API locally
@@ -34,7 +35,8 @@ Required: `DATABASE_URL` (postgres connection string), `JWT_SECRET` (HMAC key, 3
 
 ## Specifications
 
-Implementation specifications for frontend located at `frontend/SPEC.md`. Frontend-specific guidance in `frontend/CLAUDE.md`.
+Frontend-specific guidance in `frontend/CLAUDE.md`.
+Backend-specific guidance in `backend/CLAUDE.md`.
 
 ## Code Quality
 

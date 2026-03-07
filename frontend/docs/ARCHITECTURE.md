@@ -100,7 +100,7 @@ Stateless utilities:
 | `query-keys.ts`    | Centralized TanStack Query key factory                  |
 | `utils.ts`         | `cn()` utility for Tailwind class merging               |
 | `db.ts`            | IndexedDB schema, CRUD helpers via `idb` library        |
-| `sync-queue.ts`    | Offline mutation queue operations (enqueue, dequeue)     |
+| `sync-queue.ts`    | Offline mutation queue operations (enqueue, dequeue)    |
 | `sync-engine.ts`   | Replays queued mutations against the API on reconnect   |
 
 ## Authentication
@@ -176,12 +176,12 @@ A custom service worker (`src/sw.ts`) is built via `vite-plugin-pwa` in `injectM
 
 `lib/db.ts` defines an IndexedDB database (`finance-tracker`) via the `idb` library with four object stores:
 
-| Store          | Purpose                               | Key            |
-|----------------|---------------------------------------|----------------|
-| `transactions` | Local mirror of server transactions   | `id`           |
-| `accounts`     | Local mirror of accounts (read-only)  | `id`           |
-| `categories`   | Local mirror of categories (read-only)| `id`           |
-| `sync-queue`   | Pending offline mutations             | auto-increment |
+| Store          | Purpose                                | Key            |
+| -------------- | -------------------------------------- | -------------- |
+| `transactions` | Local mirror of server transactions    | `id`           |
+| `accounts`     | Local mirror of accounts (read-only)   | `id`           |
+| `categories`   | Local mirror of categories (read-only) | `id`           |
+| `sync-queue`   | Pending offline mutations              | auto-increment |
 
 **Read flow:** TanStack Query hooks fetch from the API when online and mirror successful responses to IndexedDB. When offline (`isNetworkError` detects a `TypeError` from `fetch`), hooks fall back to reading from IndexedDB.
 
@@ -192,11 +192,13 @@ A custom service worker (`src/sw.ts`) is built via `vite-plugin-pwa` in `injectM
 `lib/sync-engine.ts` replays queued mutations against the API. `lib/sync-queue.ts` manages queue entries (enqueue, dequeue, mark failed) and registers Background Sync with the service worker.
 
 **Trigger points:**
+
 1. `online` window event (via `useOnlineStatus` change in `SyncStatusProvider`)
 2. Background Sync API — the SW fires a `SYNC_REQUESTED` message to client tabs
 3. App startup (if online and queue is non-empty)
 
 **Sync process:**
+
 1. Read queue entries ordered by timestamp (FIFO)
 2. Replay each operation (create, update, delete, transfer variants)
 3. On success: remove from queue, replace temp IDs with server-assigned IDs in IndexedDB
@@ -205,6 +207,7 @@ A custom service worker (`src/sw.ts`) is built via `vite-plugin-pwa` in `injectM
 6. After sync: invalidate TanStack Query caches, show success/failure toasts
 
 **Edge cases for temp transactions:**
+
 - Edit a temp transaction → merge payload into the existing create entry in the queue
 - Delete a temp transaction → remove the create entry from the queue (no server call needed)
 

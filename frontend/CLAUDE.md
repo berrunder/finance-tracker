@@ -2,7 +2,7 @@
 
 ## Stack
 
-React 19, TypeScript, Vite, Tailwind CSS v4, shadcn/ui (new-york style, lucide icons), React Router v7, TanStack Query, React Hook Form + Zod, date-fns.
+React 19, TypeScript, Vite, Tailwind CSS v4, shadcn/ui (new-york style, lucide icons), React Router v7, TanStack Query, React Hook Form + Zod, date-fns, vite-plugin-pwa (injectManifest mode), idb (IndexedDB).
 
 ## Commands
 
@@ -27,9 +27,10 @@ src/
     domain/     # App-specific components (forms, tables, filters)
     layout/     # Shell, nav, layout wrappers
   hooks/        # Custom hooks (use-accounts, use-auth, use-transactions, etc.)
-  lib/          # Utilities (constants, dates, money, validators, query-keys, etc.)
+  lib/          # Utilities (constants, dates, money, validators, query-keys, db, sync-queue, sync-engine)
   pages/        # Route-level page components
   types/        # Shared TypeScript types
+  sw.ts         # Service worker (built by vite-plugin-pwa, excluded from tsconfig.app.json)
 ```
 
 ## Testing
@@ -58,6 +59,7 @@ src/
 - **Unused vars**: prefix with `_` (enforced by ESLint rule `argsIgnorePattern: '^_'`).
 - When renaming or moving files in the frontend, check for fast-refresh compatibility — never rename .ts to .tsx or vice versa for hook files without verifying import chains and HMR behavior.
 - ALWAYS use proper typing. NEVER use `any` or `as unknown as Type` without a very good reason and approval. If you find yourself needing to do this, stop and ask for help — there's almost always a better way.
+- `isNetworkError` in `api/client.ts` must handle all major browsers: Chrome (`Failed to fetch`), Safari (`Load failed`), Firefox (`NetworkError...`). If modifying offline detection, test against all three message patterns.
 
 ## Documentation
 
