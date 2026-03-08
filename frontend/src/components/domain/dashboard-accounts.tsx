@@ -19,7 +19,7 @@ export function DashboardAccounts({ accounts }: DashboardAccountsProps) {
   }
 
   const groups = groupAccountsByType(accounts, user.base_currency, rates)
-  const netWorth = accounts
+  const total = accounts
     .reduce(
       (sum, a) =>
         sum.add(
@@ -35,9 +35,9 @@ export function DashboardAccounts({ accounts }: DashboardAccountsProps) {
         <div className="flex items-center justify-between">
           <CardTitle>Account Balances</CardTitle>
           <div className="text-right">
-            <p className="text-sm text-muted-foreground">Net Worth</p>
+            <p className="text-sm text-muted-foreground">Total</p>
             <p className="text-lg font-bold">
-              {formatMoney(netWorth, user.base_currency)}
+              {formatMoney(total, user.base_currency)}
             </p>
           </div>
         </div>
