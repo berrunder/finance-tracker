@@ -3,6 +3,10 @@ import { formatMoney } from '@/lib/money'
 import { formatDate } from '@/lib/dates'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ErrorBanner } from '@/components/domain/error-banner'
+import {
+  TransactionActionsInline,
+  TransactionActionsMenu,
+} from '@/components/domain/transaction-row-actions'
 import type { Transaction, Account, Category } from '@/types/api'
 
 interface DashboardRecentProps {
@@ -11,9 +15,13 @@ interface DashboardRecentProps {
   categories: Category[]
   isError?: boolean
   onRetry?: () => void
+  onEdit: (transaction: Transaction) => void
+  onDelete: (transaction: Transaction) => void
 }
 
 const EM_DASH = '\u2014'
+
+const TITLE = 'Recent Transactions'
 
 function getAccountName(accountId: string, accounts: Account[]): string {
   return accounts.find((a) => a.id === accountId)?.name ?? EM_DASH
@@ -33,12 +41,14 @@ export function DashboardRecent({
   categories,
   isError,
   onRetry,
+  onEdit,
+  onDelete,
 }: DashboardRecentProps) {
   if (isError) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Recent Transactions</CardTitle>
+          <CardTitle>{TITLE}</CardTitle>
         </CardHeader>
         <CardContent>
           <ErrorBanner
@@ -54,7 +64,7 @@ export function DashboardRecent({
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Recent Transactions</CardTitle>
+          <CardTitle>{TITLE}</CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground">
@@ -68,7 +78,7 @@ export function DashboardRecent({
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>Recent Transactions</CardTitle>
+        <CardTitle>{TITLE}</CardTitle>
         <Link
           to="/transactions"
           className="text-sm text-primary hover:underline"
@@ -81,27 +91,43 @@ export function DashboardRecent({
           {transactions.map((transaction) => (
             <div
               key={transaction.id}
-              className="flex items-center justify-between"
+              className="flex items-center justify-between gap-2"
             >
-              <div className="space-y-1">
+              <div className="min-w-0 flex-1 space-y-1">
                 <p className="text-sm font-medium leading-none">
-                  {transaction.description || 'No description'}
-                </p>
-                <p className="text-sm text-muted-foreground">
                   {getAccountName(transaction.account_id, accounts)} •{' '}
                   {getCategoryName(transaction.category_id, categories)} •{' '}
                   {formatDate(transaction.date)}
                 </p>
+                {transaction.description && (
+                  <p className="text-sm text-muted-foreground">
+                    {transaction.description}
+                  </p>
+                )}
               </div>
-              <div
-                className={`font-medium ${
-                  transaction.type === 'income'
-                    ? 'text-green-600'
-                    : 'text-red-600'
-                }`}
-              >
-                {transaction.type === 'income' ? '+' : '-'}
-                {formatMoney(transaction.amount, transaction.currency)}
+              <div className="flex shrink-0 items-center gap-1">
+                <div
+                  className={`font-medium ${
+                    transaction.type === 'income'
+                      ? 'text-green-600'
+                      : 'text-red-600'
+                  }`}
+                >
+                  {transaction.type === 'income' ? '+' : '-'}
+                  {formatMoney(transaction.amount, transaction.currency)}
+                </div>
+                <div className="hidden md:block">
+                  <TransactionActionsInline
+                    onEdit={() => onEdit(transaction)}
+                    onDelete={() => onDelete(transaction)}
+                  />
+                </div>
+                <div className="md:hidden">
+                  <TransactionActionsMenu
+                    onEdit={() => onEdit(transaction)}
+                    onDelete={() => onDelete(transaction)}
+                  />
+                </div>
               </div>
             </div>
           ))}

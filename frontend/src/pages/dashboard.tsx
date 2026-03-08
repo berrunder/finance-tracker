@@ -1,4 +1,6 @@
+import { useState } from 'react'
 import { startOfMonth, endOfMonth } from 'date-fns'
+import { useNavigate } from 'react-router'
 import { toISODate } from '@/lib/dates'
 import { useAuth } from '@/hooks/use-auth'
 import { useAccounts } from '@/hooks/use-accounts'
@@ -11,9 +13,13 @@ import { DashboardSummary } from '@/components/domain/dashboard-summary'
 import { DashboardRecent } from '@/components/domain/dashboard-recent'
 import { DashboardAccounts } from '@/components/domain/dashboard-accounts'
 import { MultiCurrencyNote } from '@/components/domain/multi-currency-note'
+import { TransactionDeleteDialog } from '@/components/domain/transaction-delete-dialog'
+import type { Transaction } from '@/types/api'
 
 export default function DashboardPage() {
   const { user } = useAuth()
+  const navigate = useNavigate()
+  const [deleteTarget, setDeleteTarget] = useState<Transaction | null>(null)
   const now = new Date()
   const dateFrom = toISODate(startOfMonth(now))
   const dateTo = toISODate(endOfMonth(now))
@@ -113,6 +119,13 @@ export default function DashboardPage() {
         categories={categories}
         isError={isTransactionsError}
         onRetry={refetchTransactions}
+        onEdit={(tx) => navigate(`/transactions/${tx.id}`)}
+        onDelete={setDeleteTarget}
+      />
+
+      <TransactionDeleteDialog
+        deleteTarget={deleteTarget}
+        onClose={() => setDeleteTarget(null)}
       />
     </div>
   )

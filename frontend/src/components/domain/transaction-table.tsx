@@ -1,21 +1,9 @@
 import { useEffect, useState } from 'react'
-import {
-  AlertCircle,
-  Cloud,
-  MoreHorizontal,
-  Pencil,
-  Trash2,
-} from 'lucide-react'
+import { AlertCircle, Cloud } from 'lucide-react'
 import { formatMoney } from '@/lib/money'
 import { formatDate } from '@/lib/dates'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
 import {
   Table,
   TableBody,
@@ -29,6 +17,10 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
+import {
+  TransactionActionsInline,
+  TransactionActionsMenu,
+} from '@/components/domain/transaction-row-actions'
 import { getFailedTransactionIds } from '@/lib/sync-queue'
 import { useSyncStatus } from '@/hooks/use-sync-status'
 import { cn } from '@/lib/utils'
@@ -73,7 +65,7 @@ function getTransferDescription(
   transactions: Transaction[],
   accounts: Account[],
 ): string {
-  if (!tx.transfer_id) return tx.description || EM_DASH
+  if (!tx.transfer_id) return tx.description || ''
 
   const linked = transactions.find((item) => item.id === tx.transfer_id)
   const currentAccount = getAccountName(tx.account_id, accounts)
@@ -120,34 +112,6 @@ function amountColorClass(type: string): string {
   if (type === 'income') return 'text-green-600 dark:text-green-400'
   if (type === 'expense') return 'text-red-600 dark:text-red-400'
   return ''
-}
-
-function TransactionActions({
-  onEdit,
-  onDelete,
-}: {
-  onEdit: () => void
-  onDelete: () => void
-}) {
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="h-8 w-8">
-          <MoreHorizontal className="h-4 w-4" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={onEdit}>
-          <Pencil className="mr-2 h-4 w-4" />
-          Edit
-        </DropdownMenuItem>
-        <DropdownMenuItem variant="destructive" onClick={onDelete}>
-          <Trash2 className="mr-2 h-4 w-4" />
-          Delete
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  )
 }
 
 export function TransactionTable({
@@ -236,24 +200,10 @@ export function TransactionTable({
                   </div>
                 </TableCell>
                 <TableCell>
-                  <div className="flex items-center gap-1">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={() => onEdit(tx)}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="text-destructive hover:text-destructive h-8 w-8"
-                      onClick={() => onDelete(tx)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
+                  <TransactionActionsInline
+                    onEdit={() => onEdit(tx)}
+                    onDelete={() => onDelete(tx)}
+                  />
                 </TableCell>
               </TableRow>
             ))}
@@ -295,7 +245,7 @@ export function TransactionTable({
                 {tx.type === 'expense' ? '\u2212' : '+'}
                 {formatMoney(tx.amount, tx.currency)}
               </span>
-              <TransactionActions
+              <TransactionActionsMenu
                 onEdit={() => onEdit(tx)}
                 onDelete={() => onDelete(tx)}
               />

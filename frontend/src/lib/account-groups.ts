@@ -10,10 +10,10 @@ export const ACCOUNT_TYPE_ORDER = [
 ] as const
 
 export const ACCOUNT_TYPE_LABELS: Record<string, string> = {
-  debit_card: 'Debit Card',
+  debit_card: 'Debit Cards',
   cash: 'Cash',
-  deposit: 'Deposit',
-  credit_card: 'Credit Card',
+  deposit: 'Deposits',
+  credit_card: 'Credit Cards',
   other: 'Other',
 }
 
