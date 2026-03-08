@@ -72,3 +72,11 @@ export function updateTransfer(
 export function deleteTransaction(id: string): Promise<void> {
   return apiClient<void>(`/transactions/${id}`, { method: 'DELETE' })
 }
+
+export function getTransactionDescriptions(
+  search: string,
+): Promise<{ data: string[] }> {
+  return apiClient<{ data: string[] }>(
+    `/transactions/descriptions${buildQueryString({ search })}`,
+  )
+}

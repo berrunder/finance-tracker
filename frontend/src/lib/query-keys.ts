@@ -15,6 +15,8 @@ export const queryKeys = {
     list: (filters: Record<string, unknown>) =>
       ['transactions', filters] as const,
     detail: (id: string) => ['transactions', id] as const,
+    descriptions: (search: string) =>
+      ['transactions', 'descriptions', search] as const,
   },
   reports: {
     all: ['reports'] as const,

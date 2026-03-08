@@ -328,6 +328,42 @@ func (q *Queries) GetTransactionsByTransferID(ctx context.Context, arg GetTransa
 	return items, nil
 }
 
+const listTransactionDescriptions = `-- name: ListTransactionDescriptions :many
+SELECT description
+FROM transactions
+WHERE user_id = $1
+  AND description <> ''
+  AND description ILIKE '%' || $2::TEXT || '%'
+GROUP BY description
+ORDER BY MAX(date) DESC, MAX(created_at) DESC
+LIMIT 15
+`
+
+type ListTransactionDescriptionsParams struct {
+	UserID uuid.UUID `json:"user_id"`
+	Search string    `json:"search"`
+}
+
+func (q *Queries) ListTransactionDescriptions(ctx context.Context, arg ListTransactionDescriptionsParams) ([]string, error) {
+	rows, err := q.db.Query(ctx, listTransactionDescriptions, arg.UserID, arg.Search)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []string{}
+	for rows.Next() {
+		var description string
+		if err := rows.Scan(&description); err != nil {
+			return nil, err
+		}
+		items = append(items, description)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listTransactions = `-- name: ListTransactions :many
 WITH RECURSIVE expanded_categories AS (
     SELECT id FROM categories

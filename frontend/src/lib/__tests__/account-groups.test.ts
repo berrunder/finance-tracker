@@ -61,9 +61,7 @@ describe('groupAccountsByType', () => {
   })
 
   it('excludes empty groups', () => {
-    const accounts = [
-      makeAccount({ name: 'Cash', type: 'cash' }),
-    ]
+    const accounts = [makeAccount({ name: 'Cash', type: 'cash' })]
 
     const groups = groupAccountsByType(accounts, 'USD', [])
     expect(groups).toHaveLength(1)
@@ -72,8 +70,18 @@ describe('groupAccountsByType', () => {
 
   it('sums balances in base currency', () => {
     const accounts = [
-      makeAccount({ name: 'USD Savings', type: 'deposit', balance: '200.00', currency: 'USD' }),
-      makeAccount({ name: 'EUR Savings', type: 'deposit', balance: '100.00', currency: 'EUR' }),
+      makeAccount({
+        name: 'USD Savings',
+        type: 'deposit',
+        balance: '200.00',
+        currency: 'USD',
+      }),
+      makeAccount({
+        name: 'EUR Savings',
+        type: 'deposit',
+        balance: '100.00',
+        currency: 'EUR',
+      }),
     ]
 
     const groups = groupAccountsByType(accounts, 'USD', [usdToEur])
@@ -82,9 +90,7 @@ describe('groupAccountsByType', () => {
   })
 
   it('uses friendly labels', () => {
-    const accounts = [
-      makeAccount({ name: 'Card', type: 'credit_card' }),
-    ]
+    const accounts = [makeAccount({ name: 'Card', type: 'credit_card' })]
 
     const groups = groupAccountsByType(accounts, 'USD', [])
     expect(groups[0].label).toBe('Credit Card')

@@ -189,6 +189,18 @@ func (h *Transaction) Update(w http.ResponseWriter, r *http.Request) {
 	respond.JSON(w, http.StatusOK, txn)
 }
 
+func (h *Transaction) ListDescriptions(w http.ResponseWriter, r *http.Request) {
+	userID := middleware.UserID(r.Context())
+	search := r.URL.Query().Get("search")
+
+	descriptions, err := h.svc.ListDescriptions(r.Context(), userID, search)
+	if err != nil {
+		respond.Error(w, http.StatusInternalServerError, "INTERNAL_ERROR", "failed to list descriptions")
+		return
+	}
+	respond.JSON(w, http.StatusOK, map[string]any{"data": descriptions})
+}
+
 func (h *Transaction) Delete(w http.ResponseWriter, r *http.Request) {
 	userID := middleware.UserID(r.Context())
 	id, err := uuid.Parse(chi.URLParam(r, "id"))

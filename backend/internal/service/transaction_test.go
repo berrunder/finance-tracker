@@ -26,6 +26,7 @@ type mockTransactionStore struct {
 	updateTransferTransactionFn     func(ctx context.Context, arg store.UpdateTransferTransactionParams) (store.Transaction, error)
 	getAccountFn                    func(ctx context.Context, arg store.GetAccountParams) (store.Account, error)
 	listAccountsFn                  func(ctx context.Context, userID uuid.UUID) ([]store.ListAccountsRow, error)
+	listTransactionDescriptionsFn   func(ctx context.Context, arg store.ListTransactionDescriptionsParams) ([]string, error)
 	withTxFn                        func(tx pgx.Tx) *store.Queries
 }
 
@@ -61,6 +62,9 @@ func (m *mockTransactionStore) GetTransactionsByTransferID(ctx context.Context, 
 }
 func (m *mockTransactionStore) UpdateTransferTransaction(ctx context.Context, arg store.UpdateTransferTransactionParams) (store.Transaction, error) {
 	return m.updateTransferTransactionFn(ctx, arg)
+}
+func (m *mockTransactionStore) ListTransactionDescriptions(ctx context.Context, arg store.ListTransactionDescriptionsParams) ([]string, error) {
+	return m.listTransactionDescriptionsFn(ctx, arg)
 }
 func (m *mockTransactionStore) WithTx(tx pgx.Tx) *store.Queries {
 	if m.withTxFn != nil {

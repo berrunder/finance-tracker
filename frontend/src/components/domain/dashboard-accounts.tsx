@@ -21,7 +21,10 @@ export function DashboardAccounts({ accounts }: DashboardAccountsProps) {
   const groups = groupAccountsByType(accounts, user.base_currency, rates)
   const netWorth = accounts
     .reduce(
-      (sum, a) => sum.add(convertToBase(a.balance, a.currency, user.base_currency, rates)),
+      (sum, a) =>
+        sum.add(
+          convertToBase(a.balance, a.currency, user.base_currency, rates),
+        ),
       new Decimal(0),
     )
     .toFixed(2)

@@ -26,6 +26,7 @@ type transactionStore interface {
 	UpdateTransferTransaction(ctx context.Context, arg store.UpdateTransferTransactionParams) (store.Transaction, error)
 	GetAccount(ctx context.Context, arg store.GetAccountParams) (store.Account, error)
 	ListAccounts(ctx context.Context, userID uuid.UUID) ([]store.ListAccountsRow, error)
+	ListTransactionDescriptions(ctx context.Context, arg store.ListTransactionDescriptionsParams) ([]string, error)
 	WithTx(tx pgx.Tx) *store.Queries
 }
 
@@ -385,6 +386,20 @@ func (s *Transaction) Delete(ctx context.Context, userID, txnID uuid.UUID) error
 	}
 
 	return s.queries.DeleteTransaction(ctx, store.DeleteTransactionParams{ID: txnID, UserID: userID})
+}
+
+func (s *Transaction) ListDescriptions(ctx context.Context, userID uuid.UUID, search string) ([]string, error) {
+	descriptions, err := s.queries.ListTransactionDescriptions(ctx, store.ListTransactionDescriptionsParams{
+		UserID: userID,
+		Search: search,
+	})
+	if err != nil {
+		return nil, err
+	}
+	if descriptions == nil {
+		descriptions = []string{}
+	}
+	return descriptions, nil
 }
 
 func (s *Transaction) toResponse(ctx context.Context, t store.Transaction) *dto.TransactionResponse {

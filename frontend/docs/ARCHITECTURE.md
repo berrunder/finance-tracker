@@ -65,6 +65,8 @@ Transactions use `useInfiniteQuery` for cursor-based pagination with a "Load mor
 
 - `use-theme.ts` — dark mode preference management
 - `use-online-status.ts` — offline/online detection via `useSyncExternalStore` + browser `online`/`offline` events
+- `use-mobile.ts` — mobile breakpoint detection via `useSyncExternalStore` + `matchMedia` (Tailwind `md` = 768px)
+- `use-description-suggestions.ts` — description autocomplete suggestions with debounced search, TanStack Query, and offline fallback to IndexedDB
 - `use-keyboard-shortcuts.ts` — `useHotkey` hook for global keyboard shortcuts (mod+key format, auto-disabled on input focus)
 - `use-sync-status.ts` — sync state context (pending count, syncing flag, auto-sync on reconnect + Background Sync messages)
 - `use-install-prompt.ts` — captures `beforeinstallprompt` for PWA install button

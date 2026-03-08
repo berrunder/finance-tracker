@@ -157,9 +157,7 @@ export function Sidebar({ collapsed = false, onNavigate }: SidebarProps) {
           ) : (
             groups.map((group, groupIndex) => (
               <div key={group.type}>
-                {groupIndex > 0 && (
-                  <div className="border-t mx-2 my-1" />
-                )}
+                {groupIndex > 0 && <div className="border-t mx-2 my-1" />}
                 {group.accounts.map((account) => (
                   <Tooltip key={account.id}>
                     <TooltipTrigger asChild>

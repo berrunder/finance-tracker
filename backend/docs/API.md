@@ -375,6 +375,19 @@ Response 200 — single transaction object.
 // Response 200 — updated transaction object
 ```
 
+### `GET /transactions/descriptions`
+
+Returns distinct transaction descriptions matching a substring, ordered by most recently used.
+
+| Param | Type | Default | Description |
+|-------|------|---------|-------------|
+| `search` | string | `""` | Case-insensitive substring filter. Empty returns the 15 most recent. |
+
+```json
+// Response 200
+{"data": ["Grocery store", "Gas station", "Coffee shop"]}
+```
+
 ### `DELETE /transactions/{id}`
 
 Response 204 (no body). If the transaction is part of a transfer, both linked transactions are deleted.

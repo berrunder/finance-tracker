@@ -12,6 +12,7 @@ import { FormError } from '@/components/ui/form-error'
 import { AccountCombobox } from '@/components/domain/account-combobox'
 import { CategoryCombobox } from '@/components/domain/category-combobox'
 import { DatePicker } from '@/components/domain/date-picker'
+import { DescriptionInput } from '@/components/domain/description-input'
 import type { Account } from '@/types/api'
 
 interface IncomeExpenseFormProps {
@@ -88,7 +89,10 @@ export function IncomeExpenseForm({
 
       <div className="space-y-2">
         <Label>Description</Label>
-        <Input {...form.register('description')} />
+        <DescriptionInput
+          value={form.watch('description')}
+          onChange={(v) => form.setValue('description', v)}
+        />
       </div>
 
       <div className="flex justify-end gap-2">

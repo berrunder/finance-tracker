@@ -140,3 +140,13 @@ VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9);
 
 -- name: DeleteAllUserTransactions :exec
 DELETE FROM transactions WHERE user_id = $1;
+
+-- name: ListTransactionDescriptions :many
+SELECT description
+FROM transactions
+WHERE user_id = @user_id
+  AND description <> ''
+  AND description ILIKE '%' || @search::TEXT || '%'
+GROUP BY description
+ORDER BY MAX(date) DESC, MAX(created_at) DESC
+LIMIT 15;

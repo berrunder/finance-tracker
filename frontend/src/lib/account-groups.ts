@@ -70,7 +70,8 @@ export function groupAccountsByType(
     if (!typeAccounts || typeAccounts.length === 0) continue
 
     const total = typeAccounts.reduce(
-      (sum, a) => sum.add(convertToBase(a.balance, a.currency, baseCurrency, rates)),
+      (sum, a) =>
+        sum.add(convertToBase(a.balance, a.currency, baseCurrency, rates)),
       new Decimal(0),
     )
 
