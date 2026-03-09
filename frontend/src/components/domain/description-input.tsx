@@ -1,4 +1,4 @@
-import { type ChangeEvent, useRef, useState } from 'react'
+import { type ChangeEvent, type KeyboardEvent, useRef, useState } from 'react'
 import {
   Command,
   CommandGroup,
@@ -28,10 +28,54 @@ export function DescriptionInput({
   const suggestions = useDescriptionSuggestions(value)
   const suppressBlurRef = useRef(false)
   const dismissedRef = useRef(false)
+  const suggestionsKey = suggestions.join('\0')
+  const [selectedState, setSelectedIndex] = useState({
+    key: suggestionsKey,
+    index: 0,
+  })
+  const selectedIndex =
+    selectedState.key === suggestionsKey ? selectedState.index : 0
 
   function handleInputChange(e: ChangeEvent<HTMLInputElement>) {
     dismissedRef.current = false
+    setOpen(true)
     onChange(e.target.value)
+  }
+
+  function handleKeyDown(e: KeyboardEvent<HTMLInputElement>) {
+    if (!(open && suggestions.length > 0)) return
+
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault()
+        setSelectedIndex((prev) => ({
+          key: suggestionsKey,
+          index:
+            (prev.key === suggestionsKey ? prev.index + 1 : 1) %
+            suggestions.length,
+        }))
+        break
+      case 'ArrowUp':
+        e.preventDefault()
+        setSelectedIndex((prev) => ({
+          key: suggestionsKey,
+          index:
+            ((prev.key === suggestionsKey ? prev.index : 0) -
+              1 +
+              suggestions.length) %
+            suggestions.length,
+        }))
+        break
+      case 'Enter':
+        e.preventDefault()
+        handleSelect(suggestions[selectedIndex])
+        break
+      case 'Escape':
+        e.preventDefault()
+        setOpen(false)
+        dismissedRef.current = true
+        break
+    }
   }
 
   function handleFocus() {
@@ -72,6 +116,7 @@ export function DescriptionInput({
         <Input
           value={value}
           onChange={handleInputChange}
+          onKeyDown={handleKeyDown}
           onFocus={handleFocus}
           onBlur={handleBlur}
           placeholder={placeholder}
@@ -87,7 +132,17 @@ export function DescriptionInput({
         onOpenAutoFocus={preventEvent}
         onMouseDown={handleContentMouseDown}
       >
-        <Command shouldFilter={false}>
+        <Command
+          shouldFilter={false}
+          value={suggestions[selectedIndex]}
+          onValueChange={(val) => {
+            const normalizedVal = val.toLowerCase()
+            const idx = suggestions.findIndex(
+              (s) => s.toLowerCase() === normalizedVal,
+            )
+            if (idx >= 0) setSelectedIndex({ key: suggestionsKey, index: idx })
+          }}
+        >
           <CommandList>
             <CommandGroup>
               {suggestions.map((suggestion) => (

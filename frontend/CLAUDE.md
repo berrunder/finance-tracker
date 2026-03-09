@@ -48,6 +48,7 @@ src/
 
 ## Conventions
 
+- **React Compiler lint**: `react-hooks/set-state-in-effect` is an error. Don't call `setState` inside `useEffect` — use derived state or state-key patterns instead (e.g., store `{ key, value }` and derive from key mismatch).
 - **Path alias**: use `@/` for imports from `src/` (configured in tsconfig and vite).
 - **API layer**: all HTTP calls go through `apiClient` in `api/client.ts`. Per-resource files (`api/accounts.ts`, etc.) export typed functions. Never call `fetch` directly from components.
 - **Data fetching**: use TanStack Query hooks in `hooks/`. Query keys are centralized in `lib/query-keys.ts`.
