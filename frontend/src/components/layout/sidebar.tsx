@@ -1,9 +1,11 @@
+import { useState } from 'react'
 import { NavLink, useNavigate } from 'react-router'
 import { useAuth } from '@/hooks/use-auth.ts'
 import { useAccounts } from '@/hooks/use-accounts'
 import { useExchangeRates } from '@/hooks/use-exchange-rates'
 import { formatMoney } from '@/lib/money'
 import { groupAccountsByType } from '@/lib/account-groups'
+import { SIDEBAR_COLLAPSED_GROUPS_KEY } from '@/lib/constants'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import {
@@ -48,6 +50,31 @@ export function Sidebar({ collapsed = false, onNavigate }: SidebarProps) {
   const groups = user
     ? groupAccountsByType(accounts, user.base_currency, rates)
     : []
+
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(() => {
+    try {
+      const stored = localStorage.getItem(SIDEBAR_COLLAPSED_GROUPS_KEY)
+      return stored ? new Set(JSON.parse(stored) as string[]) : new Set()
+    } catch {
+      return new Set()
+    }
+  })
+
+  function toggleGroup(type: string) {
+    setCollapsedGroups((prev) => {
+      const next = new Set(prev)
+      if (next.has(type)) {
+        next.delete(type)
+      } else {
+        next.add(type)
+      }
+      localStorage.setItem(
+        SIDEBAR_COLLAPSED_GROUPS_KEY,
+        JSON.stringify([...next]),
+      )
+      return next
+    })
+  }
 
   function navigateToAccount(accountId: string) {
     navigate(`/transactions?account_id=${accountId}`)
@@ -112,34 +139,44 @@ export function Sidebar({ collapsed = false, onNavigate }: SidebarProps) {
             <p className="text-muted-foreground px-3 text-xs">No accounts</p>
           ) : (
             <div className="space-y-2">
-              {groups.map((group) => (
-                <div key={group.type}>
-                  <div className="flex items-center justify-between px-3 py-1">
-                    <span className="text-muted-foreground text-[10px] font-semibold uppercase tracking-wider">
-                      {group.label}
-                    </span>
-                    <span className="text-muted-foreground text-[10px] font-medium">
-                      {formatMoney(group.total, group.totalCurrency)}
-                    </span>
+              {groups.map((group) => {
+                const isCollapsed = collapsedGroups.has(group.type)
+                return (
+                  <div key={group.type}>
+                    <button
+                      type="button"
+                      onClick={() => toggleGroup(group.type)}
+                      className="flex w-full items-center justify-between px-3 py-1 "
+                      aria-expanded={!isCollapsed}
+                    >
+                      <span className="text-muted-foreground text-[10px] font-semibold uppercase tracking-wider border-b border-dashed border-muted-foreground/40 transition-colors">
+                        {group.label}
+                      </span>
+                      <span className="text-muted-foreground text-[10px] font-medium">
+                        {formatMoney(group.total, group.totalCurrency)}
+                      </span>
+                    </button>
+                    {!isCollapsed && (
+                      <div className="space-y-0.5">
+                        {group.accounts.map((account) => (
+                          <button
+                            key={account.id}
+                            onClick={() => navigateToAccount(account.id)}
+                            className="hover:bg-accent flex w-full items-center justify-between rounded-md px-3 py-1.5 text-left transition-colors"
+                          >
+                            <span className="truncate text-xs font-medium">
+                              {account.name}
+                            </span>
+                            <span className="text-muted-foreground shrink-0 text-xs">
+                              {formatMoney(account.balance, account.currency)}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                  <div className="space-y-0.5">
-                    {group.accounts.map((account) => (
-                      <button
-                        key={account.id}
-                        onClick={() => navigateToAccount(account.id)}
-                        className="hover:bg-accent flex w-full items-center justify-between rounded-md px-3 py-1.5 text-left transition-colors"
-                      >
-                        <span className="truncate text-xs font-medium">
-                          {account.name}
-                        </span>
-                        <span className="text-muted-foreground shrink-0 text-xs">
-                          {formatMoney(account.balance, account.currency)}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           )}
         </div>
