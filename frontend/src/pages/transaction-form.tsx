@@ -27,7 +27,7 @@ export default function TransactionFormPage() {
     hasNextPage,
     fetchNextPage,
     isFetchingNextPage,
-  } = useTransactions({ per_page: 3 })
+  } = useTransactions({ per_page: 5 })
 
   const { data: accounts = [] } = useAccounts()
   const { data: categories = [] } = useCategories()

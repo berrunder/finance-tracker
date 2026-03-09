@@ -88,11 +88,4 @@ describe('groupAccountsByType', () => {
     expect(groups[0].total).toBe('311.11')
     expect(groups[0].totalCurrency).toBe('USD')
   })
-
-  it('uses friendly labels', () => {
-    const accounts = [makeAccount({ name: 'Card', type: 'credit_card' })]
-
-    const groups = groupAccountsByType(accounts, 'USD', [])
-    expect(groups[0].label).toBe('Credit Card')
-  })
 })

@@ -14,3 +14,8 @@ export function formatMoney(amount: string, currency: string): string {
 export function parseDecimal(value: string): Decimal {
   return new Decimal(value)
 }
+
+export function computeBarPercent(value: Decimal, max: Decimal): number {
+  if (max.isZero()) return 0
+  return value.div(max).mul(100).toNumber()
+}

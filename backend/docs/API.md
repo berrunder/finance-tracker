@@ -428,7 +428,7 @@ Monthly income vs expense.
 ```json
 // Response 200
 {
-  "data": [{"month": "2024-01", "income": "5000.00", "expense": "3200.00"}]
+  "data": [{"month": "2024-01-01", "income": "5000.00", "expense": "3200.00"}]
 }
 ```
 

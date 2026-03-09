@@ -1,6 +1,7 @@
-import Decimal from 'decimal.js'
+import { useState } from 'react'
+import { ChevronDown, ChevronRight } from 'lucide-react'
 import { formatMoney } from '@/lib/money'
-import { groupAccountsByType, convertToBase } from '@/lib/account-groups'
+import { groupAccountsByType } from '@/lib/account-groups'
 import { useAuth } from '@/hooks/use-auth'
 import { useExchangeRates } from '@/hooks/use-exchange-rates'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -13,67 +14,78 @@ interface DashboardAccountsProps {
 export function DashboardAccounts({ accounts }: DashboardAccountsProps) {
   const { user } = useAuth()
   const { data: rates = [] } = useExchangeRates()
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
 
   if (accounts.length <= 1 || !user) {
     return null
   }
 
   const groups = groupAccountsByType(accounts, user.base_currency, rates)
-  const total = accounts
-    .reduce(
-      (sum, a) =>
-        sum.add(
-          convertToBase(a.balance, a.currency, user.base_currency, rates),
-        ),
-      new Decimal(0),
-    )
-    .toFixed(2)
+
+  function toggleGroup(type: string) {
+    setExpandedGroups((prev) => {
+      const next = new Set(prev)
+      if (next.has(type)) {
+        next.delete(type)
+      } else {
+        next.add(type)
+      }
+      return next
+    })
+  }
 
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle>Account Balances</CardTitle>
-          <div className="text-right">
-            <p className="text-sm text-muted-foreground">Total</p>
-            <p className="text-lg font-bold">
-              {formatMoney(total, user.base_currency)}
-            </p>
-          </div>
-        </div>
+        <CardTitle>Account Balances</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
-          {groups.map((group) => (
-            <div key={group.type}>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-semibold text-muted-foreground">
-                  {group.label}
-                </span>
-                <span className="text-sm font-semibold text-muted-foreground">
-                  {formatMoney(group.total, group.totalCurrency)}
-                </span>
-              </div>
-              <div className="space-y-1">
-                {group.accounts.map((account) => (
-                  <div
-                    key={account.id}
-                    className="flex items-center justify-between py-2 border-b last:border-b-0"
-                  >
-                    <span className="font-medium">{account.name}</span>
-                    <div className="text-right">
-                      <div className="font-medium">
-                        {formatMoney(account.balance, account.currency)}
+        <div className="space-y-2">
+          {groups.map((group) => {
+            const isExpanded = expandedGroups.has(group.type)
+            return (
+              <div key={group.type}>
+                <button
+                  type="button"
+                  className="flex w-full items-center justify-between py-2 hover:bg-accent/50 rounded-md px-1 -mx-1 transition-colors"
+                  onClick={() => toggleGroup(group.type)}
+                  aria-expanded={isExpanded}
+                >
+                  <span className="flex items-center gap-1 text-sm font-semibold text-muted-foreground">
+                    {isExpanded ? (
+                      <ChevronDown className="h-4 w-4" />
+                    ) : (
+                      <ChevronRight className="h-4 w-4" />
+                    )}
+                    {group.label}
+                  </span>
+                  <span className="text-sm font-semibold text-muted-foreground">
+                    {formatMoney(group.total, group.totalCurrency)}
+                  </span>
+                </button>
+                {isExpanded && (
+                  <div className="space-y-1 ml-5">
+                    {group.accounts.map((account) => (
+                      <div
+                        key={account.id}
+                        className="flex items-center justify-between py-2 border-b last:border-b-0"
+                      >
+                        <span className="font-medium">{account.name}</span>
+                        <div className="text-right">
+                          <div className="font-medium">
+                            {formatMoney(account.balance, account.currency)}
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            {account.currency}
+                          </div>
+                        </div>
                       </div>
-                      <div className="text-sm text-muted-foreground">
-                        {account.currency}
-                      </div>
-                    </div>
+                    ))}
                   </div>
-                ))}
+                )}
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       </CardContent>
     </Card>

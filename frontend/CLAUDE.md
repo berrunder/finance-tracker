@@ -57,6 +57,8 @@ src/
 - **Domain components**: app-specific reusable components go in `components/domain/`.
 - **`use-auth.ts`** uses `createElement` instead of JSX intentionally — keeping the file as `.ts` (not `.tsx`) ensures React Fast Refresh works, since Fast Refresh requires files to only export components. The file exports both `AuthProvider` (component) and `useAuth` (hook), so using `.tsx` would trigger the `react-refresh/only-export-components` lint error.
 - **ESLint**: `react-refresh/only-export-components` is set to `error`. If a file exports both components and non-components, keep it as `.ts` with `createElement` or split the exports.
+- **`.tsx` component files**: Must only export React components. Move non-component exports (utility functions, constants) to `lib/` files.
+- **Tests must import, not duplicate**: Test files should import functions and types from source modules. Never copy implementation code into tests. Export pure helper functions from `.ts` hook files when needed for testing.
 - **Unused vars**: prefix with `_` (enforced by ESLint rule `argsIgnorePattern: '^_'`).
 - When renaming or moving files in the frontend, check for fast-refresh compatibility — never rename .ts to .tsx or vice versa for hook files without verifying import chains and HMR behavior.
 - ALWAYS use proper typing. NEVER use `any` or `as unknown as Type` without a very good reason and approval. If you find yourself needing to do this, stop and ask for help — there's almost always a better way.

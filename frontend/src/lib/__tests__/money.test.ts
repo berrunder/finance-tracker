@@ -1,5 +1,6 @@
 import Decimal from 'decimal.js'
-import { formatMoney, parseDecimal } from '../money'
+import { computeBarPercent, formatMoney, parseDecimal } from '../money'
+import { describe, expect, it } from 'vitest'
 
 // Lock locale for deterministic output
 const originalLanguage = navigator.language
@@ -55,5 +56,33 @@ describe('parseDecimal', () => {
 
   it('throws on empty string', () => {
     expect(() => parseDecimal('')).toThrow()
+  })
+})
+
+describe('computeBarPercent', () => {
+  it('returns 100 when value equals max', () => {
+    expect(computeBarPercent(new Decimal('500'), new Decimal('500'))).toBe(100)
+  })
+
+  it('returns 50 when value is half of max', () => {
+    expect(computeBarPercent(new Decimal('250'), new Decimal('500'))).toBe(50)
+  })
+
+  it('returns 0 when value is zero', () => {
+    expect(computeBarPercent(new Decimal('0'), new Decimal('500'))).toBe(0)
+  })
+
+  it('returns 0 when max is zero (avoids division by zero)', () => {
+    expect(computeBarPercent(new Decimal('0'), new Decimal('0'))).toBe(0)
+  })
+
+  it('handles decimal precision', () => {
+    const result = computeBarPercent(new Decimal('333.33'), new Decimal('1000'))
+    expect(result).toBeCloseTo(33.333, 2)
+  })
+
+  it('handles very small values relative to max', () => {
+    const result = computeBarPercent(new Decimal('1'), new Decimal('100000'))
+    expect(result).toBeCloseTo(0.001, 3)
   })
 })
