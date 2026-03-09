@@ -66,7 +66,7 @@ function getTransactionResetValues(
 ): TransactionFormData {
   return {
     account_id: data.account_id,
-    category_id: '',
+    category_id: data.category_id,
     type: data.type,
     amount: '',
     description: '',
