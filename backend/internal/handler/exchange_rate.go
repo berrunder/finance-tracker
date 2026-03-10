@@ -1,6 +1,8 @@
 package handler
 
 import (
+	"context"
+	"log/slog"
 	"net/http"
 
 	"github.com/sanches/finance-tracker-cc/backend/internal/dto"
@@ -9,11 +11,13 @@ import (
 )
 
 type ExchangeRate struct {
-	svc *service.ExchangeRate
+	svc     *service.ExchangeRate
+	syncSvc *service.ExchangeRateSync
+	token   string
 }
 
-func NewExchangeRate(svc *service.ExchangeRate) *ExchangeRate {
-	return &ExchangeRate{svc: svc}
+func NewExchangeRate(svc *service.ExchangeRate, syncSvc *service.ExchangeRateSync, token string) *ExchangeRate {
+	return &ExchangeRate{svc: svc, syncSvc: syncSvc, token: token}
 }
 
 func (h *ExchangeRate) List(w http.ResponseWriter, r *http.Request) {
@@ -42,4 +46,20 @@ func (h *ExchangeRate) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	respond.JSON(w, http.StatusCreated, rate)
+}
+
+func (h *ExchangeRate) Sync(w http.ResponseWriter, r *http.Request) {
+	if h.token == "" || r.Header.Get("X-Sync-Token") != h.token {
+		respond.Error(w, http.StatusUnauthorized, "UNAUTHORIZED", "invalid or missing sync token")
+		return
+	}
+
+	// Run sync in background to avoid hitting the server's WriteTimeout.
+	go func() {
+		if err := h.syncSvc.Sync(context.Background()); err != nil {
+			slog.Error("exchange rate sync failed", "error", err)
+		}
+	}()
+
+	w.WriteHeader(http.StatusAccepted)
 }

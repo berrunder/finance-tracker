@@ -197,6 +197,30 @@ func (q *Queries) ListAccounts(ctx context.Context, userID uuid.UUID) ([]ListAcc
 	return items, nil
 }
 
+const listDistinctAccountCurrencies = `-- name: ListDistinctAccountCurrencies :many
+SELECT DISTINCT currency FROM accounts ORDER BY currency
+`
+
+func (q *Queries) ListDistinctAccountCurrencies(ctx context.Context) ([]string, error) {
+	rows, err := q.db.Query(ctx, listDistinctAccountCurrencies)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []string{}
+	for rows.Next() {
+		var currency string
+		if err := rows.Scan(&currency); err != nil {
+			return nil, err
+		}
+		items = append(items, currency)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const updateAccount = `-- name: UpdateAccount :one
 UPDATE accounts
 SET name = $2, type = $3, initial_balance = $4, updated_at = now()

@@ -4,9 +4,6 @@ import (
 	"context"
 	"log/slog"
 	"net/http"
-	"os"
-	"os/signal"
-	"syscall"
 	"time"
 )
 
@@ -26,10 +23,7 @@ func New(addr string, handler http.Handler) *Server {
 	}
 }
 
-func (s *Server) Start() error {
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	defer stop()
-
+func (s *Server) Start(ctx context.Context) error {
 	errCh := make(chan error, 1)
 	go func() {
 		slog.Info("server starting", "addr", s.httpServer.Addr)

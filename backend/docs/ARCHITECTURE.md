@@ -7,7 +7,7 @@ Go, chi router, PostgreSQL 16 via pgx, sqlc for query codegen, golang-migrate fo
 ## Structure
 
 ```
-cmd/api/main.go          -- entry point, wiring
+cmd/api/main.go          -- entry point, wiring, background sync goroutine
 internal/
   config/config.go       -- env vars via envconfig
   server/
@@ -18,6 +18,7 @@ internal/
   service/               -- business logic, pgtype conversions
     convert.go           -- pgtype.Numeric/Date/UUID <-> Go type helpers
   store/                 -- sqlc-generated DB access (DO NOT EDIT)
+  rateapi/client.go      -- HTTP adapter for external currency API
   middleware/auth.go     -- JWT auth middleware
   dto/dto.go             -- all request/response types
 migrations/              -- SQL up/down files + embed.go
@@ -92,6 +93,32 @@ sqlc annotations: `-- name: FuncName :one/:many/:exec/:copyfrom`
 - **Upsert**: `ON CONFLICT ... DO UPDATE` for exchange rates.
 - **Bulk insert**: `:copyfrom` for CSV import (uses pgx CopyFrom).
 - **Auth check**: Every query includes `WHERE user_id = $N` or `AND user_id = $N`.
+
+## Exchange Rate Sync
+
+Automatic daily exchange rate updates from [fawazahmed0/exchange-api](https://github.com/fawazahmed0/exchange-api).
+
+### Packages
+
+- **`internal/rateapi`**: HTTP adapter for the currency API. `Fetcher` interface with `Client` implementation. Tries primary CDN URL, falls back to Cloudflare Pages URL on failure.
+- **`internal/service/exchange_rate_sync.go`**: Orchestrator service. Lists distinct currencies used in accounts, fetches rates for each base currency, filters against known currencies, upserts to DB.
+
+### Trigger Modes (`EXCHANGE_RATE_SYNC_MODE` env var)
+
+- `"background"`: Goroutine in `main.go` runs sync immediately on startup, then every 24 hours. Stops on shutdown signal.
+- `"endpoint"` (default): Only the HTTP endpoint is available (`POST /api/v1/exchange-rates/sync`), protected by `X-Sync-Token` header matching `EXCHANGE_RATE_SYNC_TOKEN` env var.
+
+### Data Flow
+
+```
+trigger (background ticker OR POST /exchange-rates/sync)
+  -> ExchangeRateSync.Sync(ctx)
+    -> ListDistinctAccountCurrencies() -> ["USD", "EUR"]
+    -> ListCurrencies() -> build known set
+    -> for each base: rateapi.Client.FetchRates(ctx, base)
+      -> GET primary URL (cdn.jsdelivr.net), fallback to pages.dev
+      -> for each target in known set: UpsertExchangeRate(base, target, rate, today)
+```
 
 ## API Conventions
 

@@ -58,6 +58,17 @@ All config is via environment variables:
 | `JWT_SECRET` | yes | — | HMAC signing key for JWTs |
 | `INVITE_CODES` | yes | — | Comma-separated list of valid invite codes for registration |
 | `PORT` | no | `8080` | HTTP listen port |
+| `EXCHANGE_RATE_SYNC_MODE` | no | `endpoint` | `"background"` (daily goroutine) or `"endpoint"` (HTTP trigger only) |
+| `EXCHANGE_RATE_SYNC_TOKEN` | no | — | Static token for `POST /exchange-rates/sync` (via `X-Sync-Token` header). Endpoint returns 401 if not set. |
+
+To trigger a sync via the endpoint (e.g. from a crontab):
+
+```sh
+curl -s -o /dev/null -w "%{http_code}" -X POST \
+  -H "X-Sync-Token: $EXCHANGE_RATE_SYNC_TOKEN" \
+  http://localhost:8080/api/v1/exchange-rates/sync
+# 202 = accepted, 401 = bad token
+```
 
 ## API Overview
 
@@ -104,6 +115,7 @@ POST /import/csv               multipart/form-data (file field: "file")
 POST /import/csv/confirm       { account_id, mapping, rows }
 
 GET|POST /exchange-rates
+POST     /exchange-rates/sync   (public, requires X-Sync-Token header)
 ```
 
 ### Response Format

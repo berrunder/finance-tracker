@@ -506,6 +506,20 @@ Overall financial summary.
 // Response 201 — single exchange rate object
 ```
 
+### `POST /exchange-rates/sync` (public, token-authenticated)
+
+Triggers a sync of exchange rates from the [fawazahmed0/exchange-api](https://github.com/fawazahmed0/exchange-api). Fetches latest rates for all currency pairs where at least one currency is used in an account, filtered to currencies in the `currencies` table.
+
+Requires `X-Sync-Token` header matching the `EXCHANGE_RATE_SYNC_TOKEN` env var. Returns 401 if the token is missing, invalid, or not configured.
+
+The sync runs asynchronously — the endpoint returns immediately and errors are logged server-side.
+
+```
+// Response 202 Accepted (no body)
+```
+
+Errors: `UNAUTHORIZED` (401) if token is missing/invalid
+
 ---
 
 ## CSV Import (protected)

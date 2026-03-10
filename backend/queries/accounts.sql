@@ -40,3 +40,8 @@ WHERE account_id = $1;
 
 -- name: DeleteAllUserAccounts :exec
 DELETE FROM accounts WHERE user_id = $1;
+
+-- name: ListDistinctAccountCurrencies :many
+-- Intentionally not scoped to a user: exchange rates are global, and the sync
+-- needs all currencies in use across all accounts.
+SELECT DISTINCT currency FROM accounts ORDER BY currency;

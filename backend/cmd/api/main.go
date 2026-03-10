@@ -4,7 +4,11 @@ import (
 	"context"
 	"log"
 	"log/slog"
+	"os"
+	"os/signal"
 	"strings"
+	"syscall"
+	"time"
 
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
@@ -14,6 +18,7 @@ import (
 	"github.com/sanches/finance-tracker-cc/backend/internal/config"
 	"github.com/sanches/finance-tracker-cc/backend/internal/handler"
 	"github.com/sanches/finance-tracker-cc/backend/internal/middleware"
+	"github.com/sanches/finance-tracker-cc/backend/internal/rateapi"
 	"github.com/sanches/finance-tracker-cc/backend/internal/server"
 	"github.com/sanches/finance-tracker-cc/backend/internal/service"
 	"github.com/sanches/finance-tracker-cc/backend/internal/store"
@@ -54,6 +59,8 @@ func main() {
 	importSvc := service.NewImport(queries)
 	importFullSvc := service.NewImportFull(queries, pool)
 	exchangeRateSvc := service.NewExchangeRate(queries)
+	rateFetcher := rateapi.NewClient()
+	exchangeRateSyncSvc := service.NewExchangeRateSync(queries, rateFetcher)
 	currencySvc := service.NewCurrency(queries)
 	exportSvc := service.NewExport(queries)
 	userSvc := service.NewUser(queries, pool)
@@ -69,7 +76,7 @@ func main() {
 	reportH := handler.NewReport(reportSvc)
 	importH := handler.NewImport(importSvc)
 	importFullH := handler.NewImportFull(importFullSvc)
-	exchangeRateH := handler.NewExchangeRate(exchangeRateSvc)
+	exchangeRateH := handler.NewExchangeRate(exchangeRateSvc, exchangeRateSyncSvc, cfg.ExchangeRateSyncToken)
 	currencyH := handler.NewCurrency(currencySvc)
 	exportH := handler.NewExport(exportSvc)
 	userH := handler.NewUser(userSvc)
@@ -78,9 +85,44 @@ func main() {
 	router := server.NewRouter(authMw, authH, accountH, categoryH, transactionH, reportH, importH, importFullH, exchangeRateH, currencyH, exportH, userH)
 
 	// Server
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	switch cfg.ExchangeRateSyncMode {
+	case "background":
+		go runBackgroundSync(ctx, exchangeRateSyncSvc.Sync)
+	case "endpoint":
+		if cfg.ExchangeRateSyncToken == "" {
+			slog.Warn("EXCHANGE_RATE_SYNC_TOKEN is not set, POST /exchange-rates/sync will reject all requests")
+		}
+	default:
+		log.Fatalf("invalid EXCHANGE_RATE_SYNC_MODE %q, must be \"background\" or \"endpoint\"", cfg.ExchangeRateSyncMode)
+	}
+
 	srv := server.New(":"+cfg.Port, router)
-	if err := srv.Start(); err != nil {
+	if err := srv.Start(ctx); err != nil {
 		log.Fatal("server error: ", err)
+	}
+}
+
+func runBackgroundSync(ctx context.Context, fn func(context.Context) error) {
+	run := func() {
+		if err := fn(ctx); err != nil {
+			slog.Error("background exchange rate sync failed", "error", err)
+		}
+	}
+
+	run() // immediate first run on startup
+
+	ticker := time.NewTicker(24 * time.Hour)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ticker.C:
+			run()
+		case <-ctx.Done():
+			return
+		}
 	}
 }
 

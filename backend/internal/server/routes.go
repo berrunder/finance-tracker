@@ -38,6 +38,7 @@ func NewRouter(
 			r.Post("/refresh", authH.Refresh)
 		})
 		r.Get("/currencies", currencyH.List)
+		r.Post("/exchange-rates/sync", exchangeRateH.Sync)
 
 		// Protected routes
 		r.Group(func(r chi.Router) {
