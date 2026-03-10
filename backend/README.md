@@ -87,13 +87,16 @@ All return `{ access_token, refresh_token, user }`.
 ### Other public endpoints
 
 ```
-GET /currencies        [{ code, name, symbol }]
+GET  /currencies              [{ code, name, symbol }]
+POST /exchange-rates/sync     requires X-Sync-Token header (see Configuration)
 ```
 
 ### Protected Endpoints (require `Authorization: Bearer <access_token>`)
 
 ```
 PUT              /user                  { display_name, base_currency }
+POST             /user/reset            reset all user data
+POST             /user/password         { current_password, new_password }
 
 GET|POST         /accounts
 GET|PUT|DELETE   /accounts/:id
@@ -104,6 +107,7 @@ PUT|DELETE       /categories/:id
 GET|POST         /transactions          ?account_id=&category_id=&type=&date_from=&date_to=&page=&per_page=
 POST             /transactions/transfer
 PUT              /transactions/transfer/:id
+GET              /transactions/descriptions  ?search=
 GET|PUT|DELETE   /transactions/:id
 
 GET /reports/spending          ?date_from=&date_to=
@@ -113,9 +117,11 @@ GET /reports/summary           ?date_from=&date_to=
 
 POST /import/csv               multipart/form-data (file field: "file")
 POST /import/csv/confirm       { account_id, mapping, rows }
+POST /import/full              { date_format, decimal_separator, rows, ... }
 
 GET|POST /exchange-rates
-POST     /exchange-rates/sync   (public, requires X-Sync-Token header)
+
+GET /export/csv                ?date_from=&date_to=
 ```
 
 ### Response Format
@@ -165,6 +171,7 @@ internal/
   handler/             HTTP handlers (request parsing, validation, response)
   service/             business logic, type conversions
   store/               sqlc-generated DB access (do not edit)
+  rateapi/             HTTP adapter for external currency API
   middleware/           JWT auth
   dto/                 request/response types
 migrations/            SQL migration files
