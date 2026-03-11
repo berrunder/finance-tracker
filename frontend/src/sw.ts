@@ -27,12 +27,13 @@ const navigationHandler = new NetworkFirst({
   cacheName: 'navigation',
   networkTimeoutSeconds: 3,
 })
+const apiPattern = new RegExp(`^${import.meta.env.BASE_URL}api/`)
 registerRoute(
-  new NavigationRoute(navigationHandler, { denylist: [/^\/api\//] }),
+  new NavigationRoute(navigationHandler, { denylist: [apiPattern] }),
 )
 
 // API requests — never cached by service worker (app-level IndexedDB handles offline)
-registerRoute(/^\/api\//, new NetworkOnly())
+registerRoute(apiPattern, new NetworkOnly())
 
 // Background Sync: when connectivity returns, tell client tabs to flush the queue
 self.addEventListener(

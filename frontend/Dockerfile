@@ -1,9 +1,10 @@
 FROM node:24-alpine AS build
+ARG VITE_BASE_PATH=/
 WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 COPY . .
-RUN npx vite build
+RUN VITE_BASE_PATH=$VITE_BASE_PATH npx vite build
 
 FROM nginx:alpine
 COPY --from=build /app/dist /usr/share/nginx/html

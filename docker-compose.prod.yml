@@ -10,6 +10,9 @@ services:
 
   frontend:
     image: ${IMAGE_REGISTRY}/finance-frontend:latest
+    build:
+      args:
+        VITE_BASE_PATH: ${VITE_BASE_PATH:-/}
     ports: !override
       - "127.0.0.1:8000:80"
     restart: unless-stopped

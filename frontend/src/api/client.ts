@@ -55,11 +55,14 @@ async function performRefresh(): Promise<AuthResponse> {
     throw new Error('No refresh token')
   }
 
-  const response = await fetch('/api/v1/auth/refresh', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ refresh_token: refreshTokenValue }),
-  })
+  const response = await fetch(
+    `${import.meta.env.BASE_URL}api/v1/auth/refresh`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refresh_token: refreshTokenValue }),
+    },
+  )
 
   if (!response.ok) {
     const errorBody = await response.json().catch(() => ({
@@ -122,7 +125,7 @@ export async function apiClient<T>(
   endpoint: string,
   options?: RequestOptions,
 ): Promise<T> {
-  const url = `/api/v1${endpoint}`
+  const url = `${import.meta.env.BASE_URL}api/v1${endpoint}`
   const { skipAuth, ...fetchOptions } = options ?? {}
 
   const headers: Record<string, string> = {}

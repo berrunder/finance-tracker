@@ -31,7 +31,7 @@ cd frontend && npm test          # Run all tests (Vitest)
 
 ## Environment Variables
 
-Required: `DATABASE_URL` (postgres connection string), `JWT_SECRET` (HMAC key, 32+ chars), `INVITE_CODES` (comma-separated list of valid registration invite codes). Optional: `PORT` (default 8080), `EXCHANGE_RATE_SYNC_MODE` (`"endpoint"` default or `"background"`), `EXCHANGE_RATE_SYNC_TOKEN` (static token for sync endpoint). Production: `IMAGE_REGISTRY` (container registry prefix, e.g. `ghcr.io/username`).
+Required: `DATABASE_URL` (postgres connection string), `JWT_SECRET` (HMAC key, 32+ chars), `INVITE_CODES` (comma-separated list of valid registration invite codes). Optional: `PORT` (default 8080), `EXCHANGE_RATE_SYNC_MODE` (`"endpoint"` default or `"background"`), `EXCHANGE_RATE_SYNC_TOKEN` (static token for sync endpoint). Production: `IMAGE_REGISTRY` (container registry prefix, e.g. `ghcr.io/username`), `VITE_BASE_PATH` (frontend URL base path, e.g. `/finance/`, default `/`).
 
 ## Specifications
 

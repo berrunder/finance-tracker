@@ -52,7 +52,9 @@ export default function App() {
       <TooltipProvider>
         <AuthProvider>
           <SyncStatusProvider>
-            <BrowserRouter>
+            <BrowserRouter
+              basename={import.meta.env.BASE_URL.replace(/\/$/, '')}
+            >
               <Routes>
                 <Route
                   path="/login"
