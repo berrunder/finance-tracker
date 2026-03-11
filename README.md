@@ -28,13 +28,21 @@ make dev-frontend
 
 ## Production Deployment
 
-Use `docker-compose.prod.yml` override for deploying on a VPS behind a reverse proxy (e.g. nginx):
+Images are built locally and pushed to a container registry (e.g. GHCR), then pulled on the VPS.
+
+Set `IMAGE_REGISTRY` in your `.env` (e.g. `ghcr.io/your-github-username`), then:
 
 ```sh
-docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+# Locally — build and push
+make prod-build                  # Build images and tag for registry
+make prod-push                   # Push backend & frontend to registry
+
+# On VPS — pull and run
+make prod-deploy                 # Pull images and start services
 ```
 
-This override:
+The `docker-compose.prod.yml` override:
+- Sets image names from `IMAGE_REGISTRY` for backend and frontend
 - Removes exposed ports from `db` and `backend` (only reachable within the Docker network)
 - Binds the frontend to `127.0.0.1:8000` (localhost only, not accessible from the internet)
 - Adds `restart: unless-stopped` to all services
@@ -73,4 +81,4 @@ Restrict file permissions: `chmod 600 .env`. The `.env` file must never be commi
 
 ## Environment Variables
 
-Required: `DATABASE_URL` (postgres connection string), `JWT_SECRET` (HMAC key, 32+ chars), `INVITE_CODES` (comma-separated list of valid registration invite codes). Optional: `PORT` (default 8080), `EXCHANGE_RATE_SYNC_MODE` (`"endpoint"` default or `"background"`), `EXCHANGE_RATE_SYNC_TOKEN` (static token for sync endpoint).
+Required: `DATABASE_URL` (postgres connection string), `JWT_SECRET` (HMAC key, 32+ chars), `INVITE_CODES` (comma-separated list of valid registration invite codes). Optional: `PORT` (default 8080), `EXCHANGE_RATE_SYNC_MODE` (`"endpoint"` default or `"background"`), `EXCHANGE_RATE_SYNC_TOKEN` (static token for sync endpoint). Production: `IMAGE_REGISTRY` (container registry prefix, e.g. `ghcr.io/username`).
