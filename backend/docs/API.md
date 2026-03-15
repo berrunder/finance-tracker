@@ -407,17 +407,26 @@ Transfer transactions are excluded from all reports.
 
 ### `GET /reports/spending`
 
-Spending by category.
+Spending by category with hierarchical drill-down support. Returns three kinds of rows:
+
+1. **Top-level rollups** (`parent_id` omitted): aggregated totals for root categories, including all subcategory spending
+2. **Child categories** (`parent_id` set to parent's ID): individual subcategory totals, for drill-down
+3. **"Other" entries** (`category_name` = `"Other"`, `parent_id` = own `category_id`): a parent category's own direct spending, only present when that parent has subcategories with spending
+
+Rows are ordered by `parent_id` nulls first, then `total` descending.
 
 ```json
 // Response 200
 {
-  "data": [{
-    "category_id": "uuid",
-    "category_name": "Food",
-    "parent_id": "uuid",      // omitted for root categories
-    "total": "350.00"
-  }]
+  "data": [
+    // Top-level rollup (includes Groceries + Restaurants + own spending)
+    {"category_id": "uuid-food", "category_name": "Food", "total": "350.00"},
+    // Child categories (for drill-down into Food)
+    {"category_id": "uuid-groceries", "category_name": "Groceries", "parent_id": "uuid-food", "total": "200.00"},
+    {"category_id": "uuid-restaurants", "category_name": "Restaurants", "parent_id": "uuid-food", "total": "100.00"},
+    // "Other" — Food's own direct transactions
+    {"category_id": "uuid-food", "category_name": "Other", "parent_id": "uuid-food", "total": "50.00"}
+  ]
 }
 ```
 
