@@ -47,6 +47,11 @@ export function clearTokens(): void {
 
 interface RequestOptions extends RequestInit {
   skipAuth?: boolean
+  responseType?: 'blob'
+}
+
+function apiUrl(endpoint: string): string {
+  return `${import.meta.env.BASE_URL}api/v1${endpoint}`
 }
 
 async function performRefresh(): Promise<AuthResponse> {
@@ -55,14 +60,11 @@ async function performRefresh(): Promise<AuthResponse> {
     throw new Error('No refresh token')
   }
 
-  const response = await fetch(
-    `${import.meta.env.BASE_URL}api/v1/auth/refresh`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ refresh_token: refreshTokenValue }),
-    },
-  )
+  const response = await fetch(apiUrl('/auth/refresh'), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ refresh_token: refreshTokenValue }),
+  })
 
   if (!response.ok) {
     const errorBody = await response.json().catch(() => ({
@@ -125,8 +127,8 @@ export async function apiClient<T>(
   endpoint: string,
   options?: RequestOptions,
 ): Promise<T> {
-  const url = `${import.meta.env.BASE_URL}api/v1${endpoint}`
-  const { skipAuth, ...fetchOptions } = options ?? {}
+  const url = apiUrl(endpoint)
+  const { skipAuth, responseType, ...fetchOptions } = options ?? {}
 
   const headers: Record<string, string> = {}
   // Skip Content-Type for FormData — the browser sets it with the correct boundary
@@ -156,6 +158,10 @@ export async function apiClient<T>(
   // Handle 204 No Content
   if (response.status === 204) {
     return undefined as T
+  }
+
+  if (responseType === 'blob') {
+    return response.blob() as Promise<T>
   }
 
   return response.json() as Promise<T>

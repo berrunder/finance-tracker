@@ -141,9 +141,7 @@ export function SpendingChart({
               width={120}
               tick={{ fontSize: 13 }}
             />
-            <Tooltip
-              formatter={(value) => formatValue(value)}
-            />
+            <Tooltip formatter={(value) => formatValue(value)} />
             <Bar
               dataKey="value"
               fill="#3b82f6"
