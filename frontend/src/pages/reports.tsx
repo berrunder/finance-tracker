@@ -115,25 +115,15 @@ export default function ReportsPage() {
 
       {/* Spending and Income/Expense Charts */}
       <div className="grid gap-4 md:grid-cols-2">
-        {isSpendingLoading ? (
-          <Card>
-            <CardHeader>
-              <Skeleton className="h-5 w-40" />
-            </CardHeader>
-            <CardContent className="flex items-center justify-center">
-              <Skeleton className="h-48 w-48 rounded-full" />
-            </CardContent>
-          </Card>
-        ) : (
-          <SpendingChart
-            data={spendingData}
-            currency={user.base_currency}
-            dateFrom={dateFrom}
-            dateTo={dateTo}
-            isError={isSpendingError}
-            onRetry={refetchSpending}
-          />
-        )}
+        <SpendingChart
+          data={spendingData}
+          currency={user.base_currency}
+          dateFrom={dateFrom}
+          dateTo={dateTo}
+          isLoading={isSpendingLoading}
+          isError={isSpendingError}
+          onRetry={refetchSpending}
+        />
         {isIncomeExpenseLoading ? (
           <Card>
             <CardHeader>

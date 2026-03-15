@@ -53,20 +53,47 @@ DELETE FROM transactions WHERE id = $1 AND user_id = $2;
 DELETE FROM transactions WHERE transfer_id = $1 AND user_id = $2;
 
 -- name: SpendingByCategory :many
+WITH raw_spending AS (
+    SELECT
+        c.id AS category_id,
+        c.name AS category_name,
+        c.parent_id,
+        COALESCE(SUM(t.amount), 0)::DECIMAL(15,2) AS total
+    FROM transactions t
+    JOIN categories c ON t.category_id = c.id
+    WHERE t.user_id = @user_id
+        AND t.type = 'expense'
+        AND t.date >= @date_from
+        AND t.date <= @date_to
+        AND t.transfer_id IS NULL
+    GROUP BY c.id, c.name, c.parent_id
+),
+parent_rollup AS (
+    SELECT
+        COALESCE(rs.parent_id, rs.category_id) AS category_id,
+        SUM(rs.total)::DECIMAL(15,2) AS total
+    FROM raw_spending rs
+    GROUP BY COALESCE(rs.parent_id, rs.category_id)
+)
 SELECT
-    c.id AS category_id,
+    pr.category_id,
     c.name AS category_name,
     c.parent_id,
-    COALESCE(SUM(t.amount), 0)::DECIMAL(15,2) AS total
-FROM transactions t
-JOIN categories c ON t.category_id = c.id
-WHERE t.user_id = @user_id
-    AND t.type = 'expense'
-    AND t.date >= @date_from
-    AND t.date <= @date_to
-    AND t.transfer_id IS NULL
-GROUP BY c.id, c.name, c.parent_id
-ORDER BY total DESC;
+    pr.total
+FROM parent_rollup pr
+JOIN categories c ON c.id = pr.category_id
+UNION ALL
+-- Child categories with individual totals (for drill-down)
+SELECT category_id, category_name, parent_id, total
+FROM raw_spending
+WHERE parent_id IS NOT NULL
+UNION ALL
+-- Parent categories' own direct spending (visible as "Other" during drill-down)
+SELECT rs.category_id, 'Other' AS category_name, rs.category_id AS parent_id, rs.total
+FROM raw_spending rs
+WHERE rs.parent_id IS NULL
+    AND EXISTS (SELECT 1 FROM raw_spending rs2 WHERE rs2.parent_id = rs.category_id)
+ORDER BY parent_id NULLS FIRST, total DESC;
 
 -- name: MonthlyIncomeExpense :many
 SELECT

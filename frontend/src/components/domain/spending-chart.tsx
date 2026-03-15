@@ -1,18 +1,19 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
-import Decimal from 'decimal.js'
 import {
-  PieChart,
-  Pie,
-  Cell,
-  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
   Tooltip,
-  Legend,
+  ResponsiveContainer,
 } from 'recharts'
-import { formatMoney } from '@/lib/money'
+import type { BarRectangleItem } from 'recharts'
+import { formatMoney, parseDecimal } from '@/lib/money'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { ErrorBanner } from '@/components/domain/error-banner'
+import { Skeleton } from '@/components/ui/skeleton'
 import type { SpendingByCategoryItem } from '@/types/api'
 
 interface SpendingChartProps {
@@ -20,34 +21,26 @@ interface SpendingChartProps {
   currency: string
   dateFrom?: string
   dateTo?: string
+  isLoading?: boolean
   isError?: boolean
   onRetry?: () => void
 }
 
-const COLORS = [
-  '#ef4444', // red
-  '#f97316', // orange
-  '#f59e0b', // amber
-  '#eab308', // yellow
-  '#84cc16', // lime
-  '#22c55e', // green
-  '#10b981', // emerald
-  '#14b8a6', // teal
-  '#06b6d4', // cyan
-  '#0ea5e9', // sky
-  '#3b82f6', // blue
-  '#6366f1', // indigo
-  '#8b5cf6', // violet
-  '#a855f7', // purple
-  '#d946ef', // fuchsia
-  '#ec4899', // pink
-]
+interface ChartItem {
+  name: string
+  value: number
+  categoryId: string
+}
+
+const BAR_HEIGHT = 36
+const CHART_PADDING = 24
 
 export function SpendingChart({
   data,
   currency,
   dateFrom,
   dateTo,
+  isLoading,
   isError,
   onRetry,
 }: SpendingChartProps) {
@@ -56,29 +49,40 @@ export function SpendingChart({
     null,
   )
 
+  // Shared formatter for tooltip and bar labels
+  const formatValue = (value: unknown): string => {
+    if (typeof value !== 'number') return ''
+    return formatMoney(String(value), currency)
+  }
+
   // Filter data based on drill-down state
   const filteredData =
     drillDownParentId === null
       ? data.filter((item) => !item.parent_id)
       : data.filter((item) => item.parent_id === drillDownParentId)
 
-  // Transform data for Recharts
-  const chartData = filteredData.map((item) => ({
-    name: item.category_name,
-    value: new Decimal(item.total).toNumber(),
-    categoryId: item.category_id,
-  }))
+  // Transform and sort data for Recharts (descending by value)
+  const chartData: ChartItem[] = filteredData
+    .map((item) => ({
+      name: item.category_name,
+      value: parseDecimal(item.total).toNumber(),
+      categoryId: item.category_id,
+    }))
+    .sort((a, b) => b.value - a.value)
+
+  const chartHeight = chartData.length * BAR_HEIGHT + CHART_PADDING
 
   function hasChildren(categoryId: string): boolean {
     return data.some((item) => item.parent_id === categoryId)
   }
 
-  function handleSegmentClick(categoryId: string) {
-    if (hasChildren(categoryId)) {
-      setDrillDownParentId(categoryId)
+  function handleBarClick(data: BarRectangleItem) {
+    const entry = data.payload as ChartItem
+    if (drillDownParentId === null && hasChildren(entry.categoryId)) {
+      setDrillDownParentId(entry.categoryId)
     } else {
       const params = new URLSearchParams({
-        category_id: categoryId,
+        category_id: entry.categoryId,
       })
       if (dateFrom) {
         params.set('date_from', dateFrom)
@@ -94,6 +98,70 @@ export function SpendingChart({
     setDrillDownParentId(null)
   }
 
+  function renderContent() {
+    if (isLoading) {
+      return (
+        <div className="space-y-3">
+          {[85, 70, 55, 40, 30, 20].map((w, i) => (
+            <Skeleton
+              key={i}
+              className="h-5 rounded"
+              style={{ width: `${w}%` }}
+            />
+          ))}
+        </div>
+      )
+    }
+
+    if (isError) {
+      return (
+        <ErrorBanner
+          message="Failed to load spending data."
+          onRetry={onRetry}
+        />
+      )
+    }
+
+    if (chartData.length === 0) {
+      return (
+        <p className="text-sm text-muted-foreground">
+          No spending data available for the selected period.
+        </p>
+      )
+    }
+
+    return (
+      <div className="overflow-y-auto max-h-[300px]">
+        <ResponsiveContainer width="100%" height={chartHeight}>
+          <BarChart data={chartData} layout="vertical" barSize={20}>
+            <XAxis type="number" hide />
+            <YAxis
+              type="category"
+              dataKey="name"
+              width={120}
+              tick={{ fontSize: 13 }}
+            />
+            <Tooltip
+              formatter={(value) => formatValue(value)}
+            />
+            <Bar
+              dataKey="value"
+              fill="#3b82f6"
+              cursor="pointer"
+              name="Spending"
+              label={{
+                position: 'right',
+                formatter: formatValue,
+                fontSize: 12,
+              }}
+              onClick={handleBarClick}
+            />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+    )
+  }
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
@@ -104,50 +172,7 @@ export function SpendingChart({
           </Button>
         )}
       </CardHeader>
-      <CardContent>
-        {isError ? (
-          <ErrorBanner
-            message="Failed to load spending data."
-            onRetry={onRetry}
-          />
-        ) : chartData.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            No spending data available for the selected period.
-          </p>
-        ) : (
-          <ResponsiveContainer width="100%" height={300}>
-            <PieChart>
-              <Pie
-                data={chartData}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                label={(entry) => entry.name}
-                outerRadius={80}
-                fill="#8884d8"
-                dataKey="value"
-                onClick={(entry) => handleSegmentClick(entry.categoryId)}
-                style={{ cursor: 'pointer' }}
-              >
-                {chartData.map((_entry, index) => (
-                  <Cell
-                    key={`cell-${index}`}
-                    fill={COLORS[index % COLORS.length]}
-                  />
-                ))}
-              </Pie>
-              <Tooltip
-                formatter={(value: number | undefined) =>
-                  value !== undefined
-                    ? formatMoney(String(value), currency)
-                    : ''
-                }
-              />
-              <Legend />
-            </PieChart>
-          </ResponsiveContainer>
-        )}
-      </CardContent>
+      <CardContent>{renderContent()}</CardContent>
     </Card>
   )
 }
