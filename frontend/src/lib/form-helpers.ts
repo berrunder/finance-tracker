@@ -1,7 +1,14 @@
-import type { FieldValues, Path, UseFormSetError } from 'react-hook-form'
+import type {
+  FieldValues,
+  Path,
+  UseFormReturn,
+  UseFormSetError,
+} from 'react-hook-form'
+import type { FocusEvent } from 'react'
 import { toast } from 'sonner'
 import { ApiError } from '@/api/client'
 import { mapApiErrorToFieldError } from '@/lib/error-mapping'
+import { evaluateExpression } from '@/lib/expression'
 
 export function handleMutationError(error: unknown): void {
   if (error instanceof ApiError) {
@@ -44,4 +51,49 @@ export function getSubmitLabel(
 ): string {
   if (isPending) return isEdit ? 'Saving...' : 'Creating...'
   return isEdit ? editLabel : createLabel
+}
+
+/**
+ * Evaluates any arithmetic expressions in the given fields and writes
+ * the resolved values back into the form before validation runs.
+ * Call this before form.handleSubmit() to handle Enter-key submissions.
+ */
+export function evalAmountFields<T extends FieldValues>(
+  form: UseFormReturn<T>,
+  fields: Path<T>[],
+  decimals: number = 2,
+): void {
+  for (const field of fields) {
+    const value = form.getValues(field) as string
+    const result = evaluateExpression(value, decimals)
+    if (result !== null) {
+      form.setValue(field, result as T[typeof field], { shouldValidate: false })
+    }
+  }
+}
+
+/**
+ * Wraps `form.register()` for an amount field, adding expression evaluation
+ * on blur. When the user types e.g. "3000-279", it resolves to "2721" before
+ * RHF's blur validation runs.
+ */
+export function registerAmountField<T extends FieldValues>(
+  form: UseFormReturn<T>,
+  field: Path<T>,
+  decimals: number = 2,
+) {
+  const registration = form.register(field)
+  return {
+    ...registration,
+    onBlur: (e: FocusEvent<HTMLInputElement>) => {
+      const result = evaluateExpression(e.target.value, decimals)
+      if (result !== null) {
+        form.setValue(field, result as T[typeof field], {
+          shouldValidate: false,
+        })
+        e.target.value = result
+      }
+      registration.onBlur(e)
+    },
+  }
 }

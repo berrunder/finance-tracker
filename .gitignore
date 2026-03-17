@@ -15,6 +15,9 @@ android/app/build/
 android/local.properties
 android/.idea/
 
+# Claude Code
+.claude/settings.local.json
+
 # IDE
 .vscode/
 *.swp

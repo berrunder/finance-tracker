@@ -5,11 +5,16 @@ import { toast } from 'sonner'
 import Decimal from 'decimal.js'
 import {
   correctionSchema,
-  moneyRegex,
+  signedMoneyRegex,
   type CorrectionFormData,
 } from '@/lib/validators'
 import { useCreateTransaction } from '@/hooks/use-transactions'
-import { handleMutationError, getSubmitLabel } from '@/lib/form-helpers'
+import {
+  evalAmountFields,
+  handleMutationError,
+  getSubmitLabel,
+  registerAmountField,
+} from '@/lib/form-helpers'
 import { formatMoney } from '@/lib/money'
 import { toISODate } from '@/lib/dates'
 import {
@@ -38,33 +43,28 @@ export function CorrectionDialog({
   const open = account !== null
   const createTransaction = useCreateTransaction()
 
-  const {
-    register,
-    handleSubmit,
-    setValue,
-    watch,
-    reset,
-    formState: { errors },
-  } = useForm<CorrectionFormData>({
+  const form = useForm<CorrectionFormData>({
     resolver: zodResolver(correctionSchema),
     defaultValues: { actual_balance: '', category_id: '' },
     mode: 'onBlur',
   })
 
+  const prevTypeRef = useRef<'income' | 'expense' | null>(null)
+
   useEffect(() => {
     if (open) {
-      reset({ actual_balance: '', category_id: '' })
+      form.reset({ actual_balance: '', category_id: '' })
       prevTypeRef.current = null
     }
-  }, [open, reset])
+  }, [open, form])
 
   // Derive correction type and amount from current input
-  const actualBalanceStr = watch('actual_balance')
+  const actualBalanceStr = form.watch('actual_balance')
   let correctionType: 'income' | 'expense' | null = null
   let correctionAmount: Decimal | null = null
   let isZeroCorrection = false
 
-  if (account && moneyRegex.test(actualBalanceStr)) {
+  if (account && signedMoneyRegex.test(actualBalanceStr)) {
     const actual = new Decimal(actualBalanceStr)
     const current = new Decimal(account.balance)
     const diff = actual.minus(current)
@@ -80,13 +80,12 @@ export function CorrectionDialog({
   }
 
   // Reset category when correction type changes (income ↔ expense ↔ null)
-  const prevTypeRef = useRef<'income' | 'expense' | null>(null)
   useEffect(() => {
     if (prevTypeRef.current !== correctionType) {
-      setValue('category_id', '', { shouldValidate: false })
+      form.setValue('category_id', '', { shouldValidate: false })
     }
     prevTypeRef.current = correctionType
-  }, [correctionType, setValue])
+  }, [correctionType, form])
 
   const onSubmit = async (data: CorrectionFormData) => {
     if (!account || !correctionType || !correctionAmount) return
@@ -112,7 +111,13 @@ export function CorrectionDialog({
         <DialogHeader>
           <DialogTitle>Correct Account Balance</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <form
+          onSubmit={(e) => {
+            evalAmountFields(form, ['actual_balance'])
+            return form.handleSubmit(onSubmit)(e)
+          }}
+          className="space-y-4"
+        >
           {account && (
             <p className="text-muted-foreground text-sm">
               Current balance:{' '}
@@ -128,9 +133,11 @@ export function CorrectionDialog({
               id="actual_balance"
               inputMode="decimal"
               placeholder="0.00"
-              {...register('actual_balance')}
+              {...registerAmountField(form, 'actual_balance')}
             />
-            <FormError message={errors.actual_balance?.message} />
+            <FormError
+              message={form.formState.errors.actual_balance?.message}
+            />
             {isZeroCorrection && (
               <p className="text-muted-foreground text-sm">
                 Balance matches — no correction needed
@@ -159,13 +166,13 @@ export function CorrectionDialog({
             <div className="space-y-2">
               <Label>Category</Label>
               <CategoryCombobox
-                value={watch('category_id')}
+                value={form.watch('category_id')}
                 onValueChange={(v) =>
-                  setValue('category_id', v, { shouldValidate: true })
+                  form.setValue('category_id', v, { shouldValidate: true })
                 }
                 type={correctionType}
               />
-              <FormError message={errors.category_id?.message} />
+              <FormError message={form.formState.errors.category_id?.message} />
             </div>
           )}
 

@@ -99,11 +99,13 @@ export const profileSchema = z.object({
   base_currency: z.string().length(3, 'Please select a currency'),
 })
 
+export const signedMoneyRegex = /^-?\d+(\.\d{1,2})?$/
+
 export const correctionSchema = z.object({
   actual_balance: z
     .string()
     .min(1, 'Amount is required')
-    .regex(moneyRegex, 'Must be a valid amount (max 2 decimals)'),
+    .regex(signedMoneyRegex, 'Must be a valid amount (max 2 decimals)'),
   category_id: z.string().min(1, 'Please select a category'),
 })
 

@@ -4,7 +4,11 @@ import type {
   useUpdateTransaction,
 } from '@/hooks/use-transactions'
 import type { TransactionFormData } from '@/lib/validators'
-import { getSubmitLabel } from '@/lib/form-helpers'
+import {
+  evalAmountFields,
+  getSubmitLabel,
+  registerAmountField,
+} from '@/lib/form-helpers'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -35,7 +39,13 @@ export function IncomeExpenseForm({
   updateTransaction,
 }: IncomeExpenseFormProps) {
   return (
-    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+    <form
+      onSubmit={(e) => {
+        evalAmountFields(form, ['amount'])
+        return form.handleSubmit(onSubmit)(e)
+      }}
+      className="space-y-4"
+    >
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
           <Label>Account</Label>
@@ -69,7 +79,7 @@ export function IncomeExpenseForm({
           <Label>Amount</Label>
           <Input
             inputMode="decimal"
-            {...form.register('amount')}
+            {...registerAmountField(form, 'amount')}
             placeholder="0.00"
           />
           <FormError message={form.formState.errors.amount?.message} />

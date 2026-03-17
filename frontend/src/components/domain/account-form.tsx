@@ -6,7 +6,12 @@ import { accountSchema, type AccountFormData } from '@/lib/validators'
 import { ACCOUNT_TYPES } from '@/lib/constants'
 import { useCreateAccount, useUpdateAccount } from '@/hooks/use-accounts'
 import { useCurrencies } from '@/hooks/use-currencies'
-import { handleFormSubmitError, getSubmitLabel } from '@/lib/form-helpers'
+import {
+  evalAmountFields,
+  handleFormSubmitError,
+  getSubmitLabel,
+  registerAmountField,
+} from '@/lib/form-helpers'
 import {
   Dialog,
   DialogContent,
@@ -39,15 +44,7 @@ export function AccountForm({ open, onOpenChange, account }: AccountFormProps) {
   const updateAccount = useUpdateAccount()
   const { data: currencies = [] } = useCurrencies()
 
-  const {
-    register,
-    handleSubmit,
-    setValue,
-    setError,
-    reset,
-    watch,
-    formState: { errors, isSubmitting },
-  } = useForm<AccountFormData>({
+  const form = useForm<AccountFormData>({
     resolver: zodResolver(accountSchema),
     defaultValues: {
       name: '',
@@ -61,14 +58,14 @@ export function AccountForm({ open, onOpenChange, account }: AccountFormProps) {
   useEffect(() => {
     if (open) {
       if (account) {
-        reset({
+        form.reset({
           name: account.name,
           type: account.type as AccountFormData['type'],
           currency: account.currency,
           initial_balance: account.initial_balance,
         })
       } else {
-        reset({
+        form.reset({
           name: '',
           type: 'deposit',
           currency: 'USD',
@@ -76,7 +73,7 @@ export function AccountForm({ open, onOpenChange, account }: AccountFormProps) {
         })
       }
     }
-  }, [open, account, reset])
+  }, [open, account, form])
 
   const onSubmit = async (data: AccountFormData) => {
     try {
@@ -96,7 +93,7 @@ export function AccountForm({ open, onOpenChange, account }: AccountFormProps) {
       }
       onOpenChange(false)
     } catch (error) {
-      const serverError = handleFormSubmitError(error, setError)
+      const serverError = handleFormSubmitError(error, form.setError)
       if (serverError) {
         toast.error(serverError)
       }
@@ -109,19 +106,25 @@ export function AccountForm({ open, onOpenChange, account }: AccountFormProps) {
         <DialogHeader>
           <DialogTitle>{isEdit ? 'Edit Account' : 'New Account'}</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <form
+          onSubmit={(e) => {
+            evalAmountFields(form, ['initial_balance'])
+            return form.handleSubmit(onSubmit)(e)
+          }}
+          className="space-y-4"
+        >
           <div className="space-y-2">
             <Label htmlFor="name">Name</Label>
-            <Input id="name" {...register('name')} />
-            <FormError message={errors.name?.message} />
+            <Input id="name" {...form.register('name')} />
+            <FormError message={form.formState.errors.name?.message} />
           </div>
 
           <div className="space-y-2">
             <Label>Type</Label>
             <Select
-              value={watch('type')}
+              value={form.watch('type')}
               onValueChange={(v) =>
-                setValue('type', v as AccountFormData['type'], {
+                form.setValue('type', v as AccountFormData['type'], {
                   shouldValidate: true,
                 })
               }
@@ -137,15 +140,15 @@ export function AccountForm({ open, onOpenChange, account }: AccountFormProps) {
                 ))}
               </SelectContent>
             </Select>
-            <FormError message={errors.type?.message} />
+            <FormError message={form.formState.errors.type?.message} />
           </div>
 
           <div className="space-y-2">
             <Label>Currency</Label>
             <Select
-              value={watch('currency')}
+              value={form.watch('currency')}
               onValueChange={(v) =>
-                setValue('currency', v, { shouldValidate: true })
+                form.setValue('currency', v, { shouldValidate: true })
               }
               disabled={isEdit}
             >
@@ -160,7 +163,7 @@ export function AccountForm({ open, onOpenChange, account }: AccountFormProps) {
                 ))}
               </SelectContent>
             </Select>
-            <FormError message={errors.currency?.message} />
+            <FormError message={form.formState.errors.currency?.message} />
           </div>
 
           <div className="space-y-2">
@@ -168,9 +171,11 @@ export function AccountForm({ open, onOpenChange, account }: AccountFormProps) {
             <Input
               id="initial_balance"
               inputMode="decimal"
-              {...register('initial_balance')}
+              {...registerAmountField(form, 'initial_balance')}
             />
-            <FormError message={errors.initial_balance?.message} />
+            <FormError
+              message={form.formState.errors.initial_balance?.message}
+            />
           </div>
 
           <DialogFooter>
@@ -181,8 +186,8 @@ export function AccountForm({ open, onOpenChange, account }: AccountFormProps) {
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {getSubmitLabel(isEdit, isSubmitting)}
+            <Button type="submit" disabled={form.formState.isSubmitting}>
+              {getSubmitLabel(isEdit, form.formState.isSubmitting)}
             </Button>
           </DialogFooter>
         </form>

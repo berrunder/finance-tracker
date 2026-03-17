@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import Decimal from 'decimal.js'
+import { evaluateExpression } from '@/lib/expression'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 
@@ -85,6 +86,10 @@ export function TransferCurrencyFields({
           inputMode="decimal"
           value={amount}
           onChange={(e) => handleAmountChange(e.target.value)}
+          onBlur={() => {
+            const result = evaluateExpression(amount)
+            if (result !== null) handleAmountChange(result)
+          }}
           placeholder="0.00"
         />
       </div>
@@ -95,6 +100,10 @@ export function TransferCurrencyFields({
           inputMode="decimal"
           value={toAmount}
           onChange={(e) => handleToAmountChange(e.target.value)}
+          onBlur={() => {
+            const result = evaluateExpression(toAmount)
+            if (result !== null) handleToAmountChange(result)
+          }}
           placeholder="0.00"
         />
       </div>
