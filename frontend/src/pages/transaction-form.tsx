@@ -1,7 +1,11 @@
 import { useState, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router'
 import { ArrowLeft } from 'lucide-react'
-import { useTransaction, useTransactions } from '@/hooks/use-transactions'
+import {
+  useTransaction,
+  useTransactions,
+  useTransfer,
+} from '@/hooks/use-transactions'
 import { useAccounts } from '@/hooks/use-accounts'
 import { useCategories } from '@/hooks/use-categories'
 import { Button } from '@/components/ui/button'
@@ -19,8 +23,13 @@ export default function TransactionFormPage() {
   const isNew = !id
 
   const { data: transaction, isLoading: txLoading } = useTransaction(id ?? '')
-  const { data: linkedTransaction, isLoading: linkedTxLoading } =
-    useTransaction(transaction?.transfer_id ?? '')
+  const { data: transferData, isLoading: linkedTxLoading } = useTransfer(
+    !isNew && !!transaction?.transfer_id ? (id ?? '') : '',
+  )
+  const linkedTransaction = useMemo(
+    () => transferData?.data.find((t) => t.id !== id) ?? null,
+    [transferData, id],
+  )
 
   const {
     data: recentData,

@@ -368,6 +368,45 @@ func (s *Transaction) UpdateTransfer(ctx context.Context, userID, txnID uuid.UUI
 	}, nil
 }
 
+func (s *Transaction) GetTransfer(ctx context.Context, userID, txnID uuid.UUID) ([]dto.TransactionResponse, error) {
+	txn, err := s.queries.GetTransaction(ctx, store.GetTransactionParams{ID: txnID, UserID: userID})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrNotFound
+		}
+		return nil, err
+	}
+	if !txn.TransferID.Valid {
+		return nil, ErrNotATransfer
+	}
+
+	legs, err := s.queries.GetTransactionsByTransferID(ctx, store.GetTransactionsByTransferIDParams{
+		TransferID: txn.TransferID,
+		UserID:     userID,
+	})
+	if err != nil {
+		return nil, err
+	}
+	if len(legs) != 2 {
+		return nil, errors.New("transfer is corrupted: expected 2 transactions")
+	}
+
+	accounts, err := s.queries.ListAccounts(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	accountCurrencies := make(map[uuid.UUID]string, len(accounts))
+	for _, a := range accounts {
+		accountCurrencies[a.ID] = a.Currency
+	}
+
+	result := make([]dto.TransactionResponse, 0, len(legs))
+	for _, t := range legs {
+		result = append(result, *s.toResponseWithCurrency(t, accountCurrencies[t.AccountID]))
+	}
+	return result, nil
+}
+
 func (s *Transaction) Delete(ctx context.Context, userID, txnID uuid.UUID) error {
 	// If this is a transfer, delete the linked transaction too
 	txn, err := s.queries.GetTransaction(ctx, store.GetTransactionParams{ID: txnID, UserID: userID})

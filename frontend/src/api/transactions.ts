@@ -31,6 +31,10 @@ export function getTransaction(id: string): Promise<Transaction> {
   return apiClient<Transaction>(`/transactions/${id}`)
 }
 
+export function getTransfer(id: string): Promise<{ data: Transaction[] }> {
+  return apiClient<{ data: Transaction[] }>(`/transactions/transfer/${id}`)
+}
+
 export function createTransaction(
   data: CreateTransactionRequest,
 ): Promise<Transaction> {

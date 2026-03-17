@@ -28,6 +28,8 @@ All errors return:
 | `NOT_FOUND` | 404 | Resource doesn't exist or belongs to another user |
 | `HAS_CHILDREN` | 409 | Category has subcategories (can't delete) |
 | `HAS_TRANSACTIONS` | 409 | Category has transactions (can't delete) |
+| `CATEGORY_EXISTS` | 409 | Category with that name and type already exists |
+| `NOT_A_TRANSFER` | 400 | Transaction is not part of a transfer |
 | `VALIDATION_ERROR` | 400 | Struct validation failed |
 | `INVALID_BODY` | 400 | Malformed JSON (body limit: 1 MB) |
 | `INVALID_ID` | 400 | Path/query param is not a valid UUID |
@@ -332,6 +334,17 @@ Creates two linked transactions (expense on source account, income on destinatio
 // Response 201
 {"data": [/* expense transaction */, /* income transaction */]}
 ```
+
+### `GET /transactions/transfer/{id}`
+
+Returns both legs of a transfer. The `{id}` can be either transaction's ID.
+
+```json
+// Response 200
+{"data": [/* expense transaction */, /* income transaction */]}
+```
+
+Errors: `NOT_FOUND` (404) if transaction doesn't exist, `NOT_A_TRANSFER` (400) if transaction is not part of a transfer.
 
 ### `PUT /transactions/transfer/{id}`
 

@@ -67,6 +67,7 @@ func NewRouter(
 				r.Get("/", transactionH.List)
 				r.Post("/", transactionH.Create)
 				r.Post("/transfer", transactionH.CreateTransfer)
+				r.Get("/transfer/{id}", transactionH.GetTransfer)
 				r.Put("/transfer/{id}", transactionH.UpdateTransfer)
 				r.Get("/descriptions", transactionH.ListDescriptions)
 				r.Get("/{id}", transactionH.Get)

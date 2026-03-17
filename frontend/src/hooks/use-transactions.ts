@@ -10,11 +10,12 @@ import {
   deleteTransaction,
   getTransaction,
   getTransactions,
+  getTransfer,
   type TransactionFilters,
   updateTransaction,
   updateTransfer,
 } from '@/api/transactions'
-import { isNetworkError } from '@/api/client'
+import { isNetworkError, ApiError } from '@/api/client'
 import { queryKeys, invalidateTransactionRelated } from '@/lib/query-keys'
 import {
   putTransaction,
@@ -110,6 +111,45 @@ export function useTransaction(id: string) {
         if (isNetworkError(error)) {
           const cached = await getOfflineTransaction(id)
           if (cached) return cached
+        }
+        throw error
+      }
+    },
+    enabled: !!id,
+  })
+}
+
+export function useTransfer(id: string) {
+  return useQuery({
+    queryKey: queryKeys.transactions.transfer(id),
+    queryFn: async () => {
+      try {
+        const result = await getTransfer(id)
+        for (const tx of result.data) {
+          await putTransaction(tx)
+        }
+        return result
+      } catch (error) {
+        if (error instanceof ApiError && error.code === 'NOT_A_TRANSFER') {
+          return { data: [] }
+        }
+        if (isNetworkError(error)) {
+          const mainTx = await getOfflineTransaction(id)
+          if (mainTx?.transfer_id) {
+            if (mainTx.transfer_id.startsWith('temp_')) {
+              const linkedById = await getOfflineTransaction(mainTx.transfer_id)
+              if (linkedById) {
+                return { data: [mainTx, linkedById] }
+              }
+            }
+            const all = await getAllOfflineTransactions()
+            const linked = all.find(
+              (t) => t.id !== id && t.transfer_id === mainTx.transfer_id,
+            )
+            if (linked) {
+              return { data: [mainTx, linked] }
+            }
+          }
         }
         throw error
       }

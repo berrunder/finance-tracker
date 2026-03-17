@@ -139,6 +139,30 @@ func (h *Transaction) UpdateTransfer(w http.ResponseWriter, r *http.Request) {
 	respond.JSON(w, http.StatusOK, map[string]any{"data": txns})
 }
 
+func (h *Transaction) GetTransfer(w http.ResponseWriter, r *http.Request) {
+	userID := middleware.UserID(r.Context())
+	id, err := uuid.Parse(chi.URLParam(r, "id"))
+	if err != nil {
+		respond.Error(w, http.StatusBadRequest, "INVALID_ID", "invalid transaction ID")
+		return
+	}
+
+	txns, err := h.svc.GetTransfer(r.Context(), userID, id)
+	if err != nil {
+		if errors.Is(err, service.ErrNotFound) {
+			respond.Error(w, http.StatusNotFound, "NOT_FOUND", "transaction not found")
+			return
+		}
+		if errors.Is(err, service.ErrNotATransfer) {
+			respond.Error(w, http.StatusBadRequest, "NOT_A_TRANSFER", "transaction is not a transfer")
+			return
+		}
+		respond.Error(w, http.StatusInternalServerError, "INTERNAL_ERROR", "failed to get transfer")
+		return
+	}
+	respond.JSON(w, http.StatusOK, map[string]any{"data": txns})
+}
+
 func (h *Transaction) Get(w http.ResponseWriter, r *http.Request) {
 	userID := middleware.UserID(r.Context())
 	id, err := uuid.Parse(chi.URLParam(r, "id"))
