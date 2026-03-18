@@ -1,10 +1,12 @@
 import { useState } from 'react'
-import { ChevronDown, ChevronRight } from 'lucide-react'
+import { ChevronDown, ChevronRight, Scale } from 'lucide-react'
 import { formatMoney } from '@/lib/money'
 import { groupAccountsByType } from '@/lib/account-groups'
 import { useAuth } from '@/hooks/use-auth'
 import { useExchangeRates } from '@/hooks/use-exchange-rates'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { CorrectionDialog } from '@/components/domain/correction-dialog'
 import type { Account } from '@/types/api'
 
 interface DashboardAccountsProps {
@@ -15,6 +17,7 @@ export function DashboardAccounts({ accounts }: DashboardAccountsProps) {
   const { user } = useAuth()
   const { data: rates = [] } = useExchangeRates()
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
+  const [correctTarget, setCorrectTarget] = useState<Account | null>(null)
 
   if (accounts.length <= 1 || !user) {
     return null
@@ -71,13 +74,24 @@ export function DashboardAccounts({ accounts }: DashboardAccountsProps) {
                         className="flex items-center justify-between py-2 border-b last:border-b-0"
                       >
                         <span className="font-medium">{account.name}</span>
-                        <div className="text-right">
-                          <div className="font-medium">
-                            {formatMoney(account.balance, account.currency)}
+                        <div className="flex items-center gap-2">
+                          <div className="text-right">
+                            <div className="font-medium">
+                              {formatMoney(account.balance, account.currency)}
+                            </div>
+                            <div className="text-sm text-muted-foreground">
+                              {account.currency}
+                            </div>
                           </div>
-                          <div className="text-sm text-muted-foreground">
-                            {account.currency}
-                          </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 shrink-0"
+                            onClick={() => setCorrectTarget(account)}
+                            title="Correct balance"
+                          >
+                            <Scale className="h-4 w-4" />
+                          </Button>
                         </div>
                       </div>
                     ))}
@@ -88,6 +102,13 @@ export function DashboardAccounts({ accounts }: DashboardAccountsProps) {
           })}
         </div>
       </CardContent>
+
+      <CorrectionDialog
+        account={correctTarget}
+        onOpenChange={(open) => {
+          if (!open) setCorrectTarget(null)
+        }}
+      />
     </Card>
   )
 }
