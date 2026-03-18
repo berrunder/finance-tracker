@@ -221,8 +221,10 @@ export function TransactionTable({
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
                 <SyncIndicator tx={tx} hasFailedSync={failedIds.has(tx.id)} />
-                <span className="truncate text-sm font-medium">
-                  {getTransferDescription(tx, transactions, accounts)}
+                <span className="text-sm font-medium">
+                  {getAccountName(tx.account_id, accounts)} •{' '}
+                  {getCategoryLabel(tx.category_id, categories)} •{' '}
+                  {formatDate(tx.date)}
                 </span>
                 {tx.transfer_id && (
                   <Badge variant="outline" className="shrink-0 text-xs">
@@ -230,13 +232,11 @@ export function TransactionTable({
                   </Badge>
                 )}
               </div>
-              <div className="text-muted-foreground mt-0.5 text-xs">
-                {formatDate(tx.date)} ·{' '}
-                {getAccountName(tx.account_id, accounts)}
-              </div>
-              <div className="text-muted-foreground mt-0.5 text-xs">
-                {getCategoryLabel(tx.category_id, categories)}
-              </div>
+              {getTransferDescription(tx, transactions, accounts) && (
+                <p className="text-muted-foreground mt-0.5 text-xs">
+                  {getTransferDescription(tx, transactions, accounts)}
+                </p>
+              )}
             </div>
             <div className="flex items-center gap-1">
               <span
