@@ -32,7 +32,15 @@ function getCategoryName(
   categories: Category[],
 ): string {
   if (!categoryId) return 'Transfer'
-  return categories.find((c) => c.id === categoryId)?.name ?? EM_DASH
+  for (const cat of categories) {
+    if (cat.id === categoryId) return cat.name
+    if (cat.children) {
+      for (const child of cat.children) {
+        if (child.id === categoryId) return `${cat.name} > ${child.name}`
+      }
+    }
+  }
+  return EM_DASH
 }
 
 export function DashboardRecent({
