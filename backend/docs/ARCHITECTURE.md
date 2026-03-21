@@ -159,6 +159,7 @@ Sentinel errors in service layer, matched in handlers:
 | `ErrUserExists` | 409 | USER_EXISTS |
 | `ErrInvalidCredentials` | 401 | INVALID_CREDENTIALS |
 | `ErrInvalidToken` | 401 | INVALID_TOKEN |
+| `ErrCurrencyExists` | 409 | CURRENCY_EXISTS |
 | `ErrCategoryHasChildren` | 409 | HAS_CHILDREN |
 | `ErrCategoryHasTransactions` | 409 | HAS_TRANSACTIONS |
 

@@ -119,6 +119,9 @@ POST /import/csv               multipart/form-data (file field: "file")
 POST /import/csv/confirm       { account_id, mapping, rows }
 POST /import/full              { date_format, decimal_separator, rows, ... }
 
+POST         /currencies
+PUT          /currencies/:code
+
 GET|POST /exchange-rates
 
 GET /export/csv                ?date_from=&date_to=
