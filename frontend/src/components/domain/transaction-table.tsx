@@ -223,8 +223,7 @@ export function TransactionTable({
                 <SyncIndicator tx={tx} hasFailedSync={failedIds.has(tx.id)} />
                 <span className="text-sm font-medium">
                   {getAccountName(tx.account_id, accounts)} •{' '}
-                  {getCategoryLabel(tx.category_id, categories)} •{' '}
-                  {formatDate(tx.date)}
+                  {getCategoryLabel(tx.category_id, categories)}
                 </span>
                 {tx.transfer_id && (
                   <Badge variant="outline" className="shrink-0 text-xs">
@@ -239,12 +238,20 @@ export function TransactionTable({
               )}
             </div>
             <div className="flex items-center gap-1">
-              <span
-                className={cn('text-sm font-medium', amountColorClass(tx.type))}
-              >
-                {tx.type === 'expense' ? '\u2212' : '+'}
-                {formatMoney(tx.amount, tx.currency)}
-              </span>
+              <div className="text-right">
+                <p className="text-muted-foreground text-xs">
+                  {formatDate(tx.date)}
+                </p>
+                <span
+                  className={cn(
+                    'text-sm font-medium',
+                    amountColorClass(tx.type),
+                  )}
+                >
+                  {tx.type === 'expense' ? '\u2212' : '+'}
+                  {formatMoney(tx.amount, tx.currency)}
+                </span>
+              </div>
               <TransactionActionsMenu
                 onEdit={() => onEdit(tx)}
                 onDelete={() => onDelete(tx)}

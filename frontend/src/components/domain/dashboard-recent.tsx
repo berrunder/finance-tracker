@@ -104,8 +104,7 @@ export function DashboardRecent({
               <div className="min-w-0 flex-1 space-y-1">
                 <p className="text-sm font-medium leading-none">
                   {getAccountName(transaction.account_id, accounts)} •{' '}
-                  {getCategoryName(transaction.category_id, categories)} •{' '}
-                  {formatDate(transaction.date)}
+                  {getCategoryName(transaction.category_id, categories)}
                 </p>
                 {transaction.description && (
                   <p className="text-sm text-muted-foreground">
@@ -114,15 +113,20 @@ export function DashboardRecent({
                 )}
               </div>
               <div className="flex shrink-0 items-center gap-1">
-                <div
-                  className={`font-medium ${
-                    transaction.type === 'income'
-                      ? 'text-green-600'
-                      : 'text-red-600'
-                  }`}
-                >
-                  {transaction.type === 'income' ? '+' : '-'}
-                  {formatMoney(transaction.amount, transaction.currency)}
+                <div className="text-right">
+                  <p className="text-muted-foreground text-xs">
+                    {formatDate(transaction.date)}
+                  </p>
+                  <div
+                    className={`font-medium ${
+                      transaction.type === 'income'
+                        ? 'text-green-600'
+                        : 'text-red-600'
+                    }`}
+                  >
+                    {transaction.type === 'income' ? '+' : '-'}
+                    {formatMoney(transaction.amount, transaction.currency)}
+                  </div>
                 </div>
                 <div className="hidden md:block">
                   <TransactionActionsInline
