@@ -8,6 +8,7 @@ import {
   useMemo,
   useState,
 } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import type { UpdateUserRequest, User } from '@/types/api'
 import {
   login as apiLogin,
@@ -15,7 +16,12 @@ import {
   register as apiRegister,
 } from '@/api/auth'
 import { updateUser as apiUpdateUser } from '@/api/user'
-import { clearTokens, setAccessToken, setOnAuthFailure } from '@/api/client'
+import {
+  clearTokens,
+  setAccessToken,
+  setOnAuthFailure,
+  setOnQueryCancellation,
+} from '@/api/client'
 import { REFRESH_TOKEN_KEY } from '@/lib/constants'
 import { clearAllOfflineData } from '@/lib/db'
 
@@ -41,6 +47,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const hasStoredToken = !!localStorage.getItem(REFRESH_TOKEN_KEY)
   const [isLoading, setIsLoading] = useState(hasStoredToken)
+  const queryClient = useQueryClient()
 
   // Register auth failure callback so the API client can clear state via React
   // instead of using window.location.href (which causes a full page reload)
@@ -48,8 +55,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setOnAuthFailure(() => {
       setUser(null)
     })
-    return () => setOnAuthFailure(null)
-  }, [])
+    setOnQueryCancellation(() => {
+      queryClient.cancelQueries()
+    })
+    return () => {
+      setOnAuthFailure(null)
+      setOnQueryCancellation(null)
+    }
+  }, [queryClient])
 
   // Startup: try to refresh from stored refresh token
   useEffect(() => {

@@ -63,6 +63,7 @@ src/
 - When renaming or moving files in the frontend, check for fast-refresh compatibility — never rename .ts to .tsx or vice versa for hook files without verifying import chains and HMR behavior.
 - ALWAYS use proper typing. NEVER use `any` or `as unknown as Type` without a very good reason and approval. If you find yourself needing to do this, stop and ask for help — there's almost always a better way.
 - `isNetworkError` in `api/client.ts` must handle all major browsers: Chrome (`Failed to fetch`), Safari (`Load failed`), Firefox (`NetworkError...`). If modifying offline detection, test against all three message patterns.
+- **Auth circuit breaker**: `api/client.ts` has a module-level `authFailed` flag. `clearTokens()` resets it (for logout), `setAccessToken(non-null)` resets it (for login). In error paths, call `clearTokens()` before setting `authFailed = true` to avoid the reset stomping the flag. Only activate the circuit breaker for auth errors, not network errors — this is an offline-first PWA.
 
 ## Documentation
 

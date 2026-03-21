@@ -26,14 +26,26 @@ let refreshQueue: Array<{
   reject: (error: Error) => void
 }> = []
 
+// Circuit breaker: once refresh fails, stop attempting until a successful login resets it
+let authFailed = false
+
 // Auth failure callback — set by AuthProvider to clear state via React
 let onAuthFailure: (() => void) | null = null
 export function setOnAuthFailure(cb: (() => void) | null): void {
   onAuthFailure = cb
 }
 
+// Query cancellation callback — set by AuthProvider to cancel in-flight queries
+let onQueryCancellation: (() => void) | null = null
+export function setOnQueryCancellation(cb: (() => void) | null): void {
+  onQueryCancellation = cb
+}
+
 export function setAccessToken(token: string | null): void {
   accessToken = token
+  if (token !== null) {
+    authFailed = false
+  }
 }
 
 export function getAccessToken(): string | null {
@@ -42,6 +54,7 @@ export function getAccessToken(): string | null {
 
 export function clearTokens(): void {
   accessToken = null
+  authFailed = false
   localStorage.removeItem(REFRESH_TOKEN_KEY)
 }
 
@@ -80,6 +93,14 @@ async function handle401<T>(
   endpoint: string,
   options?: RequestOptions,
 ): Promise<T> {
+  // Circuit breaker: if refresh already failed, don't try again
+  if (authFailed) {
+    throw new ApiError(401, {
+      code: 'UNAUTHORIZED',
+      message: 'Session expired',
+    })
+  }
+
   if (isRefreshing) {
     // Queue this request — wait for the in-flight refresh to complete
     return new Promise<T>((resolve, reject) => {
@@ -100,11 +121,19 @@ async function handle401<T>(
     accessToken = data.access_token
     localStorage.setItem(REFRESH_TOKEN_KEY, data.refresh_token)
   } catch (error) {
-    // Refresh failed — reject all queued requests, clear auth
     const pending = [...refreshQueue]
     refreshQueue = []
     pending.forEach(({ reject }) => reject(error as Error))
+
+    if (isNetworkError(error)) {
+      // Network failure — don't lock out, the refresh token may still be valid
+      throw error
+    }
+
+    // Auth failure — activate circuit breaker, cancel queries, clear auth
     clearTokens()
+    authFailed = true
+    onQueryCancellation?.()
     onAuthFailure?.()
     throw error
   } finally {

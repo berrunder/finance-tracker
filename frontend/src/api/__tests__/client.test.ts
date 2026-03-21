@@ -1,9 +1,11 @@
 import {
   ApiError,
   apiClient,
+  clearTokens,
   setAccessToken,
   getAccessToken,
   setOnAuthFailure,
+  setOnQueryCancellation,
 } from '../client'
 
 const mockFetch = vi.fn()
@@ -24,9 +26,10 @@ function errorResponse(code: string, message: string, status = 400): Response {
 
 beforeEach(() => {
   mockFetch.mockReset()
-  setAccessToken(null)
+  clearTokens()
   localStorage.clear()
   setOnAuthFailure(null)
+  setOnQueryCancellation(null)
 })
 
 describe('apiClient', () => {
@@ -233,5 +236,85 @@ describe('401 interceptor', () => {
 
     expect(results[0].status).toBe('rejected')
     expect(results[1].status).toBe('rejected')
+  })
+
+  it('circuit breaker prevents repeated refresh attempts after failure', async () => {
+    setAccessToken('expired')
+    localStorage.setItem('refresh_token', 'bad-refresh')
+    setOnAuthFailure(vi.fn())
+
+    // First request: 401 → refresh fails
+    mockFetch.mockResolvedValueOnce(
+      errorResponse('UNAUTHORIZED', 'expired', 401),
+    )
+    mockFetch.mockResolvedValueOnce(
+      errorResponse('INVALID_TOKEN', 'bad refresh', 401),
+    )
+
+    await expect(apiClient('/accounts')).rejects.toThrow()
+    const callsAfterFirstFailure = mockFetch.mock.calls.length
+
+    // Second request: 401 → circuit breaker should block refresh
+    mockFetch.mockResolvedValueOnce(
+      errorResponse('UNAUTHORIZED', 'expired', 401),
+    )
+
+    await expect(apiClient('/accounts')).rejects.toThrow(ApiError)
+    // Only 1 new fetch call (the request itself), no refresh attempt
+    expect(mockFetch.mock.calls.length).toBe(callsAfterFirstFailure + 1)
+  })
+
+  it('circuit breaker resets after successful login (setAccessToken)', async () => {
+    setAccessToken('expired')
+    localStorage.setItem('refresh_token', 'bad-refresh')
+    setOnAuthFailure(vi.fn())
+
+    // Trigger circuit breaker
+    mockFetch.mockResolvedValueOnce(
+      errorResponse('UNAUTHORIZED', 'expired', 401),
+    )
+    mockFetch.mockResolvedValueOnce(
+      errorResponse('INVALID_TOKEN', 'bad refresh', 401),
+    )
+    await expect(apiClient('/accounts')).rejects.toThrow()
+
+    // Simulate re-login
+    setAccessToken('fresh-token')
+    localStorage.setItem('refresh_token', 'fresh-refresh')
+
+    // Next 401 should attempt refresh again
+    mockFetch.mockResolvedValueOnce(
+      errorResponse('UNAUTHORIZED', 'expired', 401),
+    )
+    mockFetch.mockResolvedValueOnce(
+      jsonResponse({
+        access_token: 'new-access',
+        refresh_token: 'new-refresh',
+        user: { id: '1', username: 'u' },
+      }),
+    )
+    mockFetch.mockResolvedValueOnce(jsonResponse({ data: 'ok' }))
+
+    const result = await apiClient('/accounts')
+    expect(result).toEqual({ data: 'ok' })
+  })
+
+  it('calls onQueryCancellation when refresh fails', async () => {
+    setAccessToken('expired')
+    localStorage.setItem('refresh_token', 'bad-refresh')
+    setOnAuthFailure(vi.fn())
+    const onCancel = vi.fn()
+    setOnQueryCancellation(onCancel)
+
+    mockFetch.mockResolvedValueOnce(
+      errorResponse('UNAUTHORIZED', 'expired', 401),
+    )
+    mockFetch.mockResolvedValueOnce(
+      errorResponse('INVALID_TOKEN', 'bad refresh', 401),
+    )
+
+    await expect(apiClient('/accounts')).rejects.toThrow()
+
+    expect(onCancel).toHaveBeenCalledTimes(1)
   })
 })

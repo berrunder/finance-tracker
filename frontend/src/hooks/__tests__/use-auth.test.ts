@@ -1,5 +1,6 @@
 import { createElement, type ReactNode } from 'react'
 import { renderHook, act, waitFor } from '@testing-library/react'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AuthProvider, useAuth } from '../use-auth'
 
 // Mock the API modules
@@ -17,10 +18,11 @@ vi.mock('@/api/client', () => ({
   setAccessToken: vi.fn(),
   clearTokens: vi.fn(),
   setOnAuthFailure: vi.fn(),
+  setOnQueryCancellation: vi.fn(),
 }))
 
 import { login as apiLogin, refreshToken } from '@/api/auth'
-import { setAccessToken, clearTokens } from '@/api/client'
+import { setAccessToken, clearTokens, setOnQueryCancellation } from '@/api/client'
 
 const mockUser = {
   id: '1',
@@ -36,13 +38,20 @@ const mockAuthResponse = {
   user: mockUser,
 }
 
+let queryClient = new QueryClient()
+
 function wrapper({ children }: { children: ReactNode }) {
-  return createElement(AuthProvider, null, children)
+  return createElement(
+    QueryClientProvider,
+    { client: queryClient },
+    createElement(AuthProvider, null, children),
+  )
 }
 
 beforeEach(() => {
   vi.clearAllMocks()
   localStorage.clear()
+  queryClient = new QueryClient()
 })
 
 describe('useAuth', () => {
@@ -134,5 +143,17 @@ describe('useAuth', () => {
 
     expect(clearTokens).toHaveBeenCalled()
     expect(result.current.user).toBeNull()
+  })
+
+  it('registers query cancellation callback that calls cancelQueries', () => {
+    const cancelSpy = vi.spyOn(queryClient, 'cancelQueries')
+
+    renderHook(() => useAuth(), { wrapper })
+
+    const cb = vi.mocked(setOnQueryCancellation).mock.calls[0][0]
+    expect(cb).toBeTypeOf('function')
+
+    cb!()
+    expect(cancelSpy).toHaveBeenCalledTimes(1)
   })
 })

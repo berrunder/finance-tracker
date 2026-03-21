@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { isNetworkError } from '@/api/client'
+import { ApiError, isNetworkError } from '@/api/client'
 import { Toaster } from '@/components/ui/sonner'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { AuthProvider } from '@/hooks/use-auth.ts'
@@ -27,6 +27,7 @@ const queryClient = new QueryClient({
       networkMode: 'always',
       retry: (failureCount, error) => {
         if (isNetworkError(error)) return false
+        if (error instanceof ApiError && error.status === 401) return false
         return failureCount < 3
       },
     },
