@@ -123,6 +123,21 @@ export const changePasswordSchema = z
     path: ['confirm_new_password'],
   })
 
+export const currencySchema = z.object({
+  code: z
+    .string()
+    .length(3, 'Code must be exactly 3 characters')
+    .regex(/^[A-Z]{3}$/, 'Code must be 3 uppercase letters'),
+  name: z
+    .string()
+    .min(1, 'Name is required')
+    .max(50, 'Name must be at most 50 characters'),
+  symbol: z
+    .string()
+    .min(1, 'Symbol is required')
+    .max(5, 'Symbol must be at most 5 characters'),
+})
+
 export type ChangePasswordFormData = z.infer<typeof changePasswordSchema>
 
 export type CorrectionFormData = z.infer<typeof correctionSchema>
@@ -133,3 +148,4 @@ export type CategoryFormData = z.infer<typeof categorySchema>
 export type TransactionFormData = z.infer<typeof transactionSchema>
 export type ProfileFormData = z.infer<typeof profileSchema>
 export type TransferFormData = z.infer<typeof transferSchema>
+export type CurrencyFormData = z.infer<typeof currencySchema>

@@ -1,27 +1,35 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { useCategories, useDeleteCategory } from '@/hooks/use-categories'
+import { useCurrencies } from '@/hooks/use-currencies'
 import { ApiError } from '@/api/client'
 import { mapApiErrorToFieldError } from '@/lib/error-mapping'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { CategoryList } from '@/components/domain/category-list'
 import { CategoryForm } from '@/components/domain/category-form'
+import { CurrencyList } from '@/components/domain/currency-list'
+import { CurrencyForm } from '@/components/domain/currency-form'
 import { ConfirmDialog } from '@/components/domain/confirm-dialog'
 import { ProfileForm } from '@/components/domain/profile-form'
 import { AppearanceSettings } from '@/components/domain/appearance-settings'
 import { ExportTab } from '@/components/domain/export-tab'
 import { DataTab } from '@/components/domain/data-tab'
-import type { Category } from '@/types/api'
+import type { Category, Currency } from '@/types/api'
 
 export default function SettingsPage() {
   const { data: categories = [], isLoading } = useCategories()
   const deleteCategory = useDeleteCategory()
+  const { data: currencies = [], isLoading: currenciesLoading } =
+    useCurrencies()
 
   const [formOpen, setFormOpen] = useState(false)
   const [editCategory, setEditCategory] = useState<Category | null>(null)
   const [addType, setAddType] = useState<'income' | 'expense'>('expense')
   const [deleteTarget, setDeleteTarget] = useState<Category | null>(null)
+
+  const [currencyFormOpen, setCurrencyFormOpen] = useState(false)
+  const [editCurrency, setEditCurrency] = useState<Currency | null>(null)
 
   function handleAdd(type: 'income' | 'expense') {
     setAddType(type)
@@ -64,6 +72,7 @@ export default function SettingsPage() {
       <Tabs defaultValue="categories">
         <TabsList>
           <TabsTrigger value="categories">Categories</TabsTrigger>
+          <TabsTrigger value="currencies">Currencies</TabsTrigger>
           <TabsTrigger value="profile">Profile</TabsTrigger>
           <TabsTrigger value="appearance">Appearance</TabsTrigger>
           <TabsTrigger value="export">Export</TabsTrigger>
@@ -100,6 +109,34 @@ export default function SettingsPage() {
           )}
         </TabsContent>
 
+        <TabsContent value="currencies" className="mt-4">
+          {currenciesLoading ? (
+            <div className="space-y-2">
+              {[1, 2, 3].map((i) => (
+                <div
+                  key={i}
+                  className="flex items-center justify-between rounded-md border p-3"
+                >
+                  <Skeleton className="h-4 w-32" />
+                  <Skeleton className="h-4 w-20" />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <CurrencyList
+              currencies={currencies}
+              onAdd={() => {
+                setEditCurrency(null)
+                setCurrencyFormOpen(true)
+              }}
+              onEdit={(currency) => {
+                setEditCurrency(currency)
+                setCurrencyFormOpen(true)
+              }}
+            />
+          )}
+        </TabsContent>
+
         <TabsContent value="profile" className="mt-4">
           <ProfileForm />
         </TabsContent>
@@ -122,6 +159,15 @@ export default function SettingsPage() {
         onOpenChange={handleFormClose}
         category={editCategory}
         defaultType={addType}
+      />
+
+      <CurrencyForm
+        open={currencyFormOpen}
+        onOpenChange={(open) => {
+          setCurrencyFormOpen(open)
+          if (!open) setEditCurrency(null)
+        }}
+        currency={editCurrency}
       />
 
       <ConfirmDialog

@@ -29,6 +29,7 @@ All errors return:
 | `HAS_CHILDREN` | 409 | Category has subcategories (can't delete) |
 | `HAS_TRANSACTIONS` | 409 | Category has transactions (can't delete) |
 | `CATEGORY_EXISTS` | 409 | Category with that name and type already exists |
+| `CURRENCY_EXISTS` | 409 | Currency with that code already exists |
 | `NOT_A_TRANSFER` | 400 | Transaction is not part of a transfer |
 | `VALIDATION_ERROR` | 400 | Struct validation failed |
 | `INVALID_BODY` | 400 | Malformed JSON (body limit: 1 MB) |
@@ -481,9 +482,9 @@ Overall financial summary.
 
 ---
 
-## Currencies (public)
+## Currencies
 
-### `GET /currencies`
+### `GET /currencies` (public)
 
 ```json
 // Response 200
@@ -493,6 +494,34 @@ Overall financial summary.
     {"code": "EUR", "name": "Euro", "symbol": "€"}
   ]
 }
+```
+
+### `POST /currencies` (protected)
+
+```json
+// Request
+{
+  "code": "string",   // required, exactly 3 chars
+  "name": "string",   // required, max 50 chars
+  "symbol": "string"  // required, max 5 chars
+}
+
+// Response 201 — single currency object
+// Error 409 CURRENCY_EXISTS — a currency with this code already exists
+```
+
+### `PUT /currencies/{code}` (protected)
+
+Only the name can be updated after creation.
+
+```json
+// Request
+{
+  "name": "string"  // required, max 50 chars
+}
+
+// Response 200 — updated currency object
+// Error 404 NOT_FOUND — currency not found
 ```
 
 ---

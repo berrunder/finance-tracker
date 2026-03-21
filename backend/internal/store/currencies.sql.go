@@ -71,3 +71,19 @@ func (q *Queries) ListCurrencies(ctx context.Context) ([]Currency, error) {
 	}
 	return items, nil
 }
+
+const updateCurrency = `-- name: UpdateCurrency :one
+UPDATE currencies SET name = $2 WHERE code = $1 RETURNING code, name, symbol
+`
+
+type UpdateCurrencyParams struct {
+	Code string `json:"code"`
+	Name string `json:"name"`
+}
+
+func (q *Queries) UpdateCurrency(ctx context.Context, arg UpdateCurrencyParams) (Currency, error) {
+	row := q.db.QueryRow(ctx, updateCurrency, arg.Code, arg.Name)
+	var i Currency
+	err := row.Scan(&i.Code, &i.Name, &i.Symbol)
+	return i, err
+}

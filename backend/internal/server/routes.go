@@ -88,6 +88,9 @@ func NewRouter(
 				r.Post("/full", importFullH.Execute)
 			})
 
+			r.Post("/currencies", currencyH.Create)
+			r.Put("/currencies/{code}", currencyH.Update)
+
 			r.Route("/exchange-rates", func(r chi.Router) {
 				r.Get("/", exchangeRateH.List)
 				r.Post("/", exchangeRateH.Create)

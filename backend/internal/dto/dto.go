@@ -226,6 +226,16 @@ type SummaryResponse struct {
 }
 
 // Currency
+type CreateCurrencyRequest struct {
+	Code   string `json:"code" validate:"required,len=3"`
+	Name   string `json:"name" validate:"required,max=50"`
+	Symbol string `json:"symbol" validate:"required,max=5"`
+}
+
+type UpdateCurrencyRequest struct {
+	Name string `json:"name" validate:"required,max=50"`
+}
+
 type CurrencyResponse struct {
 	Code   string `json:"code"`
 	Name   string `json:"name"`

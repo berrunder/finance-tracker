@@ -253,6 +253,16 @@ export interface Currency {
   symbol: string
 }
 
+export interface CreateCurrencyRequest {
+  code: string
+  name: string
+  symbol: string
+}
+
+export interface UpdateCurrencyRequest {
+  name: string
+}
+
 // Exchange Rate
 export interface ExchangeRate {
   id: string

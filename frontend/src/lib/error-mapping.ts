@@ -23,6 +23,11 @@ export function mapApiErrorToFieldError(error: ApiError): FieldError | null {
         field: 'name',
         message: 'A category with this name already exists',
       }
+    case 'CURRENCY_EXISTS':
+      return {
+        field: 'code',
+        message: 'A currency with this code already exists',
+      }
     case 'VALIDATION_ERROR':
       return { field: 'root', message: error.message }
     case 'HAS_CHILDREN':
