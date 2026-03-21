@@ -89,7 +89,13 @@ export default function App() {
                   <Route path="reports" element={<ReportsPage />} />
                   <Route path="import/account" element={<ImportPage />} />
                   <Route path="import/full" element={<ImportFullPage />} />
-                  <Route path="settings" element={<SettingsPage />} />
+                  <Route path="settings">
+                    <Route
+                      index
+                      element={<Navigate to="categories" replace />}
+                    />
+                    <Route path=":tab" element={<SettingsPage />} />
+                  </Route>
                 </Route>
               </Routes>
             </BrowserRouter>

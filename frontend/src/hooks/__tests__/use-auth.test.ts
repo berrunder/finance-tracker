@@ -22,7 +22,11 @@ vi.mock('@/api/client', () => ({
 }))
 
 import { login as apiLogin, refreshToken } from '@/api/auth'
-import { setAccessToken, clearTokens, setOnQueryCancellation } from '@/api/client'
+import {
+  setAccessToken,
+  clearTokens,
+  setOnQueryCancellation,
+} from '@/api/client'
 
 const mockUser = {
   id: '1',

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate, useParams } from 'react-router'
 import { toast } from 'sonner'
 import { useCategories, useDeleteCategory } from '@/hooks/use-categories'
 import { useCurrencies } from '@/hooks/use-currencies'
@@ -18,6 +19,9 @@ import { DataTab } from '@/components/domain/data-tab'
 import type { Category, Currency } from '@/types/api'
 
 export default function SettingsPage() {
+  const { tab = 'categories' } = useParams<{ tab: string }>()
+  const navigate = useNavigate()
+
   const { data: categories = [], isLoading } = useCategories()
   const deleteCategory = useDeleteCategory()
   const { data: currencies = [], isLoading: currenciesLoading } =
@@ -69,7 +73,12 @@ export default function SettingsPage() {
     <div className="space-y-4">
       <h1 className="text-2xl font-bold">Settings</h1>
 
-      <Tabs defaultValue="categories">
+      <Tabs
+        value={tab}
+        onValueChange={(value) =>
+          navigate(`/settings/${value}`, { replace: true })
+        }
+      >
         <TabsList>
           <TabsTrigger value="categories">Categories</TabsTrigger>
           <TabsTrigger value="currencies">Currencies</TabsTrigger>
