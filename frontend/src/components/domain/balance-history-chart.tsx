@@ -58,7 +58,7 @@ export function BalanceHistoryChart({
               <XAxis dataKey="date" />
               <YAxis />
               <Tooltip
-                formatter={(value: number | undefined) =>
+                formatter={(value) =>
                   value !== undefined
                     ? formatMoney(String(value), currency)
                     : ''
