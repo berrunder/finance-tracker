@@ -276,6 +276,7 @@ Query parameters (all optional):
 | `type` | string | — | `income` or `expense` |
 | `date_from` | string | — | Start date `YYYY-MM-DD` |
 | `date_to` | string | — | End date `YYYY-MM-DD` |
+| `description` | string | — | Case-insensitive substring match on description |
 | `page` | int | 1 | Page number |
 | `per_page` | int | 20 | Items per page |
 

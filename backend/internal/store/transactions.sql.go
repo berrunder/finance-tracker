@@ -119,6 +119,7 @@ WHERE t.user_id = $1
     AND ($4::VARCHAR IS NULL OR t.type = $4)
     AND ($5::DATE IS NULL OR t.date >= $5)
     AND ($6::DATE IS NULL OR t.date <= $6)
+    AND ($7::TEXT IS NULL OR t.description ILIKE '%' || $7 || '%')
 `
 
 type CountTransactionsParams struct {
@@ -128,6 +129,7 @@ type CountTransactionsParams struct {
 	Type        pgtype.Text `json:"type"`
 	DateFrom    pgtype.Date `json:"date_from"`
 	DateTo      pgtype.Date `json:"date_to"`
+	Description pgtype.Text `json:"description"`
 }
 
 func (q *Queries) CountTransactions(ctx context.Context, arg CountTransactionsParams) (int64, error) {
@@ -138,6 +140,7 @@ func (q *Queries) CountTransactions(ctx context.Context, arg CountTransactionsPa
 		arg.Type,
 		arg.DateFrom,
 		arg.DateTo,
+		arg.Description,
 	)
 	var count int64
 	err := row.Scan(&count)
@@ -379,8 +382,9 @@ WHERE t.user_id = $1
     AND ($4::VARCHAR IS NULL OR t.type = $4)
     AND ($5::DATE IS NULL OR t.date >= $5)
     AND ($6::DATE IS NULL OR t.date <= $6)
+    AND ($7::TEXT IS NULL OR t.description ILIKE '%' || $7 || '%')
 ORDER BY t.date DESC, t.created_at DESC
-LIMIT $8 OFFSET $7
+LIMIT $9 OFFSET $8
 `
 
 type ListTransactionsParams struct {
@@ -390,6 +394,7 @@ type ListTransactionsParams struct {
 	Type        pgtype.Text `json:"type"`
 	DateFrom    pgtype.Date `json:"date_from"`
 	DateTo      pgtype.Date `json:"date_to"`
+	Description pgtype.Text `json:"description"`
 	Off         int32       `json:"off"`
 	Lim         int32       `json:"lim"`
 }
@@ -402,6 +407,7 @@ func (q *Queries) ListTransactions(ctx context.Context, arg ListTransactionsPara
 		arg.Type,
 		arg.DateFrom,
 		arg.DateTo,
+		arg.Description,
 		arg.Off,
 		arg.Lim,
 	)

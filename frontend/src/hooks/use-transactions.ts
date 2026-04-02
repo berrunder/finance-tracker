@@ -62,6 +62,10 @@ function applyOfflineFilters(
   if (filters.date_to) {
     result = result.filter((t) => t.date <= filters.date_to!)
   }
+  if (filters.description) {
+    const needle = filters.description.toLowerCase()
+    result = result.filter((t) => t.description.toLowerCase().includes(needle))
+  }
   result.sort((a, b) => b.date.localeCompare(a.date))
   return result
 }

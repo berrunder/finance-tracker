@@ -1,6 +1,7 @@
-import { useEffect, useRef } from 'react'
-import { X } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { X, Search } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import {
   Select,
   SelectContent,
@@ -25,6 +26,16 @@ export function TransactionFilters({
   onFiltersChange,
 }: TransactionFiltersProps) {
   const dateTimers = useRef<Record<string, number>>({})
+  const [descState, setDescState] = useState({
+    synced: filters.description,
+    value: filters.description ?? '',
+  })
+  if (descState.synced !== filters.description) {
+    setDescState({
+      synced: filters.description,
+      value: filters.description ?? '',
+    })
+  }
 
   const categoryFilterType =
     filters.type === 'income' || filters.type === 'expense'
@@ -36,7 +47,8 @@ export function TransactionFilters({
     (filters.category_id && filters.category_id.length > 0) ||
     filters.type ||
     filters.date_from ||
-    filters.date_to
+    filters.date_to ||
+    filters.description
 
   function update(patch: Partial<Filters>) {
     onFiltersChange({ ...filters, ...patch })
@@ -66,17 +78,28 @@ export function TransactionFilters({
   }
 
   return (
-    <div className="flex flex-wrap items-end gap-3">
-      <div className="w-full md:w-44">
+    <div className="space-y-3">
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-3 lg:grid-cols-6">
+        <div className="relative">
+          <Search className="text-muted-foreground pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2" />
+          <Input
+            placeholder="Search description..."
+            value={descState.value}
+            onChange={(e) => {
+              setDescState({ synced: descState.synced, value: e.target.value })
+              debouncedUpdate('description', e.target.value || undefined)
+            }}
+            className="pl-8"
+          />
+        </div>
+
         <AccountMultiCombobox
           selected={filters.account_id ?? []}
           onSelectedChange={(v) =>
             update({ account_id: v.length > 0 ? v : undefined })
           }
         />
-      </div>
 
-      <div className="w-full md:w-52">
         <CategoryMultiCombobox
           selected={filters.category_id ?? []}
           onSelectedChange={(v) =>
@@ -84,9 +107,7 @@ export function TransactionFilters({
           }
           type={categoryFilterType}
         />
-      </div>
 
-      <div className="w-full md:w-32">
         <Select
           value={filters.type ?? 'all'}
           onValueChange={(v) => update({ type: v === 'all' ? undefined : v })}
@@ -100,18 +121,14 @@ export function TransactionFilters({
             <SelectItem value="expense">Expense</SelectItem>
           </SelectContent>
         </Select>
-      </div>
 
-      <div className="w-full md:w-44">
         <DatePicker
           value={filters.date_from}
           onChange={(v) => debouncedUpdate('date_from', v)}
           placeholder="From date"
           maxDate={filters.date_to}
         />
-      </div>
 
-      <div className="w-full md:w-44">
         <DatePicker
           value={filters.date_to}
           onChange={(v) => debouncedUpdate('date_to', v)}

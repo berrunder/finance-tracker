@@ -15,6 +15,7 @@ export interface TransactionFilters {
   type?: string
   date_from?: string
   date_to?: string
+  description?: string
   page?: number
   per_page?: number
 }

@@ -49,6 +49,7 @@ export default function TransactionsPage() {
       type: searchParams.get('type') ?? undefined,
       date_from: searchParams.get('date_from') ?? defaultDateFrom,
       date_to: searchParams.get('date_to') ?? defaultDateTo,
+      description: searchParams.get('description') ?? undefined,
     }),
     [defaultDateFrom, defaultDateTo, searchParams],
   )

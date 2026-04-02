@@ -26,12 +26,17 @@ func (h *Transaction) List(w http.ResponseWriter, r *http.Request) {
 	userID := middleware.UserID(r.Context())
 	q := r.URL.Query()
 
+	desc := q.Get("description")
+	if len(desc) > 200 {
+		desc = desc[:200]
+	}
 	params := service.ListTransactionsParams{
-		Type:     q.Get("type"),
-		DateFrom: q.Get("date_from"),
-		DateTo:   q.Get("date_to"),
-		Page:     1,
-		PerPage:  20,
+		Type:        q.Get("type"),
+		DateFrom:    q.Get("date_from"),
+		DateTo:      q.Get("date_to"),
+		Description: desc,
+		Page:        1,
+		PerPage:     20,
 	}
 
 	for _, v := range q["account_id"] {

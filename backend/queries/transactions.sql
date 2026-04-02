@@ -21,6 +21,7 @@ WHERE t.user_id = @user_id
     AND (sqlc.narg('type')::VARCHAR IS NULL OR t.type = sqlc.narg('type'))
     AND (sqlc.narg('date_from')::DATE IS NULL OR t.date >= sqlc.narg('date_from'))
     AND (sqlc.narg('date_to')::DATE IS NULL OR t.date <= sqlc.narg('date_to'))
+    AND (sqlc.narg('description')::TEXT IS NULL OR t.description ILIKE '%' || sqlc.narg('description') || '%')
 ORDER BY t.date DESC, t.created_at DESC
 LIMIT @lim OFFSET @off;
 
@@ -38,7 +39,8 @@ WHERE t.user_id = @user_id
     AND (cardinality(@category_ids::UUID[]) = 0 OR t.category_id IN (SELECT id FROM expanded_categories))
     AND (sqlc.narg('type')::VARCHAR IS NULL OR t.type = sqlc.narg('type'))
     AND (sqlc.narg('date_from')::DATE IS NULL OR t.date >= sqlc.narg('date_from'))
-    AND (sqlc.narg('date_to')::DATE IS NULL OR t.date <= sqlc.narg('date_to'));
+    AND (sqlc.narg('date_to')::DATE IS NULL OR t.date <= sqlc.narg('date_to'))
+    AND (sqlc.narg('description')::TEXT IS NULL OR t.description ILIKE '%' || sqlc.narg('description') || '%');
 
 -- name: UpdateTransaction :one
 UPDATE transactions

@@ -158,6 +158,10 @@ func (s *Transaction) List(ctx context.Context, userID uuid.UUID, params ListTra
 	if params.Type != "" {
 		txnType = pgtype.Text{String: params.Type, Valid: true}
 	}
+	var description pgtype.Text
+	if params.Description != "" {
+		description = pgtype.Text{String: params.Description, Valid: true}
+	}
 	var dateFrom, dateTo pgtype.Date
 	monthStart, monthEnd := currentMonthBounds()
 	if params.DateFrom != "" {
@@ -184,6 +188,7 @@ func (s *Transaction) List(ctx context.Context, userID uuid.UUID, params ListTra
 		Type:        txnType,
 		DateFrom:    dateFrom,
 		DateTo:      dateTo,
+		Description: description,
 		Off:         offset,
 		Lim:         int32(params.PerPage),
 	}
@@ -200,6 +205,7 @@ func (s *Transaction) List(ctx context.Context, userID uuid.UUID, params ListTra
 		Type:        txnType,
 		DateFrom:    dateFrom,
 		DateTo:      dateTo,
+		Description: description,
 	})
 	if err != nil {
 		return nil, err
@@ -489,6 +495,7 @@ type ListTransactionsParams struct {
 	Type        string
 	DateFrom    string
 	DateTo      string
+	Description string
 	Page        int
 	PerPage     int
 }
