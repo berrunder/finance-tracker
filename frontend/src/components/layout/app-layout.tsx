@@ -20,17 +20,15 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const isMobile = useIsMobile()
   const [mobileOpen, setMobileOpen] = useState(false)
   const [tabletExpanded, setTabletExpanded] = useState(false)
+  const mobileSwipeZone = useEdgeSwipe({
+    enabled: isMobile && !mobileOpen,
+    onSwipe: () => setMobileOpen(true),
+    edgeSize: 20,
+  })
 
   // N: navigate to new transaction form
   useHotkey('n', () => {
     navigate('/transactions/new')
-  })
-
-  // Edge-swipe from left opens the mobile navigation drawer.
-  useEdgeSwipe({
-    enabled: isMobile && !mobileOpen,
-    onSwipe: () => setMobileOpen(true),
-    edgeSize: 50,
   })
 
   return (
@@ -52,6 +50,14 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       >
         <Sidebar collapsed={!tabletExpanded} />
       </aside>
+
+      {mobileSwipeZone && (
+        <div
+          aria-hidden="true"
+          className="fixed inset-y-0 left-3 z-30 md:hidden"
+          {...mobileSwipeZone}
+        />
+      )}
 
       {/* Mobile top bar + sheet overlay (< 768px) */}
       <div className="bg-background fixed top-0 right-0 left-0 z-40 flex items-center border-b p-4 md:hidden">
