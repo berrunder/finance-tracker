@@ -5,6 +5,7 @@ import type {
   MonthlyIncomeExpenseItem,
   BalanceHistoryItem,
   SummaryResponse,
+  CashFlowResponse,
 } from '@/types/api'
 
 export interface ReportFilters {
@@ -42,5 +43,15 @@ export function getSummary(
 ): Promise<SummaryResponse> {
   return apiClient<SummaryResponse>(
     `/reports/summary${buildQueryString(filters)}`,
+  )
+}
+
+export function getCashFlowYears(): Promise<{ data: number[] }> {
+  return apiClient<{ data: number[] }>('/reports/cash-flow/years')
+}
+
+export function getCashFlow(year: number): Promise<CashFlowResponse> {
+  return apiClient<CashFlowResponse>(
+    `/reports/cash-flow${buildQueryString({ year: String(year) })}`,
   )
 }

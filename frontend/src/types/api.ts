@@ -246,6 +246,34 @@ export interface SummaryResponse {
   accounts: Account[]
 }
 
+export interface CashFlowCategoryItem {
+  category_id: string | null
+  type: 'income' | 'expense'
+  month: string
+  currency: string
+  amount: string
+}
+
+export interface CashFlowAccountOpening {
+  account_id: string
+  currency: string
+  opening_balance: string
+}
+
+export interface CashFlowAccountChange {
+  account_id: string
+  currency: string
+  month: string
+  net_change: string
+}
+
+export interface CashFlowResponse {
+  year: number
+  category_monthly: CashFlowCategoryItem[]
+  opening_balances: CashFlowAccountOpening[]
+  monthly_changes: CashFlowAccountChange[]
+}
+
 // Currency
 export interface Currency {
   code: string

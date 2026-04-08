@@ -1,9 +1,11 @@
-import { useQuery } from '@tanstack/react-query'
+import { skipToken, useQuery } from '@tanstack/react-query'
 import {
   getSpendingByCategory,
   getIncomeExpense,
   getBalanceHistory,
   getSummary,
+  getCashFlow,
+  getCashFlowYears,
   type ReportFilters,
 } from '@/api/reports'
 import { queryKeys } from '@/lib/query-keys'
@@ -37,5 +39,20 @@ export function useSummary(filters: ReportFilters = {}) {
   return useQuery({
     queryKey: queryKeys.reports.summary(filters),
     queryFn: () => getSummary(filters),
+  })
+}
+
+export function useCashFlowYears() {
+  return useQuery({
+    queryKey: queryKeys.reports.cashFlowYears,
+    queryFn: getCashFlowYears,
+    select: (data) => data.data,
+  })
+}
+
+export function useCashFlow(year: number | null) {
+  return useQuery({
+    queryKey: queryKeys.reports.cashFlow(year),
+    queryFn: year == null ? skipToken : () => getCashFlow(year),
   })
 }

@@ -2,6 +2,7 @@ package handler
 
 import (
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/sanches/finance-tracker-cc/backend/internal/handler/respond"
@@ -73,6 +74,39 @@ func (h *Report) Summary(w http.ResponseWriter, r *http.Request) {
 	result, err := h.svc.Summary(r.Context(), userID, dateFrom, dateTo)
 	if err != nil {
 		respond.Error(w, http.StatusInternalServerError, "INTERNAL_ERROR", "failed to get summary")
+		return
+	}
+	respond.JSON(w, http.StatusOK, result)
+}
+
+func (h *Report) CashFlowYears(w http.ResponseWriter, r *http.Request) {
+	userID := middleware.UserID(r.Context())
+
+	years, err := h.svc.CashFlowYears(r.Context(), userID)
+	if err != nil {
+		respond.Error(w, http.StatusInternalServerError, "INTERNAL_ERROR", "failed to list cash-flow years")
+		return
+	}
+	respond.JSON(w, http.StatusOK, map[string]any{"data": years})
+}
+
+func (h *Report) CashFlow(w http.ResponseWriter, r *http.Request) {
+	userID := middleware.UserID(r.Context())
+
+	yearStr := r.URL.Query().Get("year")
+	if yearStr == "" {
+		respond.Error(w, http.StatusBadRequest, "MISSING_PARAM", "year is required")
+		return
+	}
+	year, err := strconv.Atoi(yearStr)
+	if err != nil || year < 1900 || year > 9999 {
+		respond.Error(w, http.StatusBadRequest, "INVALID_PARAM", "year must be a 4-digit integer")
+		return
+	}
+
+	result, err := h.svc.CashFlow(r.Context(), userID, year)
+	if err != nil {
+		respond.Error(w, http.StatusInternalServerError, "INTERNAL_ERROR", "failed to get cash-flow report")
 		return
 	}
 	respond.JSON(w, http.StatusOK, result)

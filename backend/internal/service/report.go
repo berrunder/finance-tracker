@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -17,6 +18,10 @@ type reportStore interface {
 	DashboardSummary(ctx context.Context, arg store.DashboardSummaryParams) (store.DashboardSummaryRow, error)
 	ListAccounts(ctx context.Context, userID uuid.UUID) ([]store.ListAccountsRow, error)
 	GetAccountTransactionSums(ctx context.Context, accountID uuid.UUID) (store.GetAccountTransactionSumsRow, error)
+	ListTransactionYears(ctx context.Context, userID uuid.UUID) ([]int32, error)
+	CashFlowCategoryMonthly(ctx context.Context, arg store.CashFlowCategoryMonthlyParams) ([]store.CashFlowCategoryMonthlyRow, error)
+	CashFlowAccountOpeningBalances(ctx context.Context, arg store.CashFlowAccountOpeningBalancesParams) ([]store.CashFlowAccountOpeningBalancesRow, error)
+	CashFlowAccountMonthlyChanges(ctx context.Context, arg store.CashFlowAccountMonthlyChangesParams) ([]store.CashFlowAccountMonthlyChangesRow, error)
 }
 
 type Report struct {
@@ -154,5 +159,85 @@ func (s *Report) Summary(ctx context.Context, userID uuid.UUID, dateFrom, dateTo
 		TotalExpense: numericToString(summary.TotalExpense),
 		NetIncome:    numericToString(netIncome),
 		Accounts:     acctResponses,
+	}, nil
+}
+
+func (s *Report) CashFlowYears(ctx context.Context, userID uuid.UUID) ([]int, error) {
+	rows, err := s.queries.ListTransactionYears(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	years := make([]int, 0, len(rows))
+	for _, y := range rows {
+		years = append(years, int(y))
+	}
+	return years, nil
+}
+
+func (s *Report) CashFlow(ctx context.Context, userID uuid.UUID, year int) (*dto.CashFlowResponse, error) {
+	df := pgtype.Date{Time: time.Date(year, time.January, 1, 0, 0, 0, 0, time.UTC), Valid: true}
+	dt := pgtype.Date{Time: time.Date(year, time.December, 31, 0, 0, 0, 0, time.UTC), Valid: true}
+
+	categoryRows, err := s.queries.CashFlowCategoryMonthly(ctx, store.CashFlowCategoryMonthlyParams{
+		UserID:   userID,
+		DateFrom: df,
+		DateTo:   dt,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	openingRows, err := s.queries.CashFlowAccountOpeningBalances(ctx, store.CashFlowAccountOpeningBalancesParams{
+		DateFrom: df,
+		UserID:   userID,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	changeRows, err := s.queries.CashFlowAccountMonthlyChanges(ctx, store.CashFlowAccountMonthlyChangesParams{
+		UserID:   userID,
+		DateFrom: df,
+		DateTo:   dt,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	categoryItems := make([]dto.CashFlowCategoryItem, 0, len(categoryRows))
+	for _, r := range categoryRows {
+		categoryItems = append(categoryItems, dto.CashFlowCategoryItem{
+			CategoryID: nullableToUUID(r.CategoryID),
+			Type:       r.Type,
+			Month:      dateToString(r.Month),
+			Currency:   r.Currency,
+			Amount:     numericToString(r.Amount),
+		})
+	}
+
+	openingItems := make([]dto.CashFlowAccountOpening, 0, len(openingRows))
+	for _, r := range openingRows {
+		openingItems = append(openingItems, dto.CashFlowAccountOpening{
+			AccountID:      r.AccountID,
+			Currency:       r.Currency,
+			OpeningBalance: numericToString(r.OpeningBalance),
+		})
+	}
+
+	changeItems := make([]dto.CashFlowAccountChange, 0, len(changeRows))
+	for _, r := range changeRows {
+		changeItems = append(changeItems, dto.CashFlowAccountChange{
+			AccountID: r.AccountID,
+			Currency:  r.Currency,
+			Month:     dateToString(r.Month),
+			NetChange: numericToString(r.NetChange),
+		})
+	}
+
+	return &dto.CashFlowResponse{
+		Year:            year,
+		CategoryMonthly: categoryItems,
+		OpeningBalances: openingItems,
+		MonthlyChanges:  changeItems,
 	}, nil
 }

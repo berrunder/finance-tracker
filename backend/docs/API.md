@@ -481,6 +481,47 @@ Overall financial summary.
 }
 ```
 
+### `GET /reports/cash-flow/years`
+
+Distinct years (descending) for which the user has at least one transaction. Powers the year selector on the cash-flow report.
+
+```json
+// Response 200
+{"data": [2025, 2024, 2023]}
+```
+
+### `GET /reports/cash-flow`
+
+Yearly cash-flow report data. Multi-currency aggregation is performed by the client.
+
+| Param | Type | Required |
+|-------|------|----------|
+| `year` | integer (4-digit) | yes |
+
+Response groups:
+
+- `category_monthly`: per `(category_id, type, month, currency)` sums of non-transfer transactions in the year. `category_id` is `null` for uncategorized transactions.
+- `opening_balances`: per-account balance as of `year-01-01 - 1 day`, including initial balance and all prior history.
+- `monthly_changes`: per `(account_id, currency, month)` net change (`income − expense`) for the year. Includes transfers.
+
+```json
+// Response 200
+{
+  "year": 2024,
+  "category_monthly": [
+    {"category_id": "uuid-salary", "type": "income", "month": "2024-01-01", "currency": "USD", "amount": "5000.00"},
+    {"category_id": "uuid-groceries", "type": "expense", "month": "2024-01-01", "currency": "USD", "amount": "200.00"},
+    {"category_id": null, "type": "expense", "month": "2024-01-01", "currency": "USD", "amount": "10.00"}
+  ],
+  "opening_balances": [
+    {"account_id": "uuid-checking", "currency": "USD", "opening_balance": "1234.56"}
+  ],
+  "monthly_changes": [
+    {"account_id": "uuid-checking", "currency": "USD", "month": "2024-01-01", "net_change": "1800.00"}
+  ]
+}
+```
+
 ---
 
 ## Currencies

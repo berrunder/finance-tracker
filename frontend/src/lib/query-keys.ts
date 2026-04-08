@@ -28,6 +28,8 @@ export const queryKeys = {
     balanceHistory: (params: ReportFilters) =>
       ['reports', 'balance-history', params] as const,
     summary: (params: ReportFilters) => ['reports', 'summary', params] as const,
+    cashFlow: (year: number | null) => ['reports', 'cash-flow', year] as const,
+    cashFlowYears: ['reports', 'cash-flow', 'years'] as const,
   },
   exchangeRates: ['exchange-rates'] as const,
   currencies: ['currencies'] as const,

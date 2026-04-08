@@ -150,6 +150,57 @@ FROM daily d
 CROSS JOIN start_balance sb
 ORDER BY d.date;
 
+-- name: ListTransactionYears :many
+SELECT DISTINCT EXTRACT(YEAR FROM date)::INT AS year
+FROM transactions
+WHERE user_id = @user_id
+ORDER BY year DESC;
+
+-- name: CashFlowCategoryMonthly :many
+SELECT
+    t.category_id,
+    t.type,
+    date_trunc('month', t.date)::DATE AS month,
+    a.currency,
+    COALESCE(SUM(t.amount), 0)::DECIMAL(15,2) AS amount
+FROM transactions t
+JOIN accounts a ON a.id = t.account_id
+WHERE t.user_id = @user_id
+    AND t.date >= @date_from
+    AND t.date <= @date_to
+    AND t.transfer_id IS NULL
+GROUP BY t.category_id, t.type, date_trunc('month', t.date), a.currency;
+
+-- name: CashFlowAccountOpeningBalances :many
+SELECT
+    a.id AS account_id,
+    a.currency,
+    (a.initial_balance + COALESCE(SUM(
+        CASE WHEN t.type = 'income' THEN t.amount ELSE -t.amount END
+    ), 0))::DECIMAL(15,2) AS opening_balance
+FROM accounts a
+LEFT JOIN transactions t
+    ON t.account_id = a.id
+    AND t.user_id = a.user_id
+    AND t.date < @date_from
+WHERE a.user_id = @user_id
+GROUP BY a.id, a.currency, a.initial_balance;
+
+-- name: CashFlowAccountMonthlyChanges :many
+SELECT
+    t.account_id,
+    a.currency,
+    date_trunc('month', t.date)::DATE AS month,
+    COALESCE(SUM(
+        CASE WHEN t.type = 'income' THEN t.amount ELSE -t.amount END
+    ), 0)::DECIMAL(15,2) AS net_change
+FROM transactions t
+JOIN accounts a ON a.id = t.account_id
+WHERE t.user_id = @user_id
+    AND t.date >= @date_from
+    AND t.date <= @date_to
+GROUP BY t.account_id, a.currency, date_trunc('month', t.date);
+
 -- name: GetTransactionsByTransferID :many
 SELECT * FROM transactions WHERE transfer_id = $1 AND user_id = $2;
 

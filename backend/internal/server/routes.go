@@ -80,6 +80,8 @@ func NewRouter(
 				r.Get("/income-expense", reportH.IncomeExpense)
 				r.Get("/balance-history", reportH.BalanceHistory)
 				r.Get("/summary", reportH.Summary)
+				r.Get("/cash-flow/years", reportH.CashFlowYears)
+				r.Get("/cash-flow", reportH.CashFlow)
 			})
 
 			r.Route("/import", func(r chi.Router) {

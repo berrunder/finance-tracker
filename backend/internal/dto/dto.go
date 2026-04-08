@@ -225,6 +225,34 @@ type SummaryResponse struct {
 	Accounts     []AccountResponse `json:"accounts"`
 }
 
+type CashFlowCategoryItem struct {
+	CategoryID *uuid.UUID `json:"category_id"` // null = uncategorized
+	Type       string     `json:"type"`        // "income" | "expense"
+	Month      string     `json:"month"`
+	Currency   string     `json:"currency"`
+	Amount     string     `json:"amount"`
+}
+
+type CashFlowAccountOpening struct {
+	AccountID      uuid.UUID `json:"account_id"`
+	Currency       string    `json:"currency"`
+	OpeningBalance string    `json:"opening_balance"`
+}
+
+type CashFlowAccountChange struct {
+	AccountID uuid.UUID `json:"account_id"`
+	Currency  string    `json:"currency"`
+	Month     string    `json:"month"`
+	NetChange string    `json:"net_change"`
+}
+
+type CashFlowResponse struct {
+	Year            int                      `json:"year"`
+	CategoryMonthly []CashFlowCategoryItem   `json:"category_monthly"`
+	OpeningBalances []CashFlowAccountOpening `json:"opening_balances"`
+	MonthlyChanges  []CashFlowAccountChange  `json:"monthly_changes"`
+}
+
 // Currency
 type CreateCurrencyRequest struct {
 	Code   string `json:"code" validate:"required,len=3"`

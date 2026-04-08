@@ -14,7 +14,6 @@ import { DatePicker } from '@/components/domain/date-picker'
 import { SpendingChart } from '@/components/domain/spending-chart'
 import { IncomeExpenseChart } from '@/components/domain/income-expense-chart'
 import { BalanceHistoryChart } from '@/components/domain/balance-history-chart'
-import { MultiCurrencyNote } from '@/components/domain/multi-currency-note'
 import { Label } from '@/components/ui/label'
 import {
   Select,
@@ -24,7 +23,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 
-export default function ReportsPage() {
+export default function ReportsOverviewPage() {
   const { user } = useAuth()
   const now = new Date()
 
@@ -80,13 +79,6 @@ export default function ReportsPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Reports</h1>
-
-      <MultiCurrencyNote
-        baseCurrency={user.base_currency}
-        accounts={accounts}
-      />
-
       {/* Date Range Pickers */}
       <div className="grid gap-4 md:grid-cols-2">
         <div className="space-y-2">

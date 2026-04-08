@@ -13,7 +13,9 @@ import DashboardPage from '@/pages/dashboard'
 import TransactionsPage from '@/pages/transactions'
 import TransactionFormPage from '@/pages/transaction-form'
 import AccountsPage from '@/pages/accounts'
-import ReportsPage from '@/pages/reports'
+import ReportsLayout from '@/pages/reports-layout'
+import ReportsOverviewPage from '@/pages/reports-overview'
+import CashFlowReportPage from '@/pages/cash-flow-report'
 import ImportPage from '@/pages/import'
 import ImportFullPage from '@/pages/import-full'
 import SettingsPage from '@/pages/settings'
@@ -86,7 +88,11 @@ export default function App() {
                     element={<TransactionFormPage />}
                   />
                   <Route path="accounts" element={<AccountsPage />} />
-                  <Route path="reports" element={<ReportsPage />} />
+                  <Route path="reports" element={<ReportsLayout />}>
+                    <Route index element={<Navigate to="overview" replace />} />
+                    <Route path="overview" element={<ReportsOverviewPage />} />
+                    <Route path="cash-flow" element={<CashFlowReportPage />} />
+                  </Route>
                   <Route path="import/account" element={<ImportPage />} />
                   <Route path="import/full" element={<ImportFullPage />} />
                   <Route path="settings">
