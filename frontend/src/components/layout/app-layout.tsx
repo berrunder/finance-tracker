@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router'
 import { Sidebar } from './sidebar'
 import { OfflineBanner } from './offline-banner'
 import { useHotkey } from '@/hooks/use-keyboard-shortcuts'
+import { useIsMobile } from '@/hooks/use-mobile'
+import { useEdgeSwipe } from '@/hooks/use-edge-swipe'
 import { cn } from '@/lib/utils'
 import {
   Sheet,
@@ -15,12 +17,19 @@ import { Menu, Wallet } from 'lucide-react'
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate()
+  const isMobile = useIsMobile()
   const [mobileOpen, setMobileOpen] = useState(false)
   const [tabletExpanded, setTabletExpanded] = useState(false)
 
   // N: navigate to new transaction form
   useHotkey('n', () => {
     navigate('/transactions/new')
+  })
+
+  // Edge-swipe from left opens the mobile navigation drawer.
+  useEdgeSwipe({
+    enabled: isMobile && !mobileOpen,
+    onSwipe: () => setMobileOpen(true),
   })
 
   return (
