@@ -30,6 +30,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   useEdgeSwipe({
     enabled: isMobile && !mobileOpen,
     onSwipe: () => setMobileOpen(true),
+    edgeSize: 50,
   })
 
   return (
