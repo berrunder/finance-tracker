@@ -35,6 +35,7 @@ All errors return:
 | `INVALID_BODY` | 400 | Malformed JSON (body limit: 1 MB) |
 | `INVALID_ID` | 400 | Path/query param is not a valid UUID |
 | `MISSING_PARAM` | 400 | Required query parameter absent |
+| `INVALID_PARAM` | 400 | Query parameter has invalid value |
 | `MISSING_FILE` | 400 | No file in multipart upload |
 | `FILE_TOO_LARGE` | 400 | Upload exceeds 10 MB |
 | `PARSE_ERROR` | 400 | CSV parsing failed |

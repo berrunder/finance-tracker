@@ -114,6 +114,8 @@ GET /reports/spending          ?date_from=&date_to=
 GET /reports/income-expense    ?date_from=&date_to=
 GET /reports/balance-history   ?account_id=&date_from=&date_to=
 GET /reports/summary           ?date_from=&date_to=
+GET /reports/cash-flow/years
+GET /reports/cash-flow         ?year=
 
 POST /import/csv               multipart/form-data (file field: "file")
 POST /import/csv/confirm       { account_id, mapping, rows }

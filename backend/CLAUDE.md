@@ -30,7 +30,7 @@ handler -> service -> store (sqlc-generated)
 - **Monetary amounts**: Always strings (decimal), never float. Paired with currency code.
 - **Auth scoping**: Every DB query filters by `user_id`. Services receive userID as parameter.
 - **Transfers**: Two linked transactions sharing a `transfer_id` UUID (expense on source, income on destination).
-- **Reports**: Exclude transfer transactions (`WHERE transfer_id IS NULL`) to avoid double-counting.
+- **Reports**: Income/expense and category aggregations exclude transfer transactions (`WHERE transfer_id IS NULL`) to avoid double-counting. Per-account aggregations (balance history, cash-flow monthly changes) include transfers because each leg is a real account movement.
 - **Sentinel errors**: Service layer defines `ErrNotFound`, `ErrUserExists`, `ErrInvalidCredentials`, etc. Handlers match these to HTTP status codes.
 
 ## Adding a New Endpoint

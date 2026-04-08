@@ -135,7 +135,7 @@ trigger (background ticker OR POST /exchange-rates/sync)
 - **Transfers** create two linked transactions sharing a `transfer_id` UUID: expense on source account, income on destination. Cross-currency transfers store `exchange_rate` and may have different amounts.
 - **Categories** are hierarchical (one level: parent + children). Type is `income` or `expense`. Default categories seeded on user registration. Delete blocked if category has children or transactions.
 - **Transaction types**: `income` and `expense` only (transfers use these types internally).
-- **Reports** exclude transfer transactions (`WHERE transfer_id IS NULL`) to avoid double-counting.
+- **Reports**: income/expense and category aggregations exclude transfer transactions (`WHERE transfer_id IS NULL`) to avoid double-counting. Per-account aggregations (balance history, cash-flow monthly account changes) include transfers because they represent real movements on each account.
 
 ## Validation
 
