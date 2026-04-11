@@ -12,6 +12,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import type { UpdateUserRequest, User } from '@/types/api'
 import {
   login as apiLogin,
+  logout as apiLogout,
   refreshToken,
   register as apiRegister,
 } from '@/api/auth'
@@ -22,7 +23,6 @@ import {
   setOnAuthFailure,
   setOnQueryCancellation,
 } from '@/api/client'
-import { REFRESH_TOKEN_KEY } from '@/lib/constants'
 import { clearAllOfflineData } from '@/lib/db'
 
 interface AuthContextValue {
@@ -45,8 +45,9 @@ const AuthContext = createContext<AuthContextValue | null>(null)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
-  const hasStoredToken = !!localStorage.getItem(REFRESH_TOKEN_KEY)
-  const [isLoading, setIsLoading] = useState(hasStoredToken)
+  // Always start in loading state: the refresh cookie is HttpOnly so we can't
+  // check existence from JS — we just attempt a refresh and see.
+  const [isLoading, setIsLoading] = useState(true)
   const queryClient = useQueryClient()
 
   // Register auth failure callback so the API client can clear state via React
@@ -64,17 +65,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [queryClient])
 
-  // Startup: try to refresh from stored refresh token
+  // Startup: try to refresh via the HttpOnly cookie. If it fails we stay
+  // logged out and the user sees the login screen.
   useEffect(() => {
-    const storedRefreshToken = localStorage.getItem(REFRESH_TOKEN_KEY)
-    if (!storedRefreshToken) {
-      return
-    }
-
-    refreshToken(storedRefreshToken)
+    refreshToken()
       .then((data) => {
         setAccessToken(data.access_token)
-        localStorage.setItem(REFRESH_TOKEN_KEY, data.refresh_token)
         setUser(data.user)
       })
       .catch(() => {
@@ -88,7 +84,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback(async (username: string, password: string) => {
     const data = await apiLogin({ username, password })
     setAccessToken(data.access_token)
-    localStorage.setItem(REFRESH_TOKEN_KEY, data.refresh_token)
     setUser(data.user)
   }, [])
 
@@ -102,7 +97,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }) => {
       const data = await apiRegister(regData)
       setAccessToken(data.access_token)
-      localStorage.setItem(REFRESH_TOKEN_KEY, data.refresh_token)
       setUser(data.user)
     },
     [],
@@ -114,6 +108,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const logout = useCallback(() => {
+    apiLogout().catch(() => {})
     clearTokens()
     clearAllOfflineData().catch(() => {})
     setUser(null)

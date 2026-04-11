@@ -27,19 +27,19 @@ function errorResponse(code: string, message: string, status = 400): Response {
 beforeEach(() => {
   mockFetch.mockReset()
   clearTokens()
-  localStorage.clear()
   setOnAuthFailure(null)
   setOnQueryCancellation(null)
 })
 
 describe('apiClient', () => {
-  it('makes fetch calls with correct URL and headers', async () => {
+  it('makes fetch calls with correct URL, headers, and credentials', async () => {
     mockFetch.mockResolvedValueOnce(jsonResponse({ id: 1 }))
 
     const result = await apiClient('/accounts')
 
     expect(mockFetch).toHaveBeenCalledWith('/api/v1/accounts', {
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
     })
     expect(result).toEqual({ id: 1 })
   })
@@ -55,6 +55,7 @@ describe('apiClient', () => {
         'Content-Type': 'application/json',
         Authorization: 'Bearer test-token',
       },
+      credentials: 'include',
     })
   })
 
@@ -70,6 +71,7 @@ describe('apiClient', () => {
 
     const [, options] = mockFetch.mock.calls[0]
     expect(options.headers).not.toHaveProperty('Authorization')
+    expect(options.credentials).toBe('include')
   })
 
   it('returns undefined for 204 No Content', async () => {
@@ -118,17 +120,15 @@ describe('apiClient', () => {
 describe('401 interceptor', () => {
   it('triggers refresh and retries the original request on 401', async () => {
     setAccessToken('expired-token')
-    localStorage.setItem('refresh_token', 'valid-refresh')
 
     // First call: 401
     mockFetch.mockResolvedValueOnce(
       errorResponse('UNAUTHORIZED', 'Token expired', 401),
     )
-    // Refresh call: success
+    // Refresh call: success (cookie is set by the server, no body token)
     mockFetch.mockResolvedValueOnce(
       jsonResponse({
         access_token: 'new-access',
-        refresh_token: 'new-refresh',
         user: { id: '1', username: 'u' },
       }),
     )
@@ -139,7 +139,11 @@ describe('401 interceptor', () => {
 
     expect(result).toEqual({ data: 'ok' })
     expect(getAccessToken()).toBe('new-access')
-    expect(localStorage.getItem('refresh_token')).toBe('new-refresh')
+    // The refresh call must send credentials so the HttpOnly cookie reaches the server
+    const refreshCall = mockFetch.mock.calls.find(
+      ([url]) => url === '/api/v1/auth/refresh',
+    )
+    expect(refreshCall?.[1]?.credentials).toBe('include')
   })
 
   it('does NOT trigger refresh for /auth/ endpoints', async () => {
@@ -157,7 +161,6 @@ describe('401 interceptor', () => {
 
   it('queues concurrent 401 requests and retries after refresh', async () => {
     setAccessToken('expired')
-    localStorage.setItem('refresh_token', 'valid-refresh')
 
     let callCount = 0
     mockFetch.mockImplementation((url: string) => {
@@ -166,7 +169,6 @@ describe('401 interceptor', () => {
         return Promise.resolve(
           jsonResponse({
             access_token: 'new-access',
-            refresh_token: 'new-refresh',
             user: { id: '1', username: 'u' },
           }),
         )
@@ -192,7 +194,6 @@ describe('401 interceptor', () => {
 
   it('clears tokens and calls onAuthFailure when refresh fails', async () => {
     setAccessToken('expired')
-    localStorage.setItem('refresh_token', 'bad-refresh')
     const onFailure = vi.fn()
     setOnAuthFailure(onFailure)
 
@@ -208,13 +209,11 @@ describe('401 interceptor', () => {
     await expect(apiClient('/accounts')).rejects.toThrow()
 
     expect(getAccessToken()).toBeNull()
-    expect(localStorage.getItem('refresh_token')).toBeNull()
     expect(onFailure).toHaveBeenCalledTimes(1)
   })
 
   it('rejects queued requests when refresh fails', async () => {
     setAccessToken('expired')
-    localStorage.setItem('refresh_token', 'bad-refresh')
     setOnAuthFailure(vi.fn())
 
     // Both calls 401
@@ -240,7 +239,6 @@ describe('401 interceptor', () => {
 
   it('circuit breaker prevents repeated refresh attempts after failure', async () => {
     setAccessToken('expired')
-    localStorage.setItem('refresh_token', 'bad-refresh')
     setOnAuthFailure(vi.fn())
 
     // First request: 401 → refresh fails
@@ -266,7 +264,6 @@ describe('401 interceptor', () => {
 
   it('circuit breaker resets after successful login (setAccessToken)', async () => {
     setAccessToken('expired')
-    localStorage.setItem('refresh_token', 'bad-refresh')
     setOnAuthFailure(vi.fn())
 
     // Trigger circuit breaker
@@ -280,7 +277,6 @@ describe('401 interceptor', () => {
 
     // Simulate re-login
     setAccessToken('fresh-token')
-    localStorage.setItem('refresh_token', 'fresh-refresh')
 
     // Next 401 should attempt refresh again
     mockFetch.mockResolvedValueOnce(
@@ -289,7 +285,6 @@ describe('401 interceptor', () => {
     mockFetch.mockResolvedValueOnce(
       jsonResponse({
         access_token: 'new-access',
-        refresh_token: 'new-refresh',
         user: { id: '1', username: 'u' },
       }),
     )
@@ -301,7 +296,6 @@ describe('401 interceptor', () => {
 
   it('calls onQueryCancellation when refresh fails', async () => {
     setAccessToken('expired')
-    localStorage.setItem('refresh_token', 'bad-refresh')
     setOnAuthFailure(vi.fn())
     const onCancel = vi.fn()
     setOnQueryCancellation(onCancel)

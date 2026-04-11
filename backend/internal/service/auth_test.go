@@ -120,7 +120,7 @@ func TestRegister_DuplicateUser(t *testing.T) {
 	svc := &Auth{queries: mock, secret: []byte(testAuthSecret), inviteCodes: testInviteCodes}
 	_, err := svc.Register(context.Background(), dto.RegisterRequest{
 		Username:     "existing",
-		Password:     "password123",
+		Password:     "Str0ng-Pass!phrase",
 		DisplayName:  "Test",
 		BaseCurrency: "USD",
 		InviteCode:   "valid-code",
@@ -135,7 +135,7 @@ func TestRegister_InvalidInviteCode(t *testing.T) {
 	svc := &Auth{queries: mock, secret: []byte(testAuthSecret), inviteCodes: testInviteCodes}
 	_, err := svc.Register(context.Background(), dto.RegisterRequest{
 		Username:     "newuser",
-		Password:     "password123",
+		Password:     "Str0ng-Pass!phrase",
 		DisplayName:  "Test",
 		BaseCurrency: "USD",
 		InviteCode:   "wrong-code",
@@ -145,7 +145,7 @@ func TestRegister_InvalidInviteCode(t *testing.T) {
 }
 
 func TestRegister_ValidInviteCode(t *testing.T) {
-	user := testUser("password123")
+	user := testUser("Str0ng-Pass!phrase")
 
 	mock := &mockAuthStore{
 		createUserFn: func(ctx context.Context, arg store.CreateUserParams) (store.User, error) {
@@ -159,7 +159,7 @@ func TestRegister_ValidInviteCode(t *testing.T) {
 	svc := &Auth{queries: mock, secret: []byte(testAuthSecret), inviteCodes: testInviteCodes}
 	resp, err := svc.Register(context.Background(), dto.RegisterRequest{
 		Username:     "newuser",
-		Password:     "password123",
+		Password:     "Str0ng-Pass!phrase",
 		DisplayName:  "Test User",
 		BaseCurrency: "USD",
 		InviteCode:   "valid-code",

@@ -1,5 +1,4 @@
 import type { ApiErrorDetail, AuthResponse } from '@/types/api'
-import { REFRESH_TOKEN_KEY } from '@/lib/constants'
 
 // Custom error class for API errors
 export class ApiError extends Error {
@@ -16,7 +15,8 @@ export class ApiError extends Error {
   }
 }
 
-// Module-level token state (intentionally lost on page refresh)
+// Module-level token state (intentionally lost on page refresh — the HttpOnly
+// refresh cookie restores the session on reload).
 let accessToken: string | null = null
 
 // Refresh state
@@ -55,7 +55,6 @@ export function getAccessToken(): string | null {
 export function clearTokens(): void {
   accessToken = null
   authFailed = false
-  localStorage.removeItem(REFRESH_TOKEN_KEY)
 }
 
 interface RequestOptions extends RequestInit {
@@ -68,15 +67,9 @@ function apiUrl(endpoint: string): string {
 }
 
 async function performRefresh(): Promise<AuthResponse> {
-  const refreshTokenValue = localStorage.getItem(REFRESH_TOKEN_KEY)
-  if (!refreshTokenValue) {
-    throw new Error('No refresh token')
-  }
-
   const response = await fetch(apiUrl('/auth/refresh'), {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ refresh_token: refreshTokenValue }),
+    credentials: 'include',
   })
 
   if (!response.ok) {
@@ -117,16 +110,14 @@ async function handle401<T>(
 
   try {
     const data = await performRefresh()
-
     accessToken = data.access_token
-    localStorage.setItem(REFRESH_TOKEN_KEY, data.refresh_token)
   } catch (error) {
     const pending = [...refreshQueue]
     refreshQueue = []
     pending.forEach(({ reject }) => reject(error as Error))
 
     if (isNetworkError(error)) {
-      // Network failure — don't lock out, the refresh token may still be valid
+      // Network failure — don't lock out, the refresh cookie may still be valid
       throw error
     }
 
@@ -170,7 +161,11 @@ export async function apiClient<T>(
     headers['Authorization'] = `Bearer ${accessToken}`
   }
 
-  const response = await fetch(url, { ...fetchOptions, headers })
+  const response = await fetch(url, {
+    ...fetchOptions,
+    headers,
+    credentials: 'include',
+  })
 
   // 401 interceptor — skip for auth endpoints (infinite loop guard)
   if (response.status === 401 && !endpoint.startsWith('/auth/')) {

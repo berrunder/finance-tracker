@@ -36,11 +36,20 @@ type Auth struct {
 	inviteCodes []string
 }
 
+// AuthResult carries the output of a successful auth operation. The refresh
+// token is kept separate from the DTO so handlers can place it in an
+// HttpOnly cookie rather than the response body.
+type AuthResult struct {
+	AccessToken  string
+	RefreshToken string
+	User         dto.UserResponse
+}
+
 func NewAuth(queries *store.Queries, secret string, inviteCodes []string) *Auth {
 	return &Auth{queries: queries, secret: []byte(secret), inviteCodes: inviteCodes}
 }
 
-func (s *Auth) Register(ctx context.Context, req dto.RegisterRequest) (*dto.AuthResponse, error) {
+func (s *Auth) Register(ctx context.Context, req dto.RegisterRequest) (*AuthResult, error) {
 	if !slices.Contains(s.inviteCodes, req.InviteCode) {
 		return nil, ErrInvalidInviteCode
 	}
@@ -70,7 +79,7 @@ func (s *Auth) Register(ctx context.Context, req dto.RegisterRequest) (*dto.Auth
 	return s.generateAuthResponse(user)
 }
 
-func (s *Auth) Login(ctx context.Context, req dto.LoginRequest) (*dto.AuthResponse, error) {
+func (s *Auth) Login(ctx context.Context, req dto.LoginRequest) (*AuthResult, error) {
 	user, err := s.queries.GetUserByUsername(ctx, req.Username)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -86,7 +95,7 @@ func (s *Auth) Login(ctx context.Context, req dto.LoginRequest) (*dto.AuthRespon
 	return s.generateAuthResponse(user)
 }
 
-func (s *Auth) Refresh(ctx context.Context, tokenStr string) (*dto.AuthResponse, error) {
+func (s *Auth) Refresh(ctx context.Context, tokenStr string) (*AuthResult, error) {
 	token, err := jwt.Parse(tokenStr, func(t *jwt.Token) (any, error) {
 		return s.secret, nil
 	}, jwt.WithValidMethods([]string{"HS256"}))
@@ -118,7 +127,7 @@ func (s *Auth) Refresh(ctx context.Context, tokenStr string) (*dto.AuthResponse,
 	return s.generateAuthResponse(user)
 }
 
-func (s *Auth) generateAuthResponse(user store.User) (*dto.AuthResponse, error) {
+func (s *Auth) generateAuthResponse(user store.User) (*AuthResult, error) {
 	accessToken, err := s.generateToken(user.ID, "access", 15*time.Minute)
 	if err != nil {
 		return nil, err
@@ -129,7 +138,7 @@ func (s *Auth) generateAuthResponse(user store.User) (*dto.AuthResponse, error) 
 		return nil, err
 	}
 
-	return &dto.AuthResponse{
+	return &AuthResult{
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 		User: dto.UserResponse{

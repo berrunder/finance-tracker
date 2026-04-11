@@ -36,6 +36,7 @@ func NewRouter(
 			r.Post("/register", authH.Register)
 			r.Post("/login", authH.Login)
 			r.Post("/refresh", authH.Refresh)
+			r.Post("/logout", authH.Logout)
 		})
 		r.Get("/currencies", currencyH.List)
 		r.Post("/exchange-rates/sync", exchangeRateH.Sync)

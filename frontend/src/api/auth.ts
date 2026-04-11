@@ -17,10 +17,16 @@ export function register(data: RegisterRequest): Promise<AuthResponse> {
   })
 }
 
-export function refreshToken(token: string): Promise<AuthResponse> {
+export function refreshToken(): Promise<AuthResponse> {
   return apiClient<AuthResponse>('/auth/refresh', {
     method: 'POST',
-    body: JSON.stringify({ refresh_token: token }),
+    skipAuth: true,
+  })
+}
+
+export function logout(): Promise<void> {
+  return apiClient<void>('/auth/logout', {
+    method: 'POST',
     skipAuth: true,
   })
 }

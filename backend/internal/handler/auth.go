@@ -19,12 +19,19 @@ var validate = func() *validator.Validate {
 	return v
 }()
 
+const (
+	refreshCookieName   = "refresh_token"
+	refreshCookiePath   = "/"
+	refreshCookieMaxAge = 7 * 24 * 60 * 60 // 7 days, matches the JWT exp
+)
+
 type Auth struct {
-	svc *service.Auth
+	svc          *service.Auth
+	cookieSecure bool
 }
 
-func NewAuth(svc *service.Auth) *Auth {
-	return &Auth{svc: svc}
+func NewAuth(svc *service.Auth, cookieSecure bool) *Auth {
+	return &Auth{svc: svc, cookieSecure: cookieSecure}
 }
 
 func (h *Auth) Register(w http.ResponseWriter, r *http.Request) {
@@ -52,7 +59,8 @@ func (h *Auth) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	respond.JSON(w, http.StatusCreated, res)
+	h.setRefreshCookie(w, res.RefreshToken)
+	respond.JSON(w, http.StatusCreated, authResponse(res))
 }
 
 func (h *Auth) Login(w http.ResponseWriter, r *http.Request) {
@@ -76,23 +84,21 @@ func (h *Auth) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	respond.JSON(w, http.StatusOK, res)
+	h.setRefreshCookie(w, res.RefreshToken)
+	respond.JSON(w, http.StatusOK, authResponse(res))
 }
 
 func (h *Auth) Refresh(w http.ResponseWriter, r *http.Request) {
-	var req dto.RefreshRequest
-	if err := decodeJSON(w, r, &req); err != nil {
-		respond.Error(w, http.StatusBadRequest, "INVALID_BODY", "invalid request body")
-		return
-	}
-	if err := validate.Struct(req); err != nil {
-		respond.Error(w, http.StatusBadRequest, "VALIDATION_ERROR", err.Error())
+	cookie, err := r.Cookie(refreshCookieName)
+	if err != nil || cookie.Value == "" {
+		respond.Error(w, http.StatusUnauthorized, "INVALID_TOKEN", "missing refresh token")
 		return
 	}
 
-	res, err := h.svc.Refresh(r.Context(), req.RefreshToken)
+	res, err := h.svc.Refresh(r.Context(), cookie.Value)
 	if err != nil {
 		if errors.Is(err, service.ErrInvalidToken) {
+			h.clearRefreshCookie(w)
 			respond.Error(w, http.StatusUnauthorized, "INVALID_TOKEN", err.Error())
 			return
 		}
@@ -100,5 +106,42 @@ func (h *Auth) Refresh(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	respond.JSON(w, http.StatusOK, res)
+	h.setRefreshCookie(w, res.RefreshToken)
+	respond.JSON(w, http.StatusOK, authResponse(res))
+}
+
+func (h *Auth) Logout(w http.ResponseWriter, r *http.Request) {
+	h.clearRefreshCookie(w)
+	respond.NoContent(w)
+}
+
+func (h *Auth) setRefreshCookie(w http.ResponseWriter, token string) {
+	http.SetCookie(w, &http.Cookie{
+		Name:     refreshCookieName,
+		Value:    token,
+		Path:     refreshCookiePath,
+		MaxAge:   refreshCookieMaxAge,
+		HttpOnly: true,
+		Secure:   h.cookieSecure,
+		SameSite: http.SameSiteStrictMode,
+	})
+}
+
+func (h *Auth) clearRefreshCookie(w http.ResponseWriter) {
+	http.SetCookie(w, &http.Cookie{
+		Name:     refreshCookieName,
+		Value:    "",
+		Path:     refreshCookiePath,
+		MaxAge:   -1,
+		HttpOnly: true,
+		Secure:   h.cookieSecure,
+		SameSite: http.SameSiteStrictMode,
+	})
+}
+
+func authResponse(res *service.AuthResult) dto.AuthResponse {
+	return dto.AuthResponse{
+		AccessToken: res.AccessToken,
+		User:        res.User,
+	}
 }

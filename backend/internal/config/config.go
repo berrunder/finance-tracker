@@ -21,6 +21,10 @@ type Config struct {
 	// Exchange rate sync: "background" runs a daily goroutine, "endpoint" exposes only the HTTP trigger.
 	ExchangeRateSyncMode  string `envconfig:"EXCHANGE_RATE_SYNC_MODE" default:"endpoint"`
 	ExchangeRateSyncToken string `envconfig:"EXCHANGE_RATE_SYNC_TOKEN"`
+
+	// CookieSecure controls the Secure flag on the refresh-token cookie. Defaults
+	// to true; set COOKIE_SECURE=false for local http:// development.
+	CookieSecure bool `envconfig:"COOKIE_SECURE" default:"true"`
 }
 
 func Load() (*Config, error) {

@@ -8,6 +8,7 @@ vi.mock('@/api/auth', () => ({
   login: vi.fn(),
   register: vi.fn(),
   refreshToken: vi.fn(),
+  logout: vi.fn(),
 }))
 
 vi.mock('@/api/user', () => ({
@@ -21,7 +22,15 @@ vi.mock('@/api/client', () => ({
   setOnQueryCancellation: vi.fn(),
 }))
 
-import { login as apiLogin, refreshToken } from '@/api/auth'
+vi.mock('@/lib/db', () => ({
+  clearAllOfflineData: vi.fn().mockResolvedValue(undefined),
+}))
+
+import {
+  login as apiLogin,
+  logout as apiLogout,
+  refreshToken,
+} from '@/api/auth'
 import {
   setAccessToken,
   clearTokens,
@@ -38,7 +47,6 @@ const mockUser = {
 
 const mockAuthResponse = {
   access_token: 'access-123',
-  refresh_token: 'refresh-123',
   user: mockUser,
 }
 
@@ -54,7 +62,6 @@ function wrapper({ children }: { children: ReactNode }) {
 
 beforeEach(() => {
   vi.clearAllMocks()
-  localStorage.clear()
   queryClient = new QueryClient()
 })
 
@@ -68,18 +75,45 @@ describe('useAuth', () => {
     spy.mockRestore()
   })
 
-  it('starts unauthenticated when no refresh token in localStorage', () => {
+  it('attempts refresh on mount and stays unauthenticated on failure', async () => {
+    vi.mocked(refreshToken).mockRejectedValueOnce(new Error('no cookie'))
+
     const { result } = renderHook(() => useAuth(), { wrapper })
 
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false)
+    })
+
+    expect(refreshToken).toHaveBeenCalledTimes(1)
+    expect(clearTokens).toHaveBeenCalled()
     expect(result.current.user).toBeNull()
     expect(result.current.isAuthenticated).toBe(false)
-    expect(result.current.isLoading).toBe(false)
   })
 
-  it('login flow sets tokens and user', async () => {
+  it('restores session on mount when refresh cookie is valid', async () => {
+    vi.mocked(refreshToken).mockResolvedValueOnce(mockAuthResponse)
+
+    const { result } = renderHook(() => useAuth(), { wrapper })
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false)
+    })
+
+    expect(refreshToken).toHaveBeenCalledTimes(1)
+    expect(setAccessToken).toHaveBeenCalledWith('access-123')
+    expect(result.current.user).toEqual(mockUser)
+    expect(result.current.isAuthenticated).toBe(true)
+  })
+
+  it('login flow sets access token and user', async () => {
+    vi.mocked(refreshToken).mockRejectedValueOnce(new Error('no cookie'))
     vi.mocked(apiLogin).mockResolvedValueOnce(mockAuthResponse)
 
     const { result } = renderHook(() => useAuth(), { wrapper })
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false)
+    })
 
     await act(async () => {
       await result.current.login('testuser', 'password')
@@ -90,15 +124,20 @@ describe('useAuth', () => {
       password: 'password',
     })
     expect(setAccessToken).toHaveBeenCalledWith('access-123')
-    expect(localStorage.getItem('refresh_token')).toBe('refresh-123')
     expect(result.current.user).toEqual(mockUser)
     expect(result.current.isAuthenticated).toBe(true)
   })
 
-  it('logout clears tokens and user', async () => {
+  it('logout calls API, clears tokens, and resets user', async () => {
+    vi.mocked(refreshToken).mockRejectedValueOnce(new Error('no cookie'))
     vi.mocked(apiLogin).mockResolvedValueOnce(mockAuthResponse)
+    vi.mocked(apiLogout).mockResolvedValueOnce(undefined)
 
     const { result } = renderHook(() => useAuth(), { wrapper })
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false)
+    })
 
     await act(async () => {
       await result.current.login('testuser', 'password')
@@ -108,48 +147,14 @@ describe('useAuth', () => {
       result.current.logout()
     })
 
+    expect(apiLogout).toHaveBeenCalledTimes(1)
     expect(clearTokens).toHaveBeenCalled()
     expect(result.current.user).toBeNull()
     expect(result.current.isAuthenticated).toBe(false)
   })
 
-  it('refreshes on mount when refresh token exists', async () => {
-    localStorage.setItem('refresh_token', 'stored-refresh')
-    vi.mocked(refreshToken).mockResolvedValueOnce(mockAuthResponse)
-
-    const { result } = renderHook(() => useAuth(), { wrapper })
-
-    await waitFor(() => {
-      expect(result.current.isLoading).toBe(false)
-    })
-
-    expect(refreshToken).toHaveBeenCalledWith('stored-refresh')
-    expect(setAccessToken).toHaveBeenCalledWith('access-123')
-    expect(result.current.user).toEqual(mockUser)
-  })
-
-  it('does not refresh on mount when no token in localStorage', () => {
-    const { result } = renderHook(() => useAuth(), { wrapper })
-
-    expect(refreshToken).not.toHaveBeenCalled()
-    expect(result.current.isLoading).toBe(false)
-  })
-
-  it('clears tokens on refresh failure', async () => {
-    localStorage.setItem('refresh_token', 'bad-refresh')
-    vi.mocked(refreshToken).mockRejectedValueOnce(new Error('bad token'))
-
-    const { result } = renderHook(() => useAuth(), { wrapper })
-
-    await waitFor(() => {
-      expect(result.current.isLoading).toBe(false)
-    })
-
-    expect(clearTokens).toHaveBeenCalled()
-    expect(result.current.user).toBeNull()
-  })
-
-  it('registers query cancellation callback that calls cancelQueries', () => {
+  it('registers query cancellation callback that calls cancelQueries', async () => {
+    vi.mocked(refreshToken).mockRejectedValueOnce(new Error('no cookie'))
     const cancelSpy = vi.spyOn(queryClient, 'cancelQueries')
 
     renderHook(() => useAuth(), { wrapper })
