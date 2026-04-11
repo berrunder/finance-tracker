@@ -11,7 +11,13 @@ import (
 	"github.com/sanches/finance-tracker-cc/backend/internal/service"
 )
 
-var validate = validator.New()
+var validate = func() *validator.Validate {
+	v := validator.New()
+	_ = v.RegisterValidation("notcommon", func(fl validator.FieldLevel) bool {
+		return !isCommonPassword(fl.Field().String())
+	})
+	return v
+}()
 
 type Auth struct {
 	svc *service.Auth

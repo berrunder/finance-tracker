@@ -1,7 +1,15 @@
 package config
 
 import (
+	"errors"
+	"fmt"
+
 	"github.com/kelseyhightower/envconfig"
+)
+
+const (
+	minJWTSecretLength  = 32
+	placeholderJWTValue = "change-this-to-a-random-secret-at-least-32-chars"
 )
 
 type Config struct {
@@ -20,5 +28,18 @@ func Load() (*Config, error) {
 	if err := envconfig.Process("", &cfg); err != nil {
 		return nil, err
 	}
+	if err := cfg.validate(); err != nil {
+		return nil, err
+	}
 	return &cfg, nil
+}
+
+func (c *Config) validate() error {
+	if len(c.JWTSecret) < minJWTSecretLength {
+		return fmt.Errorf("JWT_SECRET must be at least %d characters", minJWTSecretLength)
+	}
+	if c.JWTSecret == placeholderJWTValue {
+		return errors.New("JWT_SECRET is set to the placeholder value from .env.example; generate a real secret")
+	}
+	return nil
 }

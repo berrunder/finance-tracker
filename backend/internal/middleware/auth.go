@@ -39,11 +39,8 @@ func (a *Auth) Authenticate(next http.Handler) http.Handler {
 		}
 
 		token, err := jwt.Parse(parts[1], func(t *jwt.Token) (any, error) {
-			if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
-				return nil, jwt.ErrSignatureInvalid
-			}
 			return a.secret, nil
-		})
+		}, jwt.WithValidMethods([]string{"HS256"}))
 		if err != nil || !token.Valid {
 			respond.Error(w, http.StatusUnauthorized, "UNAUTHORIZED", "invalid or expired token")
 			return

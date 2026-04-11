@@ -32,7 +32,7 @@ type ErrorResponse struct {
 // Auth
 type RegisterRequest struct {
 	Username     string `json:"username" validate:"required,min=3,max=50"`
-	Password     string `json:"password" validate:"required,min=8,max=128"`
+	Password     string `json:"password" validate:"required,min=10,max=128,notcommon"`
 	DisplayName  string `json:"display_name" validate:"required,max=100"`
 	BaseCurrency string `json:"base_currency" validate:"required,len=3"`
 	InviteCode   string `json:"invite_code" validate:"required"`
@@ -69,7 +69,7 @@ type UpdateUserRequest struct {
 
 type ChangePasswordRequest struct {
 	CurrentPassword string `json:"current_password" validate:"required"`
-	NewPassword     string `json:"new_password" validate:"required,min=8,max=128"`
+	NewPassword     string `json:"new_password" validate:"required,min=10,max=128,notcommon"`
 }
 
 // Account

@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"crypto/subtle"
 	"log/slog"
 	"net/http"
 
@@ -49,7 +50,12 @@ func (h *ExchangeRate) Create(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *ExchangeRate) Sync(w http.ResponseWriter, r *http.Request) {
-	if h.token == "" || r.Header.Get("X-Sync-Token") != h.token {
+	if h.token == "" {
+		respond.Error(w, http.StatusUnauthorized, "UNAUTHORIZED", "invalid or missing sync token")
+		return
+	}
+	provided := r.Header.Get("X-Sync-Token")
+	if subtle.ConstantTimeCompare([]byte(provided), []byte(h.token)) != 1 {
 		respond.Error(w, http.StatusUnauthorized, "UNAUTHORIZED", "invalid or missing sync token")
 		return
 	}

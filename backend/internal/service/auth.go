@@ -88,11 +88,8 @@ func (s *Auth) Login(ctx context.Context, req dto.LoginRequest) (*dto.AuthRespon
 
 func (s *Auth) Refresh(ctx context.Context, tokenStr string) (*dto.AuthResponse, error) {
 	token, err := jwt.Parse(tokenStr, func(t *jwt.Token) (any, error) {
-		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, jwt.ErrSignatureInvalid
-		}
 		return s.secret, nil
-	})
+	}, jwt.WithValidMethods([]string{"HS256"}))
 	if err != nil || !token.Valid {
 		return nil, ErrInvalidToken
 	}
