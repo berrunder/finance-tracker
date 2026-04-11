@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"errors"
 	"net/http"
 
@@ -21,16 +22,22 @@ var validate = func() *validator.Validate {
 
 const (
 	refreshCookieName   = "refresh_token"
-	refreshCookiePath   = "/"
+	refreshCookiePath   = "/api/v1/auth"
 	refreshCookieMaxAge = 7 * 24 * 60 * 60 // 7 days, matches the JWT exp
 )
 
+type authService interface {
+	Register(ctx context.Context, req dto.RegisterRequest) (*service.AuthResult, error)
+	Login(ctx context.Context, req dto.LoginRequest) (*service.AuthResult, error)
+	Refresh(ctx context.Context, token string) (*service.AuthResult, error)
+}
+
 type Auth struct {
-	svc          *service.Auth
+	svc          authService
 	cookieSecure bool
 }
 
-func NewAuth(svc *service.Auth, cookieSecure bool) *Auth {
+func NewAuth(svc authService, cookieSecure bool) *Auth {
 	return &Auth{svc: svc, cookieSecure: cookieSecure}
 }
 
@@ -76,6 +83,7 @@ func (h *Auth) Login(w http.ResponseWriter, r *http.Request) {
 
 	res, err := h.svc.Login(r.Context(), req)
 	if err != nil {
+		h.clearRefreshCookie(w)
 		if errors.Is(err, service.ErrInvalidCredentials) {
 			respond.Error(w, http.StatusUnauthorized, "INVALID_CREDENTIALS", err.Error())
 			return

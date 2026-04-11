@@ -1,10 +1,71 @@
 package handler
 
 import (
+	"context"
+	"net/http"
+	"net/http/httptest"
+	"strings"
 	"testing"
+	"time"
+
+	"github.com/google/uuid"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sanches/finance-tracker-cc/backend/internal/dto"
+	"github.com/sanches/finance-tracker-cc/backend/internal/service"
 )
+
+type stubAuthService struct {
+	registerFn func(context.Context, dto.RegisterRequest) (*service.AuthResult, error)
+	loginFn    func(context.Context, dto.LoginRequest) (*service.AuthResult, error)
+	refreshFn  func(context.Context, string) (*service.AuthResult, error)
+}
+
+func (s *stubAuthService) Register(ctx context.Context, req dto.RegisterRequest) (*service.AuthResult, error) {
+	if s.registerFn == nil {
+		return nil, nil
+	}
+	return s.registerFn(ctx, req)
+}
+
+func (s *stubAuthService) Login(ctx context.Context, req dto.LoginRequest) (*service.AuthResult, error) {
+	if s.loginFn == nil {
+		return nil, nil
+	}
+	return s.loginFn(ctx, req)
+}
+
+func (s *stubAuthService) Refresh(ctx context.Context, token string) (*service.AuthResult, error) {
+	if s.refreshFn == nil {
+		return nil, nil
+	}
+	return s.refreshFn(ctx, token)
+}
+
+func testAuthResult() *service.AuthResult {
+	return &service.AuthResult{
+		AccessToken:  "access-token",
+		RefreshToken: "refresh-token",
+		User: dto.UserResponse{
+			ID:           uuid.New(),
+			Username:     "alice",
+			DisplayName:  "Alice",
+			BaseCurrency: "USD",
+			CreatedAt:    time.Unix(0, 0).UTC(),
+		},
+	}
+}
+
+func findCookie(t *testing.T, rec *httptest.ResponseRecorder, name string) *http.Cookie {
+	t.Helper()
+	for _, cookie := range rec.Result().Cookies() {
+		if cookie.Name == name {
+			return cookie
+		}
+	}
+	t.Fatalf("expected cookie %q to be set", name)
+	return nil
+}
 
 func TestPasswordValidation_RejectsShort(t *testing.T) {
 	req := dto.RegisterRequest{
@@ -71,4 +132,72 @@ func TestChangePasswordValidation_AcceptsStrongNewPassword(t *testing.T) {
 	if err := validate.Struct(req); err != nil {
 		t.Fatalf("expected strong new password to pass validation, got %v", err)
 	}
+}
+
+func TestChangePasswordValidation_RequiresCurrentPassword(t *testing.T) {
+	req := dto.ChangePasswordRequest{
+		NewPassword: "7mW!pq-XJ9aLz2",
+	}
+	if err := validate.Struct(req); err == nil {
+		t.Fatal("expected validation error when current password is missing, got nil")
+	}
+}
+
+func TestLogin_ClearsRefreshCookieOnFailure(t *testing.T) {
+	h := NewAuth(&stubAuthService{
+		loginFn: func(context.Context, dto.LoginRequest) (*service.AuthResult, error) {
+			return nil, service.ErrInvalidCredentials
+		},
+	}, false)
+
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/login", strings.NewReader(`{"username":"alice","password":"StrongPass123!"}`))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+
+	h.Login(rec, req)
+
+	require.Equal(t, http.StatusUnauthorized, rec.Code)
+	cookie := findCookie(t, rec, refreshCookieName)
+	require.Empty(t, cookie.Value)
+	require.Equal(t, refreshCookiePath, cookie.Path)
+	require.Equal(t, -1, cookie.MaxAge)
+}
+
+func TestRefresh_RotatesScopedCookieAndOmitsBodyRefreshToken(t *testing.T) {
+	result := testAuthResult()
+	h := NewAuth(&stubAuthService{
+		refreshFn: func(_ context.Context, token string) (*service.AuthResult, error) {
+			require.Equal(t, "old-refresh-token", token)
+			return result, nil
+		},
+	}, true)
+
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/refresh", nil)
+	req.AddCookie(&http.Cookie{Name: refreshCookieName, Value: "old-refresh-token"})
+	rec := httptest.NewRecorder()
+
+	h.Refresh(rec, req)
+
+	require.Equal(t, http.StatusOK, rec.Code)
+	cookie := findCookie(t, rec, refreshCookieName)
+	require.Equal(t, result.RefreshToken, cookie.Value)
+	require.Equal(t, refreshCookiePath, cookie.Path)
+	require.True(t, cookie.HttpOnly)
+	require.True(t, cookie.Secure)
+	require.Equal(t, http.SameSiteStrictMode, cookie.SameSite)
+	require.NotContains(t, rec.Body.String(), "refresh_token")
+}
+
+func TestLogout_ClearsScopedRefreshCookie(t *testing.T) {
+	h := NewAuth(&stubAuthService{}, false)
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/logout", nil)
+	rec := httptest.NewRecorder()
+
+	h.Logout(rec, req)
+
+	require.Equal(t, http.StatusNoContent, rec.Code)
+	cookie := findCookie(t, rec, refreshCookieName)
+	require.Empty(t, cookie.Value)
+	require.Equal(t, refreshCookiePath, cookie.Path)
+	require.Equal(t, -1, cookie.MaxAge)
 }

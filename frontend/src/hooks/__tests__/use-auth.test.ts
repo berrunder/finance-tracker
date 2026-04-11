@@ -31,6 +31,7 @@ import {
   logout as apiLogout,
   refreshToken,
 } from '@/api/auth'
+import { clearAllOfflineData } from '@/lib/db'
 import {
   setAccessToken,
   clearTokens,
@@ -128,10 +129,53 @@ describe('useAuth', () => {
     expect(result.current.isAuthenticated).toBe(true)
   })
 
-  it('logout calls API, clears tokens, and resets user', async () => {
-    vi.mocked(refreshToken).mockRejectedValueOnce(new Error('no cookie'))
-    vi.mocked(apiLogin).mockResolvedValueOnce(mockAuthResponse)
+  it('logout clears local auth state only after the API succeeds', async () => {
+    vi.mocked(refreshToken).mockResolvedValueOnce(mockAuthResponse)
     vi.mocked(apiLogout).mockResolvedValueOnce(undefined)
+
+    const { result } = renderHook(() => useAuth(), { wrapper })
+
+    await waitFor(() => {
+      expect(result.current.isAuthenticated).toBe(true)
+    })
+
+    await act(async () => {
+      await result.current.logout()
+    })
+
+    expect(apiLogout).toHaveBeenCalledTimes(1)
+    expect(clearTokens).toHaveBeenCalled()
+    expect(clearAllOfflineData).toHaveBeenCalledTimes(1)
+    expect(result.current.user).toBeNull()
+    expect(result.current.isAuthenticated).toBe(false)
+  })
+
+  it('logout leaves the session intact when the API call fails', async () => {
+    vi.mocked(refreshToken).mockResolvedValueOnce(mockAuthResponse)
+    vi.mocked(apiLogout).mockRejectedValueOnce(new Error('logout failed'))
+
+    const { result } = renderHook(() => useAuth(), { wrapper })
+
+    await waitFor(() => {
+      expect(result.current.isAuthenticated).toBe(true)
+    })
+
+    vi.mocked(clearTokens).mockClear()
+    vi.mocked(clearAllOfflineData).mockClear()
+
+    await act(async () => {
+      await expect(result.current.logout()).rejects.toThrow('logout failed')
+    })
+
+    expect(clearTokens).not.toHaveBeenCalled()
+    expect(clearAllOfflineData).not.toHaveBeenCalled()
+    expect(result.current.user).toEqual(mockUser)
+    expect(result.current.isAuthenticated).toBe(true)
+  })
+
+  it('registers query cancellation callback that calls cancelQueries', async () => {
+    vi.mocked(refreshToken).mockRejectedValueOnce(new Error('no cookie'))
+    const cancelSpy = vi.spyOn(queryClient, 'cancelQueries')
 
     const { result } = renderHook(() => useAuth(), { wrapper })
 
@@ -139,30 +183,12 @@ describe('useAuth', () => {
       expect(result.current.isLoading).toBe(false)
     })
 
-    await act(async () => {
-      await result.current.login('testuser', 'password')
-    })
-
-    act(() => {
-      result.current.logout()
-    })
-
-    expect(apiLogout).toHaveBeenCalledTimes(1)
-    expect(clearTokens).toHaveBeenCalled()
-    expect(result.current.user).toBeNull()
-    expect(result.current.isAuthenticated).toBe(false)
-  })
-
-  it('registers query cancellation callback that calls cancelQueries', async () => {
-    vi.mocked(refreshToken).mockRejectedValueOnce(new Error('no cookie'))
-    const cancelSpy = vi.spyOn(queryClient, 'cancelQueries')
-
-    renderHook(() => useAuth(), { wrapper })
-
     const cb = vi.mocked(setOnQueryCancellation).mock.calls[0][0]
     expect(cb).toBeTypeOf('function')
 
-    cb!()
+    await act(async () => {
+      cb!()
+    })
     expect(cancelSpy).toHaveBeenCalledTimes(1)
   })
 })

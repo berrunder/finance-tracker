@@ -37,7 +37,7 @@ interface AuthContextValue {
     base_currency: string
     invite_code: string
   }) => Promise<void>
-  logout: () => void
+  logout: () => Promise<void>
   updateUser: (data: UpdateUserRequest) => Promise<void>
 }
 
@@ -107,11 +107,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(updatedUser)
   }, [])
 
-  const logout = useCallback(() => {
-    apiLogout().catch(() => {})
+  const logout = useCallback(async () => {
+    await apiLogout()
     clearTokens()
-    clearAllOfflineData().catch(() => {})
     setUser(null)
+    clearAllOfflineData().catch(() => {})
   }, [])
 
   const value = useMemo(

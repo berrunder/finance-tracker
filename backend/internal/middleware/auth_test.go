@@ -131,6 +131,31 @@ func TestAuthenticate_InvalidSignature(t *testing.T) {
 	require.Equal(t, http.StatusUnauthorized, rec.Code)
 }
 
+func TestAuthenticate_RejectsUnexpectedSigningMethod(t *testing.T) {
+	auth := NewAuth(testSecret)
+	userID := uuid.New()
+	token := jwt.NewWithClaims(jwt.SigningMethodNone, jwt.MapClaims{
+		"sub":  userID.String(),
+		"type": "access",
+		"iat":  time.Now().Unix(),
+		"exp":  time.Now().Add(15 * time.Minute).Unix(),
+	})
+	tokenStr, err := token.SignedString(jwt.UnsafeAllowNoneSignatureType)
+	require.NoError(t, err)
+
+	next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		t.Fatal("handler should not be called")
+	})
+
+	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	req.Header.Set("Authorization", "Bearer "+tokenStr)
+	rec := httptest.NewRecorder()
+
+	auth.Authenticate(next).ServeHTTP(rec, req)
+
+	require.Equal(t, http.StatusUnauthorized, rec.Code)
+}
+
 func TestUserID_Missing(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
 	id := UserID(req.Context())

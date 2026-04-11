@@ -6,6 +6,7 @@ import { useExchangeRates } from '@/hooks/use-exchange-rates'
 import { formatMoney } from '@/lib/money'
 import { groupAccountsByType } from '@/lib/account-groups'
 import { SIDEBAR_COLLAPSED_GROUPS_KEY } from '@/lib/constants'
+import { handleMutationError } from '@/lib/form-helpers'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import {
@@ -236,7 +237,9 @@ export function Sidebar({ collapsed = false, onNavigate }: SidebarProps) {
         <Button
           variant="ghost"
           size={collapsed ? 'icon' : 'sm'}
-          onClick={logout}
+          onClick={() => {
+            void logout().catch(handleMutationError)
+          }}
           className={collapsed ? '' : 'w-full justify-start'}
           title="Log out"
         >

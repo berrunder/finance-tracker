@@ -55,7 +55,7 @@ func (h *ExchangeRate) Sync(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	provided := r.Header.Get("X-Sync-Token")
-	if subtle.ConstantTimeCompare([]byte(provided), []byte(h.token)) != 1 {
+	if len(provided) != len(h.token) || subtle.ConstantTimeCompare([]byte(provided), []byte(h.token)) != 1 {
 		respond.Error(w, http.StatusUnauthorized, "UNAUTHORIZED", "invalid or missing sync token")
 		return
 	}
