@@ -31,7 +31,7 @@ type ErrorResponse struct {
 
 // Auth
 type RegisterRequest struct {
-	Username     string `json:"username" validate:"required,min=3,max=50"`
+	Username     string `json:"username" validate:"required,min=3,max=50,username"`
 	Password     string `json:"password" validate:"required,min=10,max=128,notcommon"`
 	DisplayName  string `json:"display_name" validate:"required,max=100"`
 	BaseCurrency string `json:"base_currency" validate:"required,len=3"`

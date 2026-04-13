@@ -48,7 +48,7 @@ func (h *Import) Confirm(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := validate.Struct(req); err != nil {
-		respond.Error(w, http.StatusBadRequest, "VALIDATION_ERROR", err.Error())
+		respond.Error(w, http.StatusBadRequest, "VALIDATION_ERROR", validationMessage(err))
 		return
 	}
 

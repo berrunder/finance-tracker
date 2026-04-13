@@ -191,6 +191,74 @@ func TestRefresh_ValidToken(t *testing.T) {
 	require.NotEmpty(t, resp.RefreshToken)
 }
 
+func TestRegister_NormalizesUsername(t *testing.T) {
+	user := testUser("Str0ng-Pass!phrase")
+
+	var capturedUsername string
+	mock := &mockAuthStore{
+		createUserFn: func(_ context.Context, arg store.CreateUserParams) (store.User, error) {
+			capturedUsername = arg.Username
+			return user, nil
+		},
+		createDefaultCategoriesFn: func(_ context.Context, _ uuid.UUID) error {
+			return nil
+		},
+	}
+
+	svc := &Auth{queries: mock, secret: []byte(testAuthSecret), inviteCodes: testInviteCodes}
+	_, err := svc.Register(context.Background(), dto.RegisterRequest{
+		Username:     "AlIcE",
+		Password:     "Str0ng-Pass!phrase",
+		DisplayName:  "Test",
+		BaseCurrency: "USD",
+		InviteCode:   "valid-code",
+	})
+
+	require.NoError(t, err)
+	require.Equal(t, "alice", capturedUsername, "username should be normalized to lowercase")
+}
+
+func TestLogin_NormalizesUsername(t *testing.T) {
+	password := "correct-password"
+	user := testUser(password)
+
+	var capturedUsername string
+	mock := &mockAuthStore{
+		getUserByUsernameFn: func(_ context.Context, username string) (store.User, error) {
+			capturedUsername = username
+			return user, nil
+		},
+	}
+
+	svc := &Auth{queries: mock, secret: []byte(testAuthSecret)}
+	_, err := svc.Login(context.Background(), dto.LoginRequest{
+		Username: "TestUser",
+		Password: password,
+	})
+
+	require.NoError(t, err)
+	require.Equal(t, "testuser", capturedUsername, "username should be normalized to lowercase")
+}
+
+func TestNormalizeUsername(t *testing.T) {
+	tests := []struct {
+		name  string
+		input string
+		want  string
+	}{
+		{"lowercase", "alice", "alice"},
+		{"uppercase", "ALICE", "alice"},
+		{"mixed case", "AlIcE", "alice"},
+		{"with numbers", "Alice123", "alice123"},
+		{"with dots and dashes", "Alice.Bob-99", "alice.bob-99"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			require.Equal(t, tt.want, normalizeUsername(tt.input))
+		})
+	}
+}
+
 func TestRefresh_AccessToken(t *testing.T) {
 	user := testUser("password")
 	mock := &mockAuthStore{}

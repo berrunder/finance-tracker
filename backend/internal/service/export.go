@@ -5,11 +5,26 @@ import (
 	"context"
 	"encoding/csv"
 	"fmt"
+	"strings"
 
 	"github.com/google/uuid"
 
 	"github.com/sanches/finance-tracker-cc/backend/internal/store"
 )
+
+// sanitizeCSVField prevents CSV injection by prefixing dangerous leading
+// characters with a single apostrophe. Spreadsheet applications like Excel
+// and LibreOffice interpret cells starting with =, +, -, @, tab, or CR as
+// formulas; the apostrophe forces text interpretation.
+func sanitizeCSVField(s string) string {
+	if s == "" {
+		return s
+	}
+	if strings.ContainsAny(s[:1], "=+-@\t\r") {
+		return "'" + s
+	}
+	return s
+}
 
 type exportStore interface {
 	ExportTransactions(ctx context.Context, arg store.ExportTransactionsParams) ([]store.ExportTransactionsRow, error)
@@ -73,12 +88,12 @@ func (s *Export) ExportCSV(ctx context.Context, userID uuid.UUID, dateFrom, date
 
 		if err := w.Write([]string{
 			date,
-			row.AccountName,
-			category,
+			sanitizeCSVField(row.AccountName),
+			sanitizeCSVField(category),
 			amount,
 			row.Currency,
-			row.Description,
-			row.TransferAccountName,
+			sanitizeCSVField(row.Description),
+			sanitizeCSVField(row.TransferAccountName),
 		}); err != nil {
 			return nil, fmt.Errorf("failed to write CSV row: %w", err)
 		}

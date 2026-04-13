@@ -5,18 +5,35 @@ import (
 	"errors"
 	"log/slog"
 	"net/http"
+	"reflect"
+	"regexp"
+	"strings"
 
 	"github.com/go-playground/validator/v10"
+	"golang.org/x/text/unicode/norm"
 
 	"github.com/sanches/finance-tracker-cc/backend/internal/dto"
 	"github.com/sanches/finance-tracker-cc/backend/internal/handler/respond"
 	"github.com/sanches/finance-tracker-cc/backend/internal/service"
 )
 
+var usernameRe = regexp.MustCompile(`^[a-z0-9._-]{3,50}$`)
+
 var validate = func() *validator.Validate {
 	v := validator.New()
+	v.RegisterTagNameFunc(func(f reflect.StructField) string {
+		name := strings.SplitN(f.Tag.Get("json"), ",", 2)[0]
+		if name == "-" || name == "" {
+			return f.Name
+		}
+		return name
+	})
 	_ = v.RegisterValidation("notcommon", func(fl validator.FieldLevel) bool {
 		return !isCommonPassword(fl.Field().String())
+	})
+	_ = v.RegisterValidation("username", func(fl validator.FieldLevel) bool {
+		normalized := norm.NFKC.String(strings.ToLower(fl.Field().String()))
+		return usernameRe.MatchString(normalized)
 	})
 	return v
 }()
@@ -49,7 +66,7 @@ func (h *Auth) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := validate.Struct(req); err != nil {
-		respond.Error(w, http.StatusBadRequest, "VALIDATION_ERROR", err.Error())
+		respond.Error(w, http.StatusBadRequest, "VALIDATION_ERROR", validationMessage(err))
 		return
 	}
 
@@ -75,7 +92,7 @@ func (h *Auth) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := validate.Struct(req); err != nil {
-		respond.Error(w, http.StatusBadRequest, "VALIDATION_ERROR", err.Error())
+		respond.Error(w, http.StatusBadRequest, "VALIDATION_ERROR", validationMessage(err))
 		return
 	}
 

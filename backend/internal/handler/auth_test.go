@@ -226,6 +226,66 @@ func TestRegister_RejectsDuplicateUserWithGenericError(t *testing.T) {
 	require.NotContains(t, rec.Body.String(), "USER_EXISTS")
 }
 
+func TestUsernameValidation_AcceptsValid(t *testing.T) {
+	cases := []string{"alice", "bob123", "a.b-c_d", "user.name-99"}
+	for _, username := range cases {
+		req := dto.RegisterRequest{
+			Username:     username,
+			Password:     "Str0ng-Pass!phrase",
+			DisplayName:  "Test",
+			BaseCurrency: "USD",
+			InviteCode:   "code",
+		}
+		if err := validate.Struct(req); err != nil {
+			t.Errorf("expected username %q to pass validation, got %v", username, err)
+		}
+	}
+}
+
+func TestUsernameValidation_RejectsInvalid(t *testing.T) {
+	cases := []struct {
+		name     string
+		username string
+	}{
+		{"spaces", "alice bob"},
+		{"special chars", "alice@home"},
+		{"too short", "ab"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			req := dto.RegisterRequest{
+				Username:     tc.username,
+				Password:     "Str0ng-Pass!phrase",
+				DisplayName:  "Test",
+				BaseCurrency: "USD",
+				InviteCode:   "code",
+			}
+			if err := validate.Struct(req); err == nil {
+				t.Errorf("expected validation error for username %q, got nil", tc.username)
+			}
+		})
+	}
+}
+
+func TestUsernameValidation_NormalizesBeforeChecking(t *testing.T) {
+	// Uppercase gets normalized to lowercase inside the validator, but
+	// the validator should still reject it since the raw value doesn't match
+	// the pattern (validator normalizes internally but the field value
+	// is uppercase — the regex requires lowercase).
+	req := dto.RegisterRequest{
+		Username:     "ALICE",
+		Password:     "Str0ng-Pass!phrase",
+		DisplayName:  "Test",
+		BaseCurrency: "USD",
+		InviteCode:   "code",
+	}
+	// The username validator normalizes then checks, so "ALICE" -> "alice" -> passes regex.
+	// This is expected: the validator accepts it because the *normalized* form is valid.
+	// The service layer then normalizes before storing.
+	err := validate.Struct(req)
+	require.NoError(t, err, "ALICE should pass validation because it normalizes to 'alice'")
+}
+
 func TestLogout_ClearsScopedRefreshCookie(t *testing.T) {
 	h := NewAuth(&stubAuthService{}, false)
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/logout", nil)

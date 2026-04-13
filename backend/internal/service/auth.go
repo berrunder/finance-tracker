@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"slices"
+	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -11,10 +12,17 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"golang.org/x/crypto/bcrypt"
+	"golang.org/x/text/unicode/norm"
 
 	"github.com/sanches/finance-tracker-cc/backend/internal/dto"
 	"github.com/sanches/finance-tracker-cc/backend/internal/store"
 )
+
+// normalizeUsername applies NFKC normalization and lowercasing so that no two
+// users can differ only by case or Unicode form.
+func normalizeUsername(s string) string {
+	return norm.NFKC.String(strings.ToLower(s))
+}
 
 var (
 	ErrUserExists         = errors.New("username already taken")
@@ -56,6 +64,8 @@ func NewAuth(queries *store.Queries, secret string, inviteCodes []string) *Auth 
 }
 
 func (s *Auth) Register(ctx context.Context, req dto.RegisterRequest) (*AuthResult, error) {
+	req.Username = normalizeUsername(req.Username)
+
 	validInvite := slices.Contains(s.inviteCodes, req.InviteCode)
 
 	// Always run bcrypt so the response time doesn't reveal whether the
@@ -90,6 +100,8 @@ func (s *Auth) Register(ctx context.Context, req dto.RegisterRequest) (*AuthResu
 }
 
 func (s *Auth) Login(ctx context.Context, req dto.LoginRequest) (*AuthResult, error) {
+	req.Username = normalizeUsername(req.Username)
+
 	user, err := s.queries.GetUserByUsername(ctx, req.Username)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
