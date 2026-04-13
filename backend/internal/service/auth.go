@@ -21,6 +21,12 @@ var (
 	ErrInvalidCredentials = errors.New("invalid username or password")
 	ErrInvalidToken       = errors.New("invalid or expired token")
 	ErrInvalidInviteCode  = errors.New("invalid invite code")
+
+	// dummyHash is a pre-computed bcrypt hash used when the requested user does
+	// not exist.  Running CompareHashAndPassword against it ensures the login
+	// path takes roughly the same time regardless of whether the username is
+	// valid, preventing timing-based user enumeration.
+	dummyHash, _ = bcrypt.GenerateFromPassword([]byte("dummy-timing-padding"), bcrypt.DefaultCost)
 )
 
 type authStore interface {
@@ -50,13 +56,17 @@ func NewAuth(queries *store.Queries, secret string, inviteCodes []string) *Auth 
 }
 
 func (s *Auth) Register(ctx context.Context, req dto.RegisterRequest) (*AuthResult, error) {
-	if !slices.Contains(s.inviteCodes, req.InviteCode) {
-		return nil, ErrInvalidInviteCode
-	}
+	validInvite := slices.Contains(s.inviteCodes, req.InviteCode)
 
+	// Always run bcrypt so the response time doesn't reveal whether the
+	// invite code was valid.
 	hash, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
 		return nil, err
+	}
+
+	if !validInvite {
+		return nil, ErrInvalidInviteCode
 	}
 
 	user, err := s.queries.CreateUser(ctx, store.CreateUserParams{
@@ -83,6 +93,9 @@ func (s *Auth) Login(ctx context.Context, req dto.LoginRequest) (*AuthResult, er
 	user, err := s.queries.GetUserByUsername(ctx, req.Username)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
+			// Run a dummy compare so the response time doesn't reveal
+			// whether the username exists.
+			bcrypt.CompareHashAndPassword(dummyHash, []byte(req.Password)) //nolint:errcheck
 			return nil, ErrInvalidCredentials
 		}
 		return nil, err

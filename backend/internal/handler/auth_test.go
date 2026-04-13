@@ -188,6 +188,44 @@ func TestRefresh_RotatesScopedCookieAndOmitsBodyRefreshToken(t *testing.T) {
 	require.NotContains(t, rec.Body.String(), "refresh_token")
 }
 
+func TestRegister_RejectsInvalidInviteCodeWithGenericError(t *testing.T) {
+	h := NewAuth(&stubAuthService{
+		registerFn: func(context.Context, dto.RegisterRequest) (*service.AuthResult, error) {
+			return nil, service.ErrInvalidInviteCode
+		},
+	}, false)
+
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/register",
+		strings.NewReader(`{"username":"alice","password":"Str0ng-Pass!phrase","display_name":"Alice","base_currency":"USD","invite_code":"bad"}`))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+
+	h.Register(rec, req)
+
+	require.Equal(t, http.StatusForbidden, rec.Code)
+	require.Contains(t, rec.Body.String(), "REGISTRATION_REJECTED")
+	require.NotContains(t, rec.Body.String(), "INVALID_INVITE_CODE")
+}
+
+func TestRegister_RejectsDuplicateUserWithGenericError(t *testing.T) {
+	h := NewAuth(&stubAuthService{
+		registerFn: func(context.Context, dto.RegisterRequest) (*service.AuthResult, error) {
+			return nil, service.ErrUserExists
+		},
+	}, false)
+
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/register",
+		strings.NewReader(`{"username":"alice","password":"Str0ng-Pass!phrase","display_name":"Alice","base_currency":"USD","invite_code":"good"}`))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+
+	h.Register(rec, req)
+
+	require.Equal(t, http.StatusForbidden, rec.Code)
+	require.Contains(t, rec.Body.String(), "REGISTRATION_REJECTED")
+	require.NotContains(t, rec.Body.String(), "USER_EXISTS")
+}
+
 func TestLogout_ClearsScopedRefreshCookie(t *testing.T) {
 	h := NewAuth(&stubAuthService{}, false)
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/logout", nil)

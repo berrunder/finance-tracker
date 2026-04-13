@@ -44,6 +44,8 @@ Backend-specific guidance in `backend/CLAUDE.md`.
 
 ## Conventions
 
+- When changes touch both backend and frontend, always run both `cd backend && go test ./...` and `cd frontend && npm test` before reporting completion.
+- When changing backend error codes, update all of: handler response, `frontend/src/lib/error-mapping.ts`, `frontend/src/lib/__tests__/error-mapping.test.ts`, `docs/API.md` error table, and `docs/ARCHITECTURE.md` error table.
 - API changes must be reflected in [backend/docs/API.md](backend/docs/API.md)
 - Backend architecture changes must be reflected in [backend/docs/ARCHITECTURE.md](backend/docs/ARCHITECTURE.md)
 - Backend feature changes must be reflected in [backend/README.md](backend/README.md)

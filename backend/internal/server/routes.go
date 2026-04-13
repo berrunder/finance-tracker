@@ -2,13 +2,25 @@ package server
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	chimiddleware "github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/httprate"
 
 	"github.com/sanches/finance-tracker-cc/backend/internal/handler"
+	"github.com/sanches/finance-tracker-cc/backend/internal/handler/respond"
 	"github.com/sanches/finance-tracker-cc/backend/internal/middleware"
 )
+
+func limitByIP(requests int, window time.Duration) func(http.Handler) http.Handler {
+	return httprate.Limit(requests, window,
+		httprate.WithKeyByIP(),
+		httprate.WithLimitHandler(func(w http.ResponseWriter, r *http.Request) {
+			respond.Error(w, http.StatusTooManyRequests, "RATE_LIMIT_EXCEEDED", "too many requests, please try again later")
+		}),
+	)
+}
 
 func NewRouter(
 	authMw *middleware.Auth,
@@ -33,13 +45,13 @@ func NewRouter(
 	r.Route("/api/v1", func(r chi.Router) {
 		// Public routes
 		r.Route("/auth", func(r chi.Router) {
-			r.Post("/register", authH.Register)
-			r.Post("/login", authH.Login)
+			r.With(limitByIP(5, time.Minute)).Post("/login", authH.Login)
+			r.With(limitByIP(10, time.Minute)).Post("/register", authH.Register)
 			r.Post("/refresh", authH.Refresh)
 			r.Post("/logout", authH.Logout)
 		})
 		r.Get("/currencies", currencyH.List)
-		r.Post("/exchange-rates/sync", exchangeRateH.Sync)
+		r.With(limitByIP(20, time.Minute)).Post("/exchange-rates/sync", exchangeRateH.Sync)
 
 		// Protected routes
 		r.Group(func(r chi.Router) {

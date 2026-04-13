@@ -23,8 +23,7 @@ All errors return:
 | `UNAUTHORIZED` | 401 | Missing/invalid/expired token |
 | `INVALID_CREDENTIALS` | 401 | Wrong username or password |
 | `INVALID_TOKEN` | 401 | Bad refresh token |
-| `INVALID_INVITE_CODE` | 403 | Invalid invite code on registration |
-| `USER_EXISTS` | 409 | Username taken |
+| `REGISTRATION_REJECTED` | 403 | Invalid invite code or username taken |
 | `NOT_FOUND` | 404 | Resource doesn't exist or belongs to another user |
 | `HAS_CHILDREN` | 409 | Category has subcategories (can't delete) |
 | `HAS_TRANSACTIONS` | 409 | Category has transactions (can't delete) |
@@ -40,6 +39,7 @@ All errors return:
 | `FILE_TOO_LARGE` | 400 | Upload exceeds 10 MB |
 | `PARSE_ERROR` | 400 | CSV parsing failed |
 | `IMPORT_ERROR` | 500 | CSV import failed |
+| `RATE_LIMIT_EXCEEDED` | 429 | Too many requests from this IP |
 | `INTERNAL_ERROR` | 500 | Unexpected server error |
 
 ---

@@ -6,11 +6,11 @@ function makeError(code: string, message = 'Error'): ApiError {
 }
 
 describe('mapApiErrorToFieldError', () => {
-  it('maps USER_EXISTS to username field', () => {
-    const result = mapApiErrorToFieldError(makeError('USER_EXISTS'))
+  it('maps REGISTRATION_REJECTED to root', () => {
+    const result = mapApiErrorToFieldError(makeError('REGISTRATION_REJECTED'))
     expect(result).toEqual({
-      field: 'username',
-      message: 'This username is already taken',
+      field: 'root',
+      message: 'Registration rejected',
     })
   })
 
@@ -19,14 +19,6 @@ describe('mapApiErrorToFieldError', () => {
     expect(result).toEqual({
       field: 'root',
       message: 'Invalid username or password',
-    })
-  })
-
-  it('maps INVALID_INVITE_CODE to invite_code field', () => {
-    const result = mapApiErrorToFieldError(makeError('INVALID_INVITE_CODE'))
-    expect(result).toEqual({
-      field: 'invite_code',
-      message: 'Invalid invite code',
     })
   })
 

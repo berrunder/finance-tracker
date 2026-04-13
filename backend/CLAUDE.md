@@ -49,6 +49,7 @@ Config: `sqlc.yaml` — generates to `internal/store/` package, uses `pgx/v5`, m
 ## Verification
 
 - After Go changes, always run `go build ./...` and `go test ./...`.
+- After `go get`, run `go mod tidy` to fix direct/indirect classification.
 
 ## Documentation
 

@@ -156,7 +156,8 @@ Sentinel errors in service layer, matched in handlers:
 | Error | HTTP Status | Code |
 |---|---|---|
 | `ErrNotFound` | 404 | NOT_FOUND |
-| `ErrUserExists` | 409 | USER_EXISTS |
+| `ErrUserExists` | 403 | REGISTRATION_REJECTED |
+| `ErrInvalidInviteCode` | 403 | REGISTRATION_REJECTED |
 | `ErrInvalidCredentials` | 401 | INVALID_CREDENTIALS |
 | `ErrInvalidToken` | 401 | INVALID_TOKEN |
 | `ErrCurrencyExists` | 409 | CURRENCY_EXISTS |

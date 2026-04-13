@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 	"errors"
+	"log/slog"
 	"net/http"
 
 	"github.com/go-playground/validator/v10"
@@ -54,12 +55,9 @@ func (h *Auth) Register(w http.ResponseWriter, r *http.Request) {
 
 	res, err := h.svc.Register(r.Context(), req)
 	if err != nil {
-		if errors.Is(err, service.ErrInvalidInviteCode) {
-			respond.Error(w, http.StatusForbidden, "INVALID_INVITE_CODE", err.Error())
-			return
-		}
-		if errors.Is(err, service.ErrUserExists) {
-			respond.Error(w, http.StatusConflict, "USER_EXISTS", err.Error())
+		if errors.Is(err, service.ErrInvalidInviteCode) || errors.Is(err, service.ErrUserExists) {
+			slog.Info("registration rejected", "reason", err.Error(), "username", req.Username)
+			respond.Error(w, http.StatusForbidden, "REGISTRATION_REJECTED", "registration rejected")
 			return
 		}
 		respond.Error(w, http.StatusInternalServerError, "INTERNAL_ERROR", "failed to register")
