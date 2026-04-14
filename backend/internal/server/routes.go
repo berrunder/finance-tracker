@@ -38,9 +38,9 @@ func NewRouter(
 ) http.Handler {
 	r := chi.NewRouter()
 
+	r.Use(chimiddleware.RealIP)
 	r.Use(chimiddleware.Logger)
 	r.Use(chimiddleware.Recoverer)
-	r.Use(chimiddleware.RealIP)
 
 	r.Route("/api/v1", func(r chi.Router) {
 		// Public routes

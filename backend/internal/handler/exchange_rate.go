@@ -5,6 +5,7 @@ import (
 	"crypto/subtle"
 	"log/slog"
 	"net/http"
+	"time"
 
 	"github.com/sanches/finance-tracker-cc/backend/internal/dto"
 	"github.com/sanches/finance-tracker-cc/backend/internal/handler/respond"
@@ -62,7 +63,9 @@ func (h *ExchangeRate) Sync(w http.ResponseWriter, r *http.Request) {
 
 	// Run sync in background to avoid hitting the server's WriteTimeout.
 	go func() {
-		if err := h.syncSvc.Sync(context.Background()); err != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+		defer cancel()
+		if err := h.syncSvc.Sync(ctx); err != nil {
 			slog.Error("exchange rate sync failed", "error", err)
 		}
 	}()

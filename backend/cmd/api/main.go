@@ -107,7 +107,9 @@ func main() {
 
 func runBackgroundSync(ctx context.Context, fn func(context.Context) error) {
 	run := func() {
-		if err := fn(ctx); err != nil {
+		tickCtx, cancel := context.WithTimeout(ctx, 5*time.Minute)
+		defer cancel()
+		if err := fn(tickCtx); err != nil {
 			slog.Error("background exchange rate sync failed", "error", err)
 		}
 	}
