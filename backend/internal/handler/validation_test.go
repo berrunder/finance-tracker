@@ -41,7 +41,7 @@ func TestRegister_ReturnsSanitizedValidationError(t *testing.T) {
 			t.Fatal("register service should not be called when request validation fails")
 			return nil, nil
 		},
-	}, false)
+	}, false, "/")
 
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/register",
 		strings.NewReader(`{"username":"alice","password":"short1","display_name":"Alice","base_currency":"USD","invite_code":"good"}`))

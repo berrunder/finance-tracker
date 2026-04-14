@@ -25,6 +25,11 @@ type Config struct {
 	// CookieSecure controls the Secure flag on the refresh-token cookie. Defaults
 	// to true; set COOKIE_SECURE=false for local http:// development.
 	CookieSecure bool `envconfig:"COOKIE_SECURE" default:"true"`
+
+	// BasePath is the URL prefix the app is served under (e.g. "/finance/").
+	// Must match the frontend's VITE_BASE_PATH; the refresh cookie's Path is
+	// derived from it so the browser sends it on every request to the app.
+	BasePath string `envconfig:"BASE_PATH" default:"/"`
 }
 
 func Load() (*Config, error) {

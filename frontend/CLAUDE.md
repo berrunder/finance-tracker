@@ -64,6 +64,7 @@ src/
 - ALWAYS use proper typing. NEVER use `any` or `as unknown as Type` without a very good reason and approval. If you find yourself needing to do this, stop and ask for help — there's almost always a better way.
 - `isNetworkError` in `api/client.ts` must handle all major browsers: Chrome (`Failed to fetch`), Safari (`Load failed`), Firefox (`NetworkError...`). If modifying offline detection, test against all three message patterns.
 - **Auth circuit breaker**: `api/client.ts` has a module-level `authFailed` flag. `clearTokens()` resets it (for logout), `setAccessToken(non-null)` resets it (for login). In error paths, call `clearTokens()` before setting `authFailed = true` to avoid the reset stomping the flag. Only activate the circuit breaker for auth errors, not network errors — this is an offline-first PWA.
+- **nginx `add_header` inheritance**: a `location` block with any `add_header` drops ALL parent `add_header`s. Any `location` that sets cache/content headers must also repeat the security headers from `server {}`. Validate with `docker run --rm -v ./nginx.conf:/etc/nginx/conf.d/default.conf:ro nginx:alpine nginx -t`.
 
 ## Documentation
 

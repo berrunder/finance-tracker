@@ -40,9 +40,15 @@ var validate = func() *validator.Validate {
 
 const (
 	refreshCookieName   = "refresh_token"
-	refreshCookiePath   = "/api/v1/auth"
 	refreshCookieMaxAge = 7 * 24 * 60 * 60 // 7 days, matches the JWT exp
 )
+
+// refreshCookiePath returns the Path to scope the refresh cookie to. It must be a
+// prefix of the actual refresh request URL or the browser silently drops the cookie,
+// so sub-path deployments (BASE_PATH=/finance/) need the prefix included.
+func refreshCookiePath(basePath string) string {
+	return strings.TrimSuffix(basePath, "/") + "/api/v1/auth"
+}
 
 type authService interface {
 	Register(ctx context.Context, req dto.RegisterRequest) (*service.AuthResult, error)
@@ -53,10 +59,15 @@ type authService interface {
 type Auth struct {
 	svc          authService
 	cookieSecure bool
+	cookiePath   string
 }
 
-func NewAuth(svc authService, cookieSecure bool) *Auth {
-	return &Auth{svc: svc, cookieSecure: cookieSecure}
+func NewAuth(svc authService, cookieSecure bool, basePath string) *Auth {
+	return &Auth{
+		svc:          svc,
+		cookieSecure: cookieSecure,
+		cookiePath:   refreshCookiePath(basePath),
+	}
 }
 
 func (h *Auth) Register(w http.ResponseWriter, r *http.Request) {
@@ -142,7 +153,7 @@ func (h *Auth) setRefreshCookie(w http.ResponseWriter, token string) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     refreshCookieName,
 		Value:    token,
-		Path:     refreshCookiePath,
+		Path:     h.cookiePath,
 		MaxAge:   refreshCookieMaxAge,
 		HttpOnly: true,
 		Secure:   h.cookieSecure,
@@ -154,7 +165,7 @@ func (h *Auth) clearRefreshCookie(w http.ResponseWriter) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     refreshCookieName,
 		Value:    "",
-		Path:     refreshCookiePath,
+		Path:     h.cookiePath,
 		MaxAge:   -1,
 		HttpOnly: true,
 		Secure:   h.cookieSecure,

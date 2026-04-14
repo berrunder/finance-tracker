@@ -32,6 +32,8 @@ handler -> service -> store (sqlc-generated)
 - **Transfers**: Two linked transactions sharing a `transfer_id` UUID (expense on source, income on destination).
 - **Reports**: Income/expense and category aggregations exclude transfer transactions (`WHERE transfer_id IS NULL`) to avoid double-counting. Per-account aggregations (balance history, cash-flow monthly changes) include transfers because each leg is a real account movement.
 - **Sentinel errors**: Service layer defines `ErrNotFound`, `ErrUserExists`, `ErrInvalidCredentials`, etc. Handlers match these to HTTP status codes.
+- **Browser-visible paths include `cfg.BasePath`**: cookie `Path`, redirects, and any URLs sent to the browser must be prefixed with `cfg.BasePath` (e.g. `strings.TrimSuffix(cfg.BasePath, "/") + "/api/v1/auth"`). Hardcoding `/api/...` silently breaks sub-path deployments — browsers drop cookies whose Path isn't a prefix of the request URL.
+- **chi middleware order**: use `RealIP → Logger → Recoverer` (chi canonical). Recoverer must be innermost so it catches handler panics before the response unwinds back through Logger.
 
 ## Adding a New Endpoint
 

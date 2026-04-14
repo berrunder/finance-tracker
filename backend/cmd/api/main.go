@@ -69,7 +69,7 @@ func main() {
 	authMw := middleware.NewAuth(cfg.JWTSecret)
 
 	// Handlers
-	authH := handler.NewAuth(authSvc, cfg.CookieSecure)
+	authH := handler.NewAuth(authSvc, cfg.CookieSecure, cfg.BasePath)
 	accountH := handler.NewAccount(accountSvc)
 	categoryH := handler.NewCategory(categorySvc)
 	transactionH := handler.NewTransaction(transactionSvc)

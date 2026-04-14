@@ -143,12 +143,27 @@ func TestChangePasswordValidation_RequiresCurrentPassword(t *testing.T) {
 	}
 }
 
+func TestRefreshCookiePath(t *testing.T) {
+	cases := []struct {
+		basePath string
+		want     string
+	}{
+		{"/", "/api/v1/auth"},
+		{"", "/api/v1/auth"},
+		{"/finance/", "/finance/api/v1/auth"},
+		{"/finance", "/finance/api/v1/auth"},
+	}
+	for _, tc := range cases {
+		require.Equal(t, tc.want, refreshCookiePath(tc.basePath), "basePath=%q", tc.basePath)
+	}
+}
+
 func TestLogin_ClearsRefreshCookieOnFailure(t *testing.T) {
 	h := NewAuth(&stubAuthService{
 		loginFn: func(context.Context, dto.LoginRequest) (*service.AuthResult, error) {
 			return nil, service.ErrInvalidCredentials
 		},
-	}, false)
+	}, false, "/")
 
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/login", strings.NewReader(`{"username":"alice","password":"StrongPass123!"}`))
 	req.Header.Set("Content-Type", "application/json")
@@ -159,7 +174,7 @@ func TestLogin_ClearsRefreshCookieOnFailure(t *testing.T) {
 	require.Equal(t, http.StatusUnauthorized, rec.Code)
 	cookie := findCookie(t, rec, refreshCookieName)
 	require.Empty(t, cookie.Value)
-	require.Equal(t, refreshCookiePath, cookie.Path)
+	require.Equal(t, "/api/v1/auth", cookie.Path)
 	require.Equal(t, -1, cookie.MaxAge)
 }
 
@@ -170,7 +185,7 @@ func TestRefresh_RotatesScopedCookieAndOmitsBodyRefreshToken(t *testing.T) {
 			require.Equal(t, "old-refresh-token", token)
 			return result, nil
 		},
-	}, true)
+	}, true, "/")
 
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/refresh", nil)
 	req.AddCookie(&http.Cookie{Name: refreshCookieName, Value: "old-refresh-token"})
@@ -181,7 +196,7 @@ func TestRefresh_RotatesScopedCookieAndOmitsBodyRefreshToken(t *testing.T) {
 	require.Equal(t, http.StatusOK, rec.Code)
 	cookie := findCookie(t, rec, refreshCookieName)
 	require.Equal(t, result.RefreshToken, cookie.Value)
-	require.Equal(t, refreshCookiePath, cookie.Path)
+	require.Equal(t, "/api/v1/auth", cookie.Path)
 	require.True(t, cookie.HttpOnly)
 	require.True(t, cookie.Secure)
 	require.Equal(t, http.SameSiteStrictMode, cookie.SameSite)
@@ -193,7 +208,7 @@ func TestRegister_RejectsInvalidInviteCodeWithGenericError(t *testing.T) {
 		registerFn: func(context.Context, dto.RegisterRequest) (*service.AuthResult, error) {
 			return nil, service.ErrInvalidInviteCode
 		},
-	}, false)
+	}, false, "/")
 
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/register",
 		strings.NewReader(`{"username":"alice","password":"Str0ng-Pass!phrase","display_name":"Alice","base_currency":"USD","invite_code":"bad"}`))
@@ -212,7 +227,7 @@ func TestRegister_RejectsDuplicateUserWithGenericError(t *testing.T) {
 		registerFn: func(context.Context, dto.RegisterRequest) (*service.AuthResult, error) {
 			return nil, service.ErrUserExists
 		},
-	}, false)
+	}, false, "/")
 
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/register",
 		strings.NewReader(`{"username":"alice","password":"Str0ng-Pass!phrase","display_name":"Alice","base_currency":"USD","invite_code":"good"}`))
@@ -287,7 +302,7 @@ func TestUsernameValidation_NormalizesBeforeChecking(t *testing.T) {
 }
 
 func TestLogout_ClearsScopedRefreshCookie(t *testing.T) {
-	h := NewAuth(&stubAuthService{}, false)
+	h := NewAuth(&stubAuthService{}, false, "/")
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/logout", nil)
 	rec := httptest.NewRecorder()
 
@@ -296,6 +311,6 @@ func TestLogout_ClearsScopedRefreshCookie(t *testing.T) {
 	require.Equal(t, http.StatusNoContent, rec.Code)
 	cookie := findCookie(t, rec, refreshCookieName)
 	require.Empty(t, cookie.Value)
-	require.Equal(t, refreshCookiePath, cookie.Path)
+	require.Equal(t, "/api/v1/auth", cookie.Path)
 	require.Equal(t, -1, cookie.MaxAge)
 }
