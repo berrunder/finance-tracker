@@ -11,36 +11,113 @@ import (
 
 func TestParseFullImportAmount(t *testing.T) {
 	tests := []struct {
-		name       string
-		input      string
-		decimalSep string
-		want       float64
-		wantErr    bool
+		name           string
+		input          string
+		decimalSep     string
+		wantAbs        string
+		wantIsNegative bool
+		wantErr        bool
 	}{
-		{"positive comma decimal", "27473,95", ",", 27473.95, false},
-		{"negative comma decimal", "-6600,00", ",", -6600.00, false},
-		{"positive dot decimal", "27473.95", ".", 27473.95, false},
-		{"negative dot decimal", "-6600.00", ".", -6600.00, false},
-		{"thousands dot comma decimal", "1.000,50", ",", 1000.50, false},
-		{"thousands comma dot decimal", "1,000.50", ".", 1000.50, false},
-		{"large comma decimal", "237500,00", ",", 237500.00, false},
-		{"with currency symbol", "₽1000,00", ",", 1000.00, false},
-		{"with spaces", " -50000,00 ", ",", -50000.00, false},
-		{"empty", "", ",", 0, true},
-		{"not a number", "abc", ",", 0, true},
+		{"positive comma decimal", "27473,95", ",", "27473.95", false, false},
+		{"negative comma decimal", "-6600,00", ",", "6600.00", true, false},
+		{"positive dot decimal", "27473.95", ".", "27473.95", false, false},
+		{"negative dot decimal", "-6600.00", ".", "6600.00", true, false},
+		{"thousands dot comma decimal", "1.000,50", ",", "1000.50", false, false},
+		{"thousands comma dot decimal", "1,000.50", ".", "1000.50", false, false},
+		{"large comma decimal", "237500,00", ",", "237500.00", false, false},
+		{"with currency symbol", "₽1000,00", ",", "1000.00", false, false},
+		{"with spaces", " -50000,00 ", ",", "50000.00", true, false},
+		{"very large value dot", "99999999.99", ".", "99999999.99", false, false},
+		{"negative european separators", "-1.234.567,89", ",", "1234567.89", true, false},
+		{"explicit plus sign", "+50,25", ",", "50.25", false, false},
+		{"decimal precision preserved", "0.1", ".", "0.1", false, false},
+		{"decimal precision preserved 2", "0.2", ".", "0.2", false, false},
+		{"empty", "", ",", "", false, true},
+		{"not a number", "abc", ",", "", false, true},
+		{"bare sign", "-", ",", "", false, true},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := parseFullImportAmount(tt.input, tt.decimalSep)
+			gotAbs, gotNeg, err := parseFullImportAmount(tt.input, tt.decimalSep)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("parseFullImportAmount(%q, %q) error = %v, wantErr %v", tt.input, tt.decimalSep, err, tt.wantErr)
 				return
 			}
-			if !tt.wantErr && got != tt.want {
-				t.Errorf("parseFullImportAmount(%q, %q) = %v, want %v", tt.input, tt.decimalSep, got, tt.want)
+			if tt.wantErr {
+				return
+			}
+			if gotAbs != tt.wantAbs {
+				t.Errorf("parseFullImportAmount(%q, %q) abs = %q, want %q", tt.input, tt.decimalSep, gotAbs, tt.wantAbs)
+			}
+			if gotNeg != tt.wantIsNegative {
+				t.Errorf("parseFullImportAmount(%q, %q) isNegative = %v, want %v", tt.input, tt.decimalSep, gotNeg, tt.wantIsNegative)
 			}
 		})
+	}
+}
+
+func TestImportAmountSumRoundTrip(t *testing.T) {
+	// Classic float trap: 0.1 + 0.2 == 0.30000000000000004 in float64.
+	// Phase 5 promises the import path preserves exact decimal arithmetic by
+	// parsing strings straight into pgtype.Numeric.
+	a, _, err := parseFullImportAmount("0.1", ".")
+	if err != nil {
+		t.Fatalf("parse 0.1: %v", err)
+	}
+	b, _, err := parseFullImportAmount("0.2", ".")
+	if err != nil {
+		t.Fatalf("parse 0.2: %v", err)
+	}
+	sum := numericAdd(numericFromString(a), numericFromString(b))
+	if got := numericToString(sum); got != "0.30" {
+		t.Errorf("0.1 + 0.2 through import path = %q, want 0.30", got)
+	}
+}
+
+func TestComputeTransferRate(t *testing.T) {
+	tests := []struct {
+		name   string
+		src    string
+		dst    string
+		want   string // numericToString output (2 dp) or "" for invalid
+		valid  bool
+	}{
+		{"simple ratio", "50000", "237500", "4.75", true},
+		{"fractional ratio rounds", "3", "10", "3.33", true},
+		{"exact one", "100", "100", "1.00", true},
+		{"sub-unit ratio", "1000", "1", "0.00", true}, // 0.001 rounded to 2dp by numericToString
+		{"precise decimals", "0.3", "0.1", "0.33", true},
+		{"zero source yields invalid", "0", "100", "", false},
+		{"invalid input yields invalid", "abc", "100", "", false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := computeTransferRate(tt.src, tt.dst)
+			if got.Valid != tt.valid {
+				t.Fatalf("valid = %v, want %v", got.Valid, tt.valid)
+			}
+			if !tt.valid {
+				return
+			}
+			if s := numericToString(got); s != tt.want {
+				t.Errorf("rate(%q/%q) = %q, want %q", tt.dst, tt.src, s, tt.want)
+			}
+		})
+	}
+}
+
+func TestComputeTransferRatePrecision(t *testing.T) {
+	// DivRound(_, 8) should preserve 8 decimal places internally, even though
+	// numericToString truncates to 2 for display.
+	got := computeTransferRate("3", "1")
+	if !got.Valid {
+		t.Fatalf("expected valid rate")
+	}
+	f := numericToBigFloat(got).Text('f', 8)
+	if f != "0.33333333" {
+		t.Errorf("1/3 rate = %s, want 0.33333333", f)
 	}
 }
 
@@ -134,8 +211,8 @@ func TestResolveCurrency(t *testing.T) {
 func TestPairTransfers(t *testing.T) {
 	t.Run("same currency pair", func(t *testing.T) {
 		candidates := []parsedRow{
-			{rowNumber: 1, account: "A", transfer: "B", amount: -1000, date: dateForTest(2026, 2, 20)},
-			{rowNumber: 2, account: "B", transfer: "A", amount: 1000, date: dateForTest(2026, 2, 20)},
+			{rowNumber: 1, account: "A", transfer: "B", absAmountStr: "1000", isNegative: true, date: dateForTest(2026, 2, 20)},
+			{rowNumber: 2, account: "B", transfer: "A", absAmountStr: "1000", isNegative: false, date: dateForTest(2026, 2, 20)},
 		}
 		pairs, failures := pairTransfers(candidates)
 		if len(pairs) != 1 {
@@ -154,8 +231,8 @@ func TestPairTransfers(t *testing.T) {
 
 	t.Run("multi-currency pair", func(t *testing.T) {
 		candidates := []parsedRow{
-			{rowNumber: 1, account: "RUB Acct", transfer: "AMD Acct", amount: -50000, date: dateForTest(2026, 2, 10)},
-			{rowNumber: 2, account: "AMD Acct", transfer: "RUB Acct", amount: 237500, date: dateForTest(2026, 2, 10)},
+			{rowNumber: 1, account: "RUB Acct", transfer: "AMD Acct", absAmountStr: "50000", isNegative: true, date: dateForTest(2026, 2, 10)},
+			{rowNumber: 2, account: "AMD Acct", transfer: "RUB Acct", absAmountStr: "237500", isNegative: false, date: dateForTest(2026, 2, 10)},
 		}
 		pairs, failures := pairTransfers(candidates)
 		if len(pairs) != 1 {
@@ -168,7 +245,7 @@ func TestPairTransfers(t *testing.T) {
 
 	t.Run("unpaired row", func(t *testing.T) {
 		candidates := []parsedRow{
-			{rowNumber: 1, account: "A", transfer: "B", amount: -1000, date: dateForTest(2026, 2, 20)},
+			{rowNumber: 1, account: "A", transfer: "B", absAmountStr: "1000", isNegative: true, date: dateForTest(2026, 2, 20)},
 		}
 		pairs, failures := pairTransfers(candidates)
 		if len(pairs) != 0 {
@@ -184,8 +261,8 @@ func TestPairTransfers(t *testing.T) {
 
 	t.Run("same sign error", func(t *testing.T) {
 		candidates := []parsedRow{
-			{rowNumber: 1, account: "A", transfer: "B", amount: -1000, date: dateForTest(2026, 2, 20)},
-			{rowNumber: 2, account: "B", transfer: "A", amount: -1000, date: dateForTest(2026, 2, 20)},
+			{rowNumber: 1, account: "A", transfer: "B", absAmountStr: "1000", isNegative: true, date: dateForTest(2026, 2, 20)},
+			{rowNumber: 2, account: "B", transfer: "A", absAmountStr: "1000", isNegative: true, date: dateForTest(2026, 2, 20)},
 		}
 		pairs, failures := pairTransfers(candidates)
 		if len(pairs) != 0 {
@@ -198,8 +275,8 @@ func TestPairTransfers(t *testing.T) {
 
 	t.Run("date mismatch no pair", func(t *testing.T) {
 		candidates := []parsedRow{
-			{rowNumber: 1, account: "A", transfer: "B", amount: -1000, date: dateForTest(2026, 2, 20)},
-			{rowNumber: 2, account: "B", transfer: "A", amount: 1000, date: dateForTest(2026, 2, 21)},
+			{rowNumber: 1, account: "A", transfer: "B", absAmountStr: "1000", isNegative: true, date: dateForTest(2026, 2, 20)},
+			{rowNumber: 2, account: "B", transfer: "A", absAmountStr: "1000", isNegative: false, date: dateForTest(2026, 2, 21)},
 		}
 		pairs, failures := pairTransfers(candidates)
 		if len(pairs) != 0 {
@@ -213,13 +290,14 @@ func TestPairTransfers(t *testing.T) {
 
 func TestParsedRowToDTO(t *testing.T) {
 	row := &parsedRow{
-		account:     "Test",
-		category:    "Food\\Home",
-		amount:      -100.50,
-		currency:    "RUB",
-		description: "desc",
-		transfer:    "",
-		date:        dateForTest(2026, 2, 19),
+		account:      "Test",
+		category:     "Food\\Home",
+		absAmountStr: "100.50",
+		isNegative:   true,
+		currency:     "RUB",
+		description:  "desc",
+		transfer:     "",
+		date:         dateForTest(2026, 2, 19),
 	}
 	d := parsedRowToDTO(row)
 	if d.Account != "Test" {
@@ -227,6 +305,9 @@ func TestParsedRowToDTO(t *testing.T) {
 	}
 	if d.Category != "Food\\Home" {
 		t.Errorf("category = %q, want Food\\Home", d.Category)
+	}
+	if d.Total != "-100.50" {
+		t.Errorf("total = %q, want -100.50", d.Total)
 	}
 }
 

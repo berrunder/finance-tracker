@@ -5,8 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
-	"math"
-	"strconv"
+	"regexp"
 	"strings"
 	"time"
 
@@ -14,6 +13,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/shopspring/decimal"
 
 	"github.com/sanches/finance-tracker-cc/backend/internal/dto"
 	"github.com/sanches/finance-tracker-cc/backend/internal/store"
@@ -41,16 +41,17 @@ func NewImportFull(queries *store.Queries, pool *pgxpool.Pool) *ImportFull {
 
 // parsedRow holds a fully parsed CSV row ready for DB insertion.
 type parsedRow struct {
-	rowNumber   int
-	date        pgtype.Date
-	account     string
-	category    string // raw "Parent\Child" or empty
-	amount      float64
-	absAmount   pgtype.Numeric
-	currency    string // resolved currency code
-	description string
-	transfer    string // target account name, empty for non-transfers
-	txnType     string // "income" or "expense"
+	rowNumber    int
+	date         pgtype.Date
+	account      string
+	category     string // raw "Parent\Child" or empty
+	absAmountStr string // canonicalized absolute amount, e.g. "1000.50"
+	isNegative   bool
+	absAmount    pgtype.Numeric
+	currency     string // resolved currency code
+	description  string
+	transfer     string // target account name, empty for non-transfers
+	txnType      string // "income" or "expense"
 }
 
 // transferPair holds two matched transfer rows.
@@ -257,12 +258,11 @@ func (s *ImportFull) Import(ctx context.Context, userID uuid.UUID, req dto.FullI
 		tidPG := pgtype.UUID{Bytes: transferID, Valid: true}
 
 		// Compute exchange rate for cross-currency transfers
-		exchangeRate := pgtype.Numeric{Valid: false}
 		sourceAcct := accountCache[pair.source.account]
 		destAcct := accountCache[pair.dest.account]
+		exchangeRate := pgtype.Numeric{Valid: false}
 		if sourceAcct.Currency != destAcct.Currency {
-			rate := math.Abs(pair.dest.amount) / math.Abs(pair.source.amount)
-			exchangeRate = numericFromString(strconv.FormatFloat(rate, 'f', 8, 64))
+			exchangeRate = computeTransferRate(pair.source.absAmountStr, pair.dest.absAmountStr)
 		}
 
 		// Source leg (expense)
@@ -374,11 +374,11 @@ func (s *ImportFull) parseRow(
 	}
 
 	// Parse amount
-	amount, err := parseFullImportAmount(row.Total, decimalSep)
+	absStr, isNegative, err := parseFullImportAmount(row.Total, decimalSep)
 	if err != nil {
 		return nil, fmt.Errorf("invalid amount %q: %w", row.Total, err)
 	}
-	if amount == 0 {
+	if isZeroDecimal(absStr) {
 		return nil, fmt.Errorf("zero amount not allowed")
 	}
 
@@ -389,25 +389,23 @@ func (s *ImportFull) parseRow(
 	}
 
 	// Determine type from amount sign
-	txnType := "expense"
-	if amount > 0 {
-		txnType = "income"
+	txnType := "income"
+	if isNegative {
+		txnType = "expense"
 	}
 
-	absAmount := math.Abs(amount)
-	absAmountNum := numericFromString(strconv.FormatFloat(absAmount, 'f', 2, 64))
-
 	return &parsedRow{
-		rowNumber:   rowNum,
-		date:        date,
-		account:     strings.TrimSpace(row.Account),
-		category:    strings.TrimSpace(row.Category),
-		amount:      amount,
-		absAmount:   absAmountNum,
-		currency:    currCode,
-		description: strings.TrimSpace(row.Description),
-		transfer:    strings.TrimSpace(row.Transfer),
-		txnType:     txnType,
+		rowNumber:    rowNum,
+		date:         date,
+		account:      strings.TrimSpace(row.Account),
+		category:     strings.TrimSpace(row.Category),
+		absAmountStr: absStr,
+		isNegative:   isNegative,
+		absAmount:    numericFromString(absStr),
+		currency:     currCode,
+		description:  strings.TrimSpace(row.Description),
+		transfer:     strings.TrimSpace(row.Transfer),
+		txnType:      txnType,
 	}, nil
 }
 
@@ -420,10 +418,12 @@ func parseFullImportDate(s string, goFormat string) (pgtype.Date, error) {
 	return pgtype.Date{Time: t, Valid: true}, nil
 }
 
-func parseFullImportAmount(s string, decimalSep string) (float64, error) {
+var decimalAmountPattern = regexp.MustCompile(`^\d+(\.\d+)?$`)
+
+func parseFullImportAmount(s string, decimalSep string) (string, bool, error) {
 	s = strings.TrimSpace(s)
 	if s == "" {
-		return 0, fmt.Errorf("empty amount")
+		return "", false, fmt.Errorf("empty amount")
 	}
 
 	// Remove currency symbols and spaces
@@ -444,7 +444,41 @@ func parseFullImportAmount(s string, decimalSep string) (float64, error) {
 		s = strings.ReplaceAll(s, ",", "")
 	}
 
-	return strconv.ParseFloat(s, 64)
+	isNegative := false
+	switch {
+	case strings.HasPrefix(s, "-"):
+		isNegative = true
+		s = s[1:]
+	case strings.HasPrefix(s, "+"):
+		s = s[1:]
+	}
+
+	if !decimalAmountPattern.MatchString(s) {
+		return "", false, fmt.Errorf("invalid amount format")
+	}
+	return s, isNegative, nil
+}
+
+// computeTransferRate returns dst/src rounded to 8 decimal places as a Numeric.
+// Returns an invalid Numeric if either side fails to parse or the source is zero.
+func computeTransferRate(srcAbs, dstAbs string) pgtype.Numeric {
+	srcAmt, srcErr := decimal.NewFromString(srcAbs)
+	dstAmt, dstErr := decimal.NewFromString(dstAbs)
+	if srcErr != nil || dstErr != nil || srcAmt.IsZero() {
+		return pgtype.Numeric{Valid: false}
+	}
+	return numericFromString(dstAmt.DivRound(srcAmt, 8).String())
+}
+
+// isZeroDecimal reports whether a canonical decimal string (no sign, matching
+// decimalAmountPattern) represents zero.
+func isZeroDecimal(s string) bool {
+	for _, r := range s {
+		if r >= '1' && r <= '9' {
+			return false
+		}
+	}
+	return true
 }
 
 func resolveCurrency(raw string, mapping map[string]string, currencies []store.Currency) (string, error) {
@@ -576,7 +610,7 @@ func pairTransfers(candidates []parsedRow) ([]transferPair, []dto.FailedRow) {
 			found = true
 
 			// Both amounts must have opposite signs
-			if (a.amount < 0) == (b.amount < 0) {
+			if a.isNegative == b.isNegative {
 				failures = append(failures,
 					dto.FailedRow{RowNumber: a.rowNumber, Data: parsedRowToDTO(a), Error: "transfer pair has same sign amounts"},
 					dto.FailedRow{RowNumber: b.rowNumber, Data: parsedRowToDTO(b), Error: "transfer pair has same sign amounts"},
@@ -586,7 +620,7 @@ func pairTransfers(candidates []parsedRow) ([]transferPair, []dto.FailedRow) {
 
 			// Source is the negative (expense) side, dest is the positive (income) side
 			source, dest := a, b
-			if b.amount < 0 {
+			if b.isNegative {
 				source, dest = b, a
 			}
 			pairs = append(pairs, transferPair{source: source, dest: dest})
@@ -631,11 +665,15 @@ func filterByCurrency(rows []parsedRow, accountCache map[string]store.Account, r
 }
 
 func parsedRowToDTO(row *parsedRow) dto.FullImportRow {
+	total := row.absAmountStr
+	if row.isNegative {
+		total = "-" + total
+	}
 	return dto.FullImportRow{
 		Date:        row.date.Time.Format("02.01.2006"),
 		Account:     row.account,
 		Category:    row.category,
-		Total:       strconv.FormatFloat(row.amount, 'f', 2, 64),
+		Total:       total,
 		Currency:    row.currency,
 		Description: row.description,
 		Transfer:    row.transfer,

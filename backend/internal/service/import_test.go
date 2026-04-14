@@ -56,27 +56,33 @@ func TestParseCSV(t *testing.T) {
 
 func TestParseAmount(t *testing.T) {
 	tests := []struct {
-		name    string
-		input   string
-		want    float64
-		wantErr bool
+		name           string
+		input          string
+		wantAbs        string
+		wantIsNegative bool
+		wantErr        bool
 	}{
-		{"plain decimal", "123.45", 123.45, false},
-		{"dollar with commas", "$1,234.56", 1234.56, false},
-		{"euro symbol", "€50.00", 50.00, false},
-		{"negative", "-100", -100, false},
-		{"garbage", "abc", 0, true},
+		{"plain decimal", "123.45", "123.45", false, false},
+		{"dollar with commas", "$1,234.56", "1234.56", false, false},
+		{"euro symbol", "€50.00", "50.00", false, false},
+		{"negative", "-100", "100", true, false},
+		{"precision preserved 0.1", "0.1", "0.1", false, false},
+		{"precision preserved 0.2", "0.2", "0.2", false, false},
+		{"large value", "99999999.99", "99999999.99", false, false},
+		{"garbage", "abc", "", false, true},
+		{"empty after cleanup", "$", "", false, true},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := parseAmount(tt.input)
+			gotAbs, gotNeg, err := parseAmount(tt.input)
 			if tt.wantErr {
 				require.Error(t, err)
-			} else {
-				require.NoError(t, err)
-				require.InDelta(t, tt.want, got, 0.001)
+				return
 			}
+			require.NoError(t, err)
+			require.Equal(t, tt.wantAbs, gotAbs)
+			require.Equal(t, tt.wantIsNegative, gotNeg)
 		})
 	}
 }

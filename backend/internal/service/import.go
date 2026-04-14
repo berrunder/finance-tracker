@@ -4,9 +4,8 @@ import (
 	"context"
 	"encoding/csv"
 	"errors"
+	"fmt"
 	"io"
-	"math"
-	"strconv"
 	"strings"
 
 	"github.com/google/uuid"
@@ -86,7 +85,7 @@ func (s *Import) ConfirmImport(ctx context.Context, userID uuid.UUID, req dto.CS
 			continue
 		}
 
-		amountFloat, err := parseAmount(amountStr)
+		absStr, isNegative, err := parseAmount(amountStr)
 		if err != nil {
 			continue
 		}
@@ -97,18 +96,15 @@ func (s *Import) ConfirmImport(ctx context.Context, userID uuid.UUID, req dto.CS
 			if mappedType == "income" || mappedType == "credit" {
 				txnType = "income"
 			}
-		} else if amountFloat > 0 {
+		} else if !isNegative {
 			txnType = "income"
 		}
-
-		absAmount := math.Abs(amountFloat)
-		amount := numericFromString(strconv.FormatFloat(absAmount, 'f', 2, 64))
 
 		params = append(params, store.BulkCreateTransactionsParams{
 			UserID:      userID,
 			AccountID:   req.AccountID,
 			Type:        txnType,
-			Amount:      amount,
+			Amount:      numericFromString(absStr),
 			Description: description,
 			Date:        date,
 			CategoryID:  pgtype.UUID{Valid: false},
@@ -127,12 +123,26 @@ func (s *Import) ConfirmImport(ctx context.Context, userID uuid.UUID, req dto.CS
 	return int(count), nil
 }
 
-func parseAmount(s string) (float64, error) {
+func parseAmount(s string) (string, bool, error) {
 	s = strings.TrimSpace(s)
 	s = strings.ReplaceAll(s, ",", "")
 	s = strings.ReplaceAll(s, " ", "")
 	// Remove currency symbols
 	s = strings.TrimLeft(s, "$€£R¥₽")
 	s = strings.TrimSpace(s)
-	return strconv.ParseFloat(s, 64)
+	if s == "" {
+		return "", false, fmt.Errorf("empty amount")
+	}
+	isNegative := false
+	switch {
+	case strings.HasPrefix(s, "-"):
+		isNegative = true
+		s = s[1:]
+	case strings.HasPrefix(s, "+"):
+		s = s[1:]
+	}
+	if !decimalAmountPattern.MatchString(s) {
+		return "", false, fmt.Errorf("invalid amount format")
+	}
+	return s, isNegative, nil
 }
