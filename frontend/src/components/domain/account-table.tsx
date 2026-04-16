@@ -1,3 +1,4 @@
+import { Fragment } from 'react'
 import { MoreHorizontal, Pencil, Scale, Trash2 } from 'lucide-react'
 import { formatMoney } from '@/lib/money'
 import { Badge } from '@/components/ui/badge'
@@ -16,13 +17,15 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import type { AccountGroup } from '@/lib/account-groups'
 import type { Account } from '@/types/api'
 
 interface AccountTableProps {
-  accounts: Account[]
+  groups: AccountGroup[]
   onEdit: (account: Account) => void
   onDelete: (account: Account) => void
   onCorrect: (account: Account) => void
+  emptyMessage?: string
 }
 
 function AccountActions({
@@ -65,16 +68,15 @@ function AccountActions({
 }
 
 export function AccountTable({
-  accounts,
+  groups,
   onEdit,
   onDelete,
   onCorrect,
+  emptyMessage = 'No accounts yet. Create one to get started.',
 }: AccountTableProps) {
-  if (accounts.length === 0) {
+  if (groups.length === 0) {
     return (
-      <p className="text-muted-foreground py-8 text-center">
-        No accounts yet. Create one to get started.
-      </p>
+      <p className="text-muted-foreground py-8 text-center">{emptyMessage}</p>
     )
   }
 
@@ -93,59 +95,90 @@ export function AccountTable({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {accounts.map((account) => (
-              <TableRow key={account.id}>
-                <TableCell className="font-medium">{account.name}</TableCell>
-                <TableCell>
-                  <Badge variant="secondary">
-                    {account.type.replaceAll('_', ' ')}
-                  </Badge>
-                </TableCell>
-                <TableCell>{account.currency}</TableCell>
-                <TableCell className="text-right">
-                  {formatMoney(account.balance, account.currency)}
-                </TableCell>
-                <TableCell>
-                  <AccountActions
-                    account={account}
-                    onEdit={onEdit}
-                    onDelete={onDelete}
-                    onCorrect={onCorrect}
-                  />
-                </TableCell>
-              </TableRow>
+            {groups.map((group) => (
+              <Fragment key={group.type}>
+                <TableRow className="bg-muted/50 hover:bg-muted/50">
+                  <TableCell
+                    colSpan={5}
+                    className="text-muted-foreground py-2 text-xs font-semibold uppercase tracking-wider"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span>{group.label}</span>
+                      <span>
+                        {formatMoney(group.total, group.totalCurrency)}
+                      </span>
+                    </div>
+                  </TableCell>
+                </TableRow>
+                {group.accounts.map((account) => (
+                  <TableRow key={account.id}>
+                    <TableCell className="font-medium">
+                      {account.name}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="secondary">
+                        {account.type.replaceAll('_', ' ')}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>{account.currency}</TableCell>
+                    <TableCell className="text-right">
+                      {formatMoney(account.balance, account.currency)}
+                    </TableCell>
+                    <TableCell>
+                      <AccountActions
+                        account={account}
+                        onEdit={onEdit}
+                        onDelete={onDelete}
+                        onCorrect={onCorrect}
+                      />
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </Fragment>
             ))}
           </TableBody>
         </Table>
       </div>
 
       {/* Mobile card layout */}
-      <div className="space-y-2 md:hidden">
-        {accounts.map((account) => (
-          <div
-            key={account.id}
-            className="flex items-center justify-between rounded-lg border p-3"
-          >
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2">
-                <span className="truncate text-sm font-medium">
-                  {account.name}
-                </span>
-                <Badge variant="secondary" className="shrink-0 text-xs">
-                  {account.type.replaceAll('_', ' ')}
-                </Badge>
-              </div>
-              <div className="text-muted-foreground mt-0.5 text-xs">
-                {account.currency} ·{' '}
-                {formatMoney(account.balance, account.currency)}
-              </div>
+      <div className="space-y-4 md:hidden">
+        {groups.map((group) => (
+          <div key={group.type} className="space-y-2">
+            <div className="flex items-center justify-between px-1">
+              <span className="text-muted-foreground text-xs font-semibold uppercase tracking-wider">
+                {group.label}
+              </span>
+              <span className="text-muted-foreground text-xs font-medium">
+                {formatMoney(group.total, group.totalCurrency)}
+              </span>
             </div>
-            <AccountActions
-              account={account}
-              onEdit={onEdit}
-              onDelete={onDelete}
-              onCorrect={onCorrect}
-            />
+            {group.accounts.map((account) => (
+              <div
+                key={account.id}
+                className="flex items-center justify-between rounded-lg border p-3"
+              >
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="truncate text-sm font-medium">
+                      {account.name}
+                    </span>
+                    <Badge variant="secondary" className="shrink-0 text-xs">
+                      {account.type.replaceAll('_', ' ')}
+                    </Badge>
+                  </div>
+                  <div className="text-muted-foreground mt-0.5 text-xs">
+                    {account.currency} ·{' '}
+                    {formatMoney(account.balance, account.currency)}
+                  </div>
+                </div>
+                <AccountActions
+                  account={account}
+                  onEdit={onEdit}
+                  onDelete={onDelete}
+                  onCorrect={onCorrect}
+                />
+              </div>
+            ))}
           </div>
         ))}
       </div>

@@ -68,6 +68,21 @@ describe('groupAccountsByType', () => {
     expect(groups[0].type).toBe('cash')
   })
 
+  it('sorts accounts within a group alphabetically (case-insensitive)', () => {
+    const accounts = [
+      makeAccount({ name: 'charlie', type: 'deposit' }),
+      makeAccount({ name: 'Alpha', type: 'deposit' }),
+      makeAccount({ name: 'bravo', type: 'deposit' }),
+    ]
+
+    const groups = groupAccountsByType(accounts, 'USD', [])
+    expect(groups[0].accounts.map((a) => a.name)).toEqual([
+      'Alpha',
+      'bravo',
+      'charlie',
+    ])
+  })
+
   it('sums balances in base currency', () => {
     const accounts = [
       makeAccount({

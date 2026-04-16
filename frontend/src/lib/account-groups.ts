@@ -69,6 +69,10 @@ export function groupAccountsByType(
     const typeAccounts = byType.get(type)
     if (!typeAccounts || typeAccounts.length === 0) continue
 
+    typeAccounts.sort((a, b) =>
+      a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }),
+    )
+
     const total = typeAccounts.reduce(
       (sum, a) =>
         sum.add(convertToBase(a.balance, a.currency, baseCurrency, rates)),

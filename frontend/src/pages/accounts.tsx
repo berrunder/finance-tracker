@@ -1,9 +1,13 @@
-import { useState } from 'react'
-import { Plus } from 'lucide-react'
+import { useMemo, useState } from 'react'
+import { Plus, Search } from 'lucide-react'
 import { toast } from 'sonner'
 import { useAccounts, useDeleteAccount } from '@/hooks/use-accounts'
+import { useAuth } from '@/hooks/use-auth'
+import { useExchangeRates } from '@/hooks/use-exchange-rates'
+import { groupAccountsByType } from '@/lib/account-groups'
 import { handleMutationError } from '@/lib/form-helpers'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
   Table,
@@ -20,13 +24,26 @@ import { CorrectionDialog } from '@/components/domain/correction-dialog'
 import type { Account } from '@/types/api'
 
 export default function AccountsPage() {
+  const { user } = useAuth()
   const { data: accounts = [], isLoading } = useAccounts()
+  const { data: rates = [] } = useExchangeRates()
   const deleteAccount = useDeleteAccount()
 
   const [formOpen, setFormOpen] = useState(false)
   const [editAccount, setEditAccount] = useState<Account | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Account | null>(null)
   const [correctTarget, setCorrectTarget] = useState<Account | null>(null)
+  const [query, setQuery] = useState('')
+
+  const trimmedQuery = query.trim().toLowerCase()
+
+  const groups = useMemo(() => {
+    const baseCurrency = user?.base_currency ?? 'USD'
+    const filtered = trimmedQuery
+      ? accounts.filter((a) => a.name.toLowerCase().includes(trimmedQuery))
+      : accounts
+    return groupAccountsByType(filtered, baseCurrency, rates)
+  }, [accounts, rates, trimmedQuery, user?.base_currency])
 
   function handleEdit(account: Account) {
     setEditAccount(account)
@@ -49,6 +66,10 @@ export default function AccountsPage() {
     }
   }
 
+  const emptyMessage = trimmedQuery
+    ? `No accounts match "${query.trim()}".`
+    : 'No accounts yet. Create one to get started.'
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -57,6 +78,17 @@ export default function AccountsPage() {
           <Plus className="mr-2 h-4 w-4" />
           New Account
         </Button>
+      </div>
+
+      <div className="relative max-w-sm">
+        <Search className="text-muted-foreground pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2" />
+        <Input
+          type="search"
+          placeholder="Search accounts..."
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          className="pl-8"
+        />
       </div>
 
       {isLoading ? (
@@ -115,10 +147,11 @@ export default function AccountsPage() {
         </>
       ) : (
         <AccountTable
-          accounts={accounts}
+          groups={groups}
           onEdit={handleEdit}
           onDelete={setDeleteTarget}
           onCorrect={setCorrectTarget}
+          emptyMessage={emptyMessage}
         />
       )}
 
