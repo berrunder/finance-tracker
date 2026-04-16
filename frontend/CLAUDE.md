@@ -27,7 +27,7 @@ src/
     domain/     # App-specific components (forms, tables, filters)
     layout/     # Shell, nav, layout wrappers
   hooks/        # Custom hooks (use-accounts, use-auth, use-transactions, etc.)
-  lib/          # Utilities (constants, dates, money, validators, query-keys, db, sync-queue, sync-engine, form-helpers, expression, utils, query-string, account-groups, error-mapping)
+  lib/          # Utilities (constants, dates, money, validators, query-keys, db, sync-queue, sync-engine, form-helpers, expression, utils, query-string, account-groups, error-mapping, cash-flow)
   pages/        # Route-level page components
   types/        # Shared TypeScript types
   sw.ts         # Service worker (built by vite-plugin-pwa, excluded from tsconfig.app.json)
@@ -68,4 +68,4 @@ src/
 
 ## Documentation
 
-- Architecture changes -> [docs/Architecture.md](docs/ARCHITECTURE.md)
+- Architecture changes -> [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)

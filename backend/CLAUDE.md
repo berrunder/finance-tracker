@@ -48,6 +48,10 @@ handler -> service -> store (sqlc-generated)
 
 Config: `sqlc.yaml` — generates to `internal/store/` package, uses `pgx/v5`, maps `uuid` to `google/uuid.UUID`. Annotations: `-- name: FuncName :one/:many/:exec/:copyfrom`.
 
+## Migrations
+
+Add a new migration by creating `NNN_name.up.sql` and `NNN_name.down.sql` in `migrations/` (next sequential number). They are applied at startup via `runMigrations` in `cmd/api/main.go` — there is no separate migrate binary.
+
 ## Verification
 
 - After Go changes, always run `go build ./...` and `go test ./...`.
@@ -56,5 +60,5 @@ Config: `sqlc.yaml` — generates to `internal/store/` package, uses `pgx/v5`, m
 ## Documentation
 
 - API changes -> [docs/API.md](docs/API.md)
-- Architecture changes -> [docs/Architecture.md](docs/ARCHITECTURE.md)
+- Architecture changes -> [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 - Feature/command changes -> [README.md](README.md)

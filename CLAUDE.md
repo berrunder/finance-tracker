@@ -13,13 +13,18 @@ Monorepo: Go API in `/backend`, React app in `/frontend`.
 docker compose up -d db          # Start PostgreSQL
 make up                          # Full stack (docker compose up -d --build)
 make down                        # docker compose down
-make migrate                     # Run DB migrations manually
+# Note: migrations run automatically on backend startup (cmd/api/main.go).
 
 # Backend
 make dev-backend                 # Run API locally
 make sqlc                        # Regenerate sqlc code after editing queries/*.sql
 cd backend && go test ./...      # Run all tests
 cd backend && go test ./internal/service/ -run TestFunctionName  # Single test
+
+# Production
+make prod-build                  # Build prod images
+make prod-push                   # Push backend & frontend to registry
+make prod-deploy                 # Pull & up on VPS
 
 # Frontend
 make dev-frontend                # Vite dev server (proxies /api to :8080)
@@ -45,7 +50,7 @@ Backend-specific guidance in `backend/CLAUDE.md`.
 ## Conventions
 
 - When changes touch both backend and frontend, always run both `cd backend && go test ./...` and `cd frontend && npm test` before reporting completion.
-- When changing backend error codes, update all of: handler response, `frontend/src/lib/error-mapping.ts`, `frontend/src/lib/__tests__/error-mapping.test.ts`, `docs/API.md` error table, and `docs/ARCHITECTURE.md` error table.
+- When changing backend error codes, update all of: handler response, `frontend/src/lib/error-mapping.ts`, `frontend/src/lib/__tests__/error-mapping.test.ts`, `backend/docs/API.md` error table, and `backend/docs/ARCHITECTURE.md` error table.
 - API changes must be reflected in [backend/docs/API.md](backend/docs/API.md)
 - Backend architecture changes must be reflected in [backend/docs/ARCHITECTURE.md](backend/docs/ARCHITECTURE.md)
 - Backend feature changes must be reflected in [backend/README.md](backend/README.md)
