@@ -44,6 +44,9 @@ func NewRouter(
 
 	r.Route("/api/v1", func(r chi.Router) {
 		// Public routes
+		r.Get("/health", func(w http.ResponseWriter, _ *http.Request) {
+			w.WriteHeader(http.StatusNoContent)
+		})
 		r.Route("/auth", func(r chi.Router) {
 			r.With(limitByIP(5, time.Minute)).Post("/login", authH.Login)
 			r.With(limitByIP(10, time.Minute)).Post("/register", authH.Register)

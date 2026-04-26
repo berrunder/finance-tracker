@@ -1,22 +1,5 @@
-import { useSyncExternalStore } from 'react'
+import { useSyncStatus } from './use-sync-status'
 
-function subscribe(callback: () => void) {
-  window.addEventListener('online', callback)
-  window.addEventListener('offline', callback)
-  return () => {
-    window.removeEventListener('online', callback)
-    window.removeEventListener('offline', callback)
-  }
-}
-
-function getSnapshot() {
-  return navigator.onLine
-}
-
-function getServerSnapshot() {
-  return true
-}
-
-export function useOnlineStatus() {
-  return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
+export function useOnlineStatus(): boolean {
+  return useSyncStatus().isOnline
 }

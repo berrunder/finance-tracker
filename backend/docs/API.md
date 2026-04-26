@@ -44,6 +44,18 @@ All errors return:
 
 ---
 
+## Health (public)
+
+### `GET /health`
+
+Lightweight liveness probe. Used by the PWA to verify connectivity when the app comes back from background. No body, no auth, no rate limit.
+
+```
+// Response 204 (no body)
+```
+
+---
+
 ## Auth (public)
 
 ### `POST /auth/register`

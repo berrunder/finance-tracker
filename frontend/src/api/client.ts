@@ -41,6 +41,32 @@ export function setOnQueryCancellation(cb: (() => void) | null): void {
   onQueryCancellation = cb
 }
 
+// Network status — published synchronously from every fetch result so the UI
+// can read truth without waiting for React commits (navigator.onLine is
+// unreliable on mobile PWAs after waking from background).
+let onNetworkStatus: ((online: boolean) => void) | null = null
+let lastNetworkStatus: boolean | null = null
+
+export function setOnNetworkStatus(
+  cb: ((online: boolean) => void) | null,
+): void {
+  onNetworkStatus = cb
+}
+
+// Compare-and-clear: only nulls the slot if the active callback is still `cb`.
+// Prevents an unmounting provider from clobbering a newly-mounted one when
+// React remounts overlap (HMR, Suspense).
+export function clearOnNetworkStatusIf(cb: (online: boolean) => void): void {
+  if (onNetworkStatus === cb) onNetworkStatus = null
+}
+
+// Latest fetch-derived online state. `null` until the first fetch runs.
+// Read by callers (e.g. post-mutation toasts) that need the freshest signal
+// without going through React state.
+export function getNetworkStatus(): boolean | null {
+  return lastNetworkStatus
+}
+
 export function setAccessToken(token: string | null): void {
   accessToken = token
   if (token !== null) {
@@ -66,8 +92,27 @@ function apiUrl(endpoint: string): string {
   return `${import.meta.env.BASE_URL}api/v1${endpoint}`
 }
 
+async function trackedFetch(
+  input: RequestInfo | URL,
+  init?: RequestInit,
+): Promise<Response> {
+  try {
+    const response = await fetch(input, init)
+    // Reaching the server (even with a 4xx/5xx) proves connectivity.
+    lastNetworkStatus = true
+    onNetworkStatus?.(true)
+    return response
+  } catch (error) {
+    if (isNetworkError(error)) {
+      lastNetworkStatus = false
+      onNetworkStatus?.(false)
+    }
+    throw error
+  }
+}
+
 async function performRefresh(): Promise<AuthResponse> {
-  const response = await fetch(apiUrl('/auth/refresh'), {
+  const response = await trackedFetch(apiUrl('/auth/refresh'), {
     method: 'POST',
     credentials: 'include',
   })
@@ -161,7 +206,7 @@ export async function apiClient<T>(
     headers['Authorization'] = `Bearer ${accessToken}`
   }
 
-  const response = await fetch(url, {
+  const response = await trackedFetch(url, {
     ...fetchOptions,
     headers,
     credentials: 'include',

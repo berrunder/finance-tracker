@@ -6,6 +6,9 @@ import {
   getAccessToken,
   setOnAuthFailure,
   setOnQueryCancellation,
+  setOnNetworkStatus,
+  clearOnNetworkStatusIf,
+  getNetworkStatus,
 } from '../client'
 
 const mockFetch = vi.fn()
@@ -29,6 +32,7 @@ beforeEach(() => {
   clearTokens()
   setOnAuthFailure(null)
   setOnQueryCancellation(null)
+  setOnNetworkStatus(null)
 })
 
 describe('apiClient', () => {
@@ -310,5 +314,95 @@ describe('401 interceptor', () => {
     await expect(apiClient('/accounts')).rejects.toThrow()
 
     expect(onCancel).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('network status', () => {
+  it('publishes online=true on a successful response', async () => {
+    const onStatus = vi.fn()
+    setOnNetworkStatus(onStatus)
+    mockFetch.mockResolvedValueOnce(jsonResponse({ ok: true }))
+
+    await apiClient('/accounts')
+
+    expect(onStatus).toHaveBeenCalledWith(true)
+    expect(getNetworkStatus()).toBe(true)
+  })
+
+  it('publishes online=true even on 4xx/5xx responses (server reachable)', async () => {
+    const onStatus = vi.fn()
+    setOnNetworkStatus(onStatus)
+    mockFetch.mockResolvedValueOnce(
+      errorResponse('NOT_FOUND', 'not found', 404),
+    )
+
+    await expect(apiClient('/accounts/x')).rejects.toThrow(ApiError)
+
+    expect(onStatus).toHaveBeenCalledWith(true)
+    expect(getNetworkStatus()).toBe(true)
+  })
+
+  it.each([
+    ['Chrome', new TypeError('Failed to fetch')],
+    ['Safari', new TypeError('Load failed')],
+    ['Firefox', new TypeError('NetworkError when attempting to fetch')],
+  ])('publishes online=false on %s network error', async (_browser, error) => {
+    const onStatus = vi.fn()
+    setOnNetworkStatus(onStatus)
+    mockFetch.mockRejectedValueOnce(error)
+
+    await expect(apiClient('/accounts')).rejects.toThrow()
+
+    expect(onStatus).toHaveBeenCalledWith(false)
+    expect(getNetworkStatus()).toBe(false)
+  })
+
+  it('does not publish on non-network errors during fetch', async () => {
+    const onStatus = vi.fn()
+    setOnNetworkStatus(onStatus)
+    // A non-TypeError thrown by fetch (rare, but isn't a network signal)
+    mockFetch.mockRejectedValueOnce(new Error('aborted'))
+
+    await expect(apiClient('/accounts')).rejects.toThrow()
+
+    expect(onStatus).not.toHaveBeenCalled()
+  })
+
+  it('clearOnNetworkStatusIf only clears when the active callback matches', async () => {
+    const cbA = vi.fn()
+    const cbB = vi.fn()
+    setOnNetworkStatus(cbA)
+
+    // Stale cleanup from a previous registration: must NOT clear.
+    clearOnNetworkStatusIf(cbB)
+    mockFetch.mockResolvedValueOnce(jsonResponse({ ok: true }))
+    await apiClient('/accounts')
+    expect(cbA).toHaveBeenCalledWith(true)
+
+    // Cleanup with the active callback: clears.
+    clearOnNetworkStatusIf(cbA)
+    cbA.mockClear()
+    mockFetch.mockResolvedValueOnce(jsonResponse({ ok: true }))
+    await apiClient('/accounts')
+    expect(cbA).not.toHaveBeenCalled()
+  })
+
+  it('updates getNetworkStatus on the refresh fetch path', async () => {
+    setAccessToken('expired')
+    mockFetch.mockResolvedValueOnce(
+      errorResponse('UNAUTHORIZED', 'expired', 401),
+    )
+    mockFetch.mockResolvedValueOnce(
+      jsonResponse({
+        access_token: 'new-access',
+        user: { id: '1', username: 'u' },
+      }),
+    )
+    mockFetch.mockResolvedValueOnce(jsonResponse({ data: 'ok' }))
+
+    await apiClient('/accounts')
+
+    // All three fetches reached the server, so latest state is online=true.
+    expect(getNetworkStatus()).toBe(true)
   })
 })

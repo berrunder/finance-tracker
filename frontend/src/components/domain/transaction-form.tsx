@@ -18,6 +18,7 @@ import {
   useUpdateTransfer,
 } from '@/hooks/use-transactions'
 import { handleMutationError } from '@/lib/form-helpers'
+import { getNetworkStatus } from '@/api/client'
 import { Button } from '@/components/ui/button'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { TransferForm } from '@/components/domain/transfer-form'
@@ -27,7 +28,12 @@ import type { Transaction, UpdateTransferRequest } from '@/types/api'
 const OFFLINE_TOAST = 'Saved offline \u2014 will sync when connected'
 
 function successToast(onlineMessage: string): void {
-  toast.success(navigator.onLine ? onlineMessage : OFFLINE_TOAST)
+  // Read fetch-derived state at call time so the very mutation that just
+  // resolved publishes the truth before we toast. Falls back to navigator
+  // for the rare case where no fetch has happened yet.
+  const status = getNetworkStatus()
+  const online = status !== null ? status : navigator.onLine
+  toast.success(online ? onlineMessage : OFFLINE_TOAST)
 }
 
 type TxType = 'income' | 'expense' | 'transfer'

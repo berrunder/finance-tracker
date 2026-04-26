@@ -49,6 +49,9 @@ src/
 ## Conventions
 
 - **React Compiler lint**: `react-hooks/set-state-in-effect` is an error. Don't call `setState` inside `useEffect` — use derived state or state-key patterns instead (e.g., store `{ key, value }` and derive from key mismatch).
+- **React Compiler lint**: `react-hooks/refs` forbids mutating a ref during render (`ref.current = x` at the top level of a component/hook). Update refs from inside `useEffect` or event handlers, never synchronously during render.
+- **Reading state after `await`**: code that runs after `await` resumes _before_ React commits any state change triggered during the awaited call. Don't capture React state into a closure and read it post-await — read from a synchronous source (e.g. `getNetworkStatus()` in `api/client.ts`, or a ref updated via `useEffect`).
+- **Online detection**: use `useOnlineStatus()` (verified — driven by real fetch results) or `getNetworkStatus()` from `api/client.ts` (synchronous getter, fresh after any `await fetch`). Never read `navigator.onLine` directly — it's unreliable on mobile PWAs after waking from background.
 - **Path alias**: use `@/` for imports from `src/` (configured in tsconfig and vite).
 - **API layer**: all HTTP calls go through `apiClient` in `api/client.ts`. Per-resource files (`api/accounts.ts`, etc.) export typed functions. Never call `fetch` directly from components.
 - **Data fetching**: use TanStack Query hooks in `hooks/`. Query keys are centralized in `lib/query-keys.ts`.

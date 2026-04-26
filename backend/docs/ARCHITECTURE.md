@@ -123,7 +123,7 @@ trigger (background ticker OR POST /exchange-rates/sync)
 ## API Conventions
 
 - Prefix: `/api/v1/`
-- Public: `/auth/register`, `/auth/login`, `/auth/refresh`, `/currencies`
+- Public: `/health`, `/auth/register`, `/auth/login`, `/auth/refresh`, `/currencies`
 - Protected: everything else (requires Bearer token)
 - List responses: `{ "data": [...] }` or `{ "data": [...], "pagination": { page, per_page, total } }`
 - Errors: `{ "error": { "code": "SNAKE_CASE", "message": "human text" } }`
