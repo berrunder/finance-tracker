@@ -71,6 +71,7 @@ export function IncomeExpenseForm({
             }
             type={form.watch('type')}
           />
+          <FormError message={form.formState.errors.category_id?.message} />
         </div>
       </div>
 
